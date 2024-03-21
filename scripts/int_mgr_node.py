@@ -7,14 +7,17 @@ from gracias_interfaces.msg import Auth
 from gracias_interfaces.msg import Comm 
 from gracias_interfaces.msg import Identity
 
-from foxglove_msgs.msg import SceneUpdate, SceneEntity
+from foxglove_msgs.msg import SceneUpdate, SceneEntity, TextPrimitive
 
 class Person():
     def __init__(self, msg):
         self.track_id = msg.track_id
-        self.identity = "unknown"
-        self.auth = "not authenticated"
+        self.identity = "Unknown identity"
+        self.auth = "Not authenticated"
         self.comms = []
+        self.pos_x = msg.pose.pose.position.x
+        self.pos_y = msg.pose.pose.position.y
+        self.pos_z = msg.pose.pose.position.z
 
 class InteractionManagerNode(Node):
     def __init__(self):
@@ -50,10 +53,18 @@ class InteractionManagerNode(Node):
 
         # Define member variables
         self.persons = {}
+        self.tracks_msg = Tracks3D()
         self.scene_msg = SceneUpdate()
 
+        # Define pubs
+        self.publisher_people_scene = self.create_publisher(
+            SceneUpdate,
+            'people_scene',
+            10)
+
+
     def listener_callback_tracked_persons(self, msg):
-        self.get_logger().info('Received tracked persons: "%s"' % msg)
+        self.tracks_msg = msg
 
         self.tracked_person_ids = []
 
@@ -69,9 +80,7 @@ class InteractionManagerNode(Node):
         persons_temp = self.persons
         self.persons = {key: val for key, val in persons_temp.items() if key in self.tracked_person_ids}
 
-        self.get_logger().info('Managed persons: "%s"' % self.persons)
-
-        # TODO - visualize people
+        self.visualize()
 
 
     def listener_callback_auth(self, msg):
@@ -83,8 +92,36 @@ class InteractionManagerNode(Node):
     def listener_callback_identity(self, msg):
         self.get_logger().info('Received identity message: "%s"' % msg)
 
-    # def visualize(self):
+    def visualize(self):
+        self.scene_msg = SceneUpdate()
 
+        for idx in self.persons.keys():
+            person = self.persons[idx]
+            entity_msg = SceneEntity()
+
+            # Populate entity message with header / person data
+            entity_msg.frame_id = self.tracks_msg.header.frame_id
+            entity_msg.timestamp = self.tracks_msg.header.stamp
+            entity_msg.id = str(person.track_id)
+            entity_msg.frame_locked = True
+            entity_msg.lifetime.nanosec = 500000000
+
+            text = TextPrimitive()
+            text.billboard = True
+            text.font_size = 12.
+            text.scale_invariant = True
+            text.color.a = 1.0
+            text.pose.position.x = person.pos_x
+            text.pose.position.y = person.pos_y
+            text.pose.position.z = person.pos_z
+            text.text = "person #%s: \n%s \n%s" % (person.track_id, person.identity, person.auth)
+            for msg in person.comms:
+                text.text += "\n%s" % (msg)
+            entity_msg.texts.append(text)
+
+            self.scene_msg.entities.append(entity_msg)
+
+        self.publisher_people_scene.publish(self.scene_msg)
 
 
 def main(args=None):
