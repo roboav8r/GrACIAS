@@ -5,15 +5,30 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# Install launch and config files
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(tracking_msgs REQUIRED)
 
-
+# Install C++ execs
 add_executable(track_preproc src/track_preproc.cpp)
 ament_target_dependencies(track_preproc rclcpp tracking_msgs)
+install(TARGETS 
+  track_preproc
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install Python
+# ament_python_install_package(${PROJECT_NAME})
+install(PROGRAMS
+  scripts/int_mgr_node.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 
 if(BUILD_TESTING)
