@@ -5,7 +5,9 @@ from rclpy.node import Node
 from tracking_msgs.msg import Tracks3D
 from gracias_interfaces.msg import Auth
 from gracias_interfaces.msg import Comm 
-from gracias_interfaces.msg import Identity 
+from gracias_interfaces.msg import Identity
+
+from foxglove_msgs.msg import SceneUpdate, SceneEntity
 
 class Person():
     def __init__(self, msg):
@@ -47,19 +49,30 @@ class InteractionManagerNode(Node):
         self.subscription_comm  # prevent unused variable warning
 
         # Define member variables
-        persons = []
+        self.persons = {}
+        self.scene_msg = SceneUpdate()
 
     def listener_callback_tracked_persons(self, msg):
         self.get_logger().info('Received tracked persons: "%s"' % msg)
 
-        tracked_person_ids = []
+        self.tracked_person_ids = []
 
-        # add new tracked persons
-        for person in msg.tracks:
-            tracked_person_ids.append(person.track_id)
+        # add new tracked persons from incoming message
+        for trkd_person in msg.tracks:
+            self.tracked_person_ids.append(trkd_person.track_id)
 
+            # Manage dict of tracked people; key is track_id
+            if trkd_person.track_id not in self.persons.keys():
+                self.persons[trkd_person.track_id] = Person(trkd_person)
 
         # remove untracked persons
+        persons_temp = self.persons
+        self.persons = {key: val for key, val in persons_temp.items() if key in self.tracked_person_ids}
+
+        self.get_logger().info('Managed persons: "%s"' % self.persons)
+
+        # TODO - visualize people
+
 
     def listener_callback_auth(self, msg):
         self.get_logger().info('Received auth message: "%s"' % msg)
@@ -69,6 +82,10 @@ class InteractionManagerNode(Node):
 
     def listener_callback_identity(self, msg):
         self.get_logger().info('Received identity message: "%s"' % msg)
+
+    # def visualize(self):
+
+
 
 def main(args=None):
     rclpy.init(args=args)
