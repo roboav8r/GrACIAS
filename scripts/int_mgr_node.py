@@ -104,11 +104,11 @@ class InteractionManagerNode(Node):
             entity_msg.timestamp = self.tracks_msg.header.stamp
             entity_msg.id = str(person.track_id)
             entity_msg.frame_locked = True
-            entity_msg.lifetime.nanosec = 500000000
+            entity_msg.lifetime.nanosec = 3000000
 
             text = TextPrimitive()
             text.billboard = True
-            text.font_size = 12.
+            text.font_size = 24.
             text.scale_invariant = True
             text.color.a = 1.0
             text.pose.position.x = person.pos_x
