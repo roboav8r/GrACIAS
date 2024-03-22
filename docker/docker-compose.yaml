@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+
+  ar_track_srv:
+
+    image: ar_track_img
+    container_name: ar_track_cont
+    
+    build:
+      # set the build context to the directory containing build files
+      context: .
+      dockerfile: ar_track.Dockerfile
+
+    environment:
+      - MARKER_SIZE=10
+      - AR_CAM_TOPIC=/oakd/rgb/blah/
+      - AR_INFO_TOPIC=/oakd/rgb/info/blah/
+      - OUTPUT_FRAME=/oak
+
+    security_opt:
+    # this is set bc of errors with RViz being denied dbus comm w/ host
+      - apparmor:unconfined
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ${HOME}/.Xauthority:/root/.Xauthority:rw
+    # give the container access to the host's network
+    network_mode: host
+    stdin_open: true
+    tty: true
+    entrypoint: /ar_track_entrypoint.sh

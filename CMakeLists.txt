@@ -7,7 +7,6 @@ endif()
 
 # Install launch and config files
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
-install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
