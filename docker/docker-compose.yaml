@@ -38,9 +38,10 @@ services:
 
     environment:
       - MARKER_SIZE=10
-      - AR_CAM_TOPIC=/oak/points
+      # - AR_CAM_TOPIC=/oak/points
+      - AR_CAM_TOPIC=/oak/rgb/image_raw
       - AR_INFO_TOPIC=/oak/stereo/camera_info
-      - OUTPUT_FRAME=oak
+      - OUTPUT_FRAME=oak_rgb_camera_optical_frame
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host

@@ -8,7 +8,6 @@ cd /bridge_ws
 source install/setup.bash 
 
 # Display bridged messages and launch the bridge 
-dpkg -l | grep cyclone
 ros2 run ros1_bridge dynamic_bridge --print-pairs 
 ros2 run ros1_bridge dynamic_bridge 
 exec "$@"
