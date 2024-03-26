@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import numpy as np
+
 import rclpy
 from rclpy.node import Node
 from tracking_msgs.msg import Tracks3D
@@ -32,14 +34,14 @@ class InteractionManagerNode(Node):
 
         self.subscription_auth = self.create_subscription(
             Auth,
-            'auth',
+            'authentication',
             self.listener_callback_auth,
             10)
         self.subscription_auth  # prevent unused variable warning
 
         self.subscription_id = self.create_subscription(
             Identity,
-            'identity',
+            'identification',
             self.listener_callback_identity,
             10)
         self.subscription_id  # prevent unused variable warning
@@ -62,6 +64,14 @@ class InteractionManagerNode(Node):
             'people_scene',
             10)
 
+    def compute_match(self, pos):
+        similarity_vector = np.zeros(len(self.persons.keys()))
+        self.get_logger().info('Similarity vector: "%s"' % similarity_vector)
+
+        for ii,key in enumerate(self.persons.keys()): [TODO come back here]
+            similarity_vector[ii] = np.linalg.norm(pos.x - self.persons[key].pos_x, pos.y - self.persons[key].pos_y, pos.z - self.persons[key].pos_z)
+
+        self.get_logger().info('Similarity vector: "%s"' % similarity_vector)
 
     def listener_callback_tracked_persons(self, msg):
         self.tracks_msg = msg
@@ -84,13 +94,28 @@ class InteractionManagerNode(Node):
 
 
     def listener_callback_auth(self, msg):
-        self.get_logger().info('Received auth message: "%s"' % msg)
+        # self.get_logger().info('Received auth message: "%s"' % msg)
+
+        # Compute match
+        self.compute_match(msg.pose.pose.position)
+
+        # Perform update
 
     def listener_callback_comm(self, msg):
-        self.get_logger().info('Received communication message: "%s"' % msg)
+        # self.get_logger().info('Received communication message: "%s"' % msg)
+
+        # Compute match
+        self.compute_match(msg.pose.pose.position)
+
+        # Perform update
 
     def listener_callback_identity(self, msg):
-        self.get_logger().info('Received identity message: "%s"' % msg)
+        # self.get_logger().info('Received identity message: "%s"' % msg)
+
+        # Compute match
+        self.compute_match(msg.pose.pose.position)
+
+        # Perform update
 
     def visualize(self):
         self.scene_msg = SceneUpdate()
