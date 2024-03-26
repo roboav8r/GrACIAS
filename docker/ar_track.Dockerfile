@@ -25,17 +25,6 @@ ros-noetic-roscpp-tutorials=0.10.2-1* \
 ros-noetic-rospy-tutorials=0.10.2-1* \
 && rm -rf /var/lib/apt/lists/* 
 
-# install ros2 debian packages 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-ros-galactic-tf2-msgs \
-ros-galactic-rviz-common \
-qtbase5-dev \
-ros-galactic-rviz-default-plugins \
-ros-$ROS2_DISTRO-rmw-fastrtps-cpp \
-ros-$ROS2_DISTRO-rmw-cyclonedds-cpp \
-ros-$ROS2_DISTRO-rmw \
-&& rm -rf /var/lib/apt/lists/* 
-
 # Clone and build custom ROS1 messages from source 
 RUN mkdir -p /ros1_ws/src 
 WORKDIR /ros1_ws/src 
@@ -44,27 +33,4 @@ WORKDIR /ros1_ws
 RUN source /opt/ros/${ROS1_DISTRO}/setup.bash && \ 
 catkin_make
 
-# Clone and build ROS2 messages from source 
-RUN mkdir -p /ros2_ws/src 
-WORKDIR /ros2_ws/src 
-RUN git clone -b ros2 https://github.com/roboav8r/ar_track_alvar_msgs.git
-WORKDIR /ros2_ws 
-RUN source /opt/ros/${ROS2_DISTRO}/setup.bash && \ 
-colcon build
-
-# Clone bridge source code and build from source 
-RUN mkdir -p /bridge_ws/src 
-WORKDIR /bridge_ws/src 
-RUN git clone -b ${ROS2_DISTRO} https://github.com/ros2/ros1_bridge.git 
-WORKDIR /bridge_ws 
-RUN source /opt/ros/${ROS1_DISTRO}/setup.bash && \ 
-source /opt/ros/${ROS2_DISTRO}/setup.bash && \ 
-colcon build --symlink-install --packages-skip ros1_bridge 
-
-# Build workspace and ros1_bridge from source 
-RUN source /ros1_ws/devel/setup.bash && \
-source /ros2_ws/install/setup.bash && \
-colcon build --packages-select ros1_bridge --cmake-force-configure
-
-COPY ./ar_bridge_entrypoint.sh /
 COPY ./ar_track_entrypoint.sh /

@@ -1,6 +1,6 @@
 #!/bin/bash 
 set -e 
-echo "AR Tag / ROS bridge entrypoint" 
+echo "AR Track entrypoint" 
 
 # Source ROS2 and bridge environments 
 source "/opt/ros/$ROS1_DISTRO/setup.bash" 
