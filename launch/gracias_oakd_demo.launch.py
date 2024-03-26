@@ -25,6 +25,11 @@ def generate_launch_description():
         'config',
         'oakd_tracker.yaml'
     )
+    ar_config = os.path.join(
+        get_package_share_directory('GrACIAS'),
+        'config',
+        'ar_commands.yaml'
+    )
 
     # Static TF node
     tf_node = Node(package = "tf2_ros", 
@@ -55,6 +60,14 @@ def generate_launch_description():
         output='screen',
         parameters=[cam_config])    
     ld.add_action(preproc_node)
+
+    ar_node = Node(
+        package='GrACIAS',
+        executable='ar_preproc',
+        name='ar_preproc_node',
+        output='screen',
+        parameters=[ar_config])    
+    ld.add_action(ar_node)
 
     # Tracker node
     trk_node = Node(

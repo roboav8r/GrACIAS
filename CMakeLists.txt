@@ -7,18 +7,29 @@ endif()
 
 # Install launch and config files
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(tracking_msgs REQUIRED)
+find_package(ar_track_alvar_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(foxglove_msgs)
+find_package(gracias_interfaces)
+find_package(geometry_msgs)
+find_package(tf2_ros)
+find_package(tf2_geometry_msgs)
 
 # Install C++ execs
 add_executable(track_preproc src/track_preproc.cpp)
 ament_target_dependencies(track_preproc rclcpp tracking_msgs)
+add_executable(ar_preproc src/artag_preproc.cpp)
+ament_target_dependencies(ar_preproc tf2_ros tf2_geometry_msgs rclcpp ar_track_alvar_msgs visualization_msgs gracias_interfaces foxglove_msgs geometry_msgs)
 install(TARGETS 
   track_preproc
+  ar_preproc
   DESTINATION lib/${PROJECT_NAME}
 )
 

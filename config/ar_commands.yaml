@@ -1,0 +1,5 @@
+ar_preproc_node:
+  ros__parameters:
+    tracker_frame: 'map'
+    words: ['Frank','John','the_password','go','stop']
+    types: ['Identity','Identity','Auth','Comm','Comm']
