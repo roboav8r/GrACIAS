@@ -37,8 +37,7 @@ services:
       dockerfile: ar_track.Dockerfile
 
     environment:
-      - MARKER_SIZE=10
-      # - AR_CAM_TOPIC=/oak/points
+      - MARKER_SIZE=15.2
       - AR_CAM_TOPIC=/oak/rgb/image_raw
       - AR_INFO_TOPIC=/oak/stereo/camera_info
       - OUTPUT_FRAME=oak_rgb_camera_optical_frame
