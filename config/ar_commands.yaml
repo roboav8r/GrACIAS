@@ -1,6 +1,6 @@
 ar_preproc_node:
   ros__parameters:
     tracker_frame: 'map'
-    word_ids: [1, 2, 3, 4, 5]
-    words: ['Frank','John','the_password','go','stop']
-    types: ['Identity','Identity','Auth','Comm','Comm']
+    word_ids: [1, 2, 3, 4, 5, 6]
+    words: ['Frank','John','the_password','go','stop', 'there']
+    types: ['Identity','Identity','Auth','Comm','Comm','Comm']

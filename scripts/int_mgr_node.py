@@ -13,14 +13,17 @@ from gracias_interfaces.msg import Auth, Comm, Comms, Identity
 from foxglove_msgs.msg import SceneUpdate, SceneEntity, TextPrimitive
 
 class Person():
-    def __init__(self, msg):
+    def __init__(self, msg, det_thresh, del_thresh, score_decay):
         self.track_id = msg.track_id
         self.identity = "Unknown"
         self.auth = False
-        self.comms = []
+        self.comms = {}
         self.pos_x = msg.pose.pose.position.x
         self.pos_y = msg.pose.pose.position.y
         self.pos_z = msg.pose.pose.position.z
+        self.det_thresh = det_thresh
+        self.del_thresh = del_thresh
+        self.score_decay = score_decay
 
     def update(self, ar_msg, type):
         if type=='authentication':
@@ -29,9 +32,31 @@ class Person():
 
         if type=='communication':
             # Increase weight for existing comms in incoming comms
-            pre_comms = self.comms # list of [gracias_interfaces/Comm]
+            temp_comms = self.comms # dictionary of comm dictionaries
             new_comms = ar_msg # list of [gracias_interfaces/Comm]
-            # Reduce weight for existing comms not in incoming comms
+            self.comms = {}
+
+            # Handle incoming comms
+            for new_comm in new_comms:
+
+                # Incoming message word matches an existing word
+                if new_comm.comm in temp_comms.keys():
+
+                    # Fuse the two and update confidence value to self.comms dict, use parallel addition
+                    self.comms[new_comm.comm] = 1 - (1 - new_comm.conf)*(1 - temp_comms[new_comm.comm])/((1 - new_comm.conf) + (1 - temp_comms[new_comm.comm]))
+
+                    # Remove word from temp_comms
+                    del temp_comms[new_comm.comm]
+
+                elif new_comm.conf > self.det_thresh: # Create new word
+                    self.comms[new_comm.comm] = new_comm.conf
+
+            # Now, find unmatched words in last comm step and reduce confidence
+            for word in temp_comms.keys():
+
+                new_score = temp_comms[word] - self.score_decay
+                if new_score > self.del_thresh: # Only publish if above delete threshold
+                    self.comms[word] = new_score
 
         if type=='identity':
             self.identity = ar_msg.identity
@@ -40,6 +65,9 @@ class Person():
 class InteractionManagerNode(Node):
     def __init__(self):
         super().__init__('interaction_manager_node')
+        self.det_thresh = .15
+        self.del_thresh = .25
+        self.score_decay = .05
         
         self.subscription_tracked_persons = self.create_subscription(
             Tracks3D,
@@ -99,7 +127,7 @@ class InteractionManagerNode(Node):
 
             # Create person and add to dict if not currently tracked
             if trkd_person.track_id not in self.persons.keys():
-                self.persons[trkd_person.track_id] = Person(trkd_person)
+                self.persons[trkd_person.track_id] = Person(trkd_person, self.det_thresh,self.del_thresh,self.score_decay)
 
             self.persons[trkd_person.track_id].pos_x = trkd_person.pose.pose.position.x
             self.persons[trkd_person.track_id].pos_y = trkd_person.pose.pose.position.y
@@ -123,14 +151,12 @@ class InteractionManagerNode(Node):
         # self.get_logger().info('Received communication message: "%s"' % msg)
 
         comm_matches = {}
+        for person_id in self.tracked_person_ids:
+            comm_matches[person_id] = []
 
         # Compute set of comms that are matched to a person
         for comm in msg.comms:
-            match_key = self.compute_match(comm.pose.position)
-            
-            if match_key not in comm_matches.keys():
-                comm_matches[match_key] = []
-            
+            match_key = self.compute_match(comm.pose.position)            
             comm_matches[match_key].append(comm)
 
         # Update
@@ -168,9 +194,9 @@ class InteractionManagerNode(Node):
             text.pose.position.x = person.pos_x
             text.pose.position.y = person.pos_y
             text.pose.position.z = person.pos_z
-            text.text = "person #%s: \nID: %s \nAuth: %s" % (person.track_id, person.identity, person.auth)
-            for msg in person.comms:
-                text.text += "\n%s" % (msg)
+            text.text = "person #%s: \nID: %s \nAuth: %s\n" % (person.track_id, person.identity, person.auth)
+            for word in person.comms.keys():
+                text.text += "%s (%.2f) " % (word, person.comms[word]*100)
             text.text
             entity_msg.texts.append(text)
 
