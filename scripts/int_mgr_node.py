@@ -8,9 +8,7 @@ from rclpy.node import Node
 import gtsam
 
 from tracking_msgs.msg import Tracks3D
-from gracias_interfaces.msg import Auth
-from gracias_interfaces.msg import Comm 
-from gracias_interfaces.msg import Identity
+from gracias_interfaces.msg import Auth, Comm, Comms, Identity
 
 from foxglove_msgs.msg import SceneUpdate, SceneEntity, TextPrimitive
 
@@ -30,7 +28,10 @@ class Person():
                 self.auth = True
 
         if type=='communication':
-            self.comms=[ar_msg.comm]
+            # Increase weight for existing comms in incoming comms
+            pre_comms = self.comms # list of [gracias_interfaces/Comm]
+            new_comms = ar_msg # list of [gracias_interfaces/Comm]
+            # Reduce weight for existing comms not in incoming comms
 
         if type=='identity':
             self.identity = ar_msg.identity
@@ -61,12 +62,12 @@ class InteractionManagerNode(Node):
             10)
         self.subscription_id  # prevent unused variable warning
 
-        self.subscription_comm = self.create_subscription(
-            Comm,
-            'communication',
-            self.listener_callback_comm,
+        self.subscription_comms = self.create_subscription(
+            Comms,
+            'communications',
+            self.listener_callback_comms,
             10)
-        self.subscription_comm  # prevent unused variable warning
+        self.subscription_comms  # prevent unused variable warning
 
         # Define member variables
         self.persons = {}
@@ -118,12 +119,24 @@ class InteractionManagerNode(Node):
         match_key = self.compute_match(msg.pose.pose.position)
         self.persons[match_key].update(msg, 'authentication')
 
-    def listener_callback_comm(self, msg):
+    def listener_callback_comms(self, msg):
         # self.get_logger().info('Received communication message: "%s"' % msg)
 
-        # Compute match, perform update
-        match_key = self.compute_match(msg.pose.pose.position)
-        self.persons[match_key].update(msg, 'communication')
+        comm_matches = {}
+
+        # Compute set of comms that are matched to a person
+        for comm in msg.comms:
+            match_key = self.compute_match(comm.pose.position)
+            
+            if match_key not in comm_matches.keys():
+                comm_matches[match_key] = []
+            
+            comm_matches[match_key].append(comm)
+
+        # Update
+        self.get_logger().info('person-comm matches: "%s"' % comm_matches)
+        for key in comm_matches.keys():
+            self.persons[key].update(comm_matches[key], 'communication')
 
     def listener_callback_identity(self, msg):
         # self.get_logger().info('Received identity message: "%s"' % msg)
