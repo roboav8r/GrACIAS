@@ -48,10 +48,11 @@ class AudioPublisherNode(Node):
         
         # Declare parameters with default values
         self.declare_parameter('n_channels', 6)
-        self.declare_parameter('src', 'hw:4,0')
+        self.declare_parameter('src', 'hw:2,0')
         self.declare_parameter('sample_rate', 16000)
         self.declare_parameter('hop_size', 1600) # .1 seconds
         self.declare_parameter('frame_size', 1600)
+        self.declare_parameter('microphone_frame_id','respeaker_frame')
 
         # Retrieve parameters
         self.n_channels = self.get_parameter('n_channels').get_parameter_value().integer_value
@@ -59,6 +60,7 @@ class AudioPublisherNode(Node):
         self.sample_rate = self.get_parameter('sample_rate').get_parameter_value().integer_value
         self.hop_size = self.get_parameter('hop_size').get_parameter_value().integer_value
         self.frame_size = self.get_parameter('frame_size').get_parameter_value().integer_value
+        self.microphone_frame_id = self.get_parameter('microphone_frame_id').get_parameter_value().string_value
         self.format = "alsa"
         self.options = {"sample_rate": str(self.sample_rate),"channels": str(self.n_channels)}
 
@@ -69,8 +71,12 @@ class AudioPublisherNode(Node):
         # Example additional fields setup
         # audio_info_msg.sample_format = "16-bit"
 
-        # Create frame cacher and queue
-        self.cacher = ContextCacher(self.frame_size, self.hop_size, self.n_channels)
+        self.audio_data_msg = AudioDataStamped()
+        self.audio_data_msg.header.frame_id = self.microphone_frame_id
+
+        # Create frame cache and queue
+        self.frame = torch.zeros([self.frame_size, self.n_channels],dtype=torch.float16)
+        # self.cacher = ContextCacher(self.frame_size, self.hop_size, self.n_channels)
         # self.q = []
 
         # Create stream
@@ -108,13 +114,17 @@ class AudioPublisherNode(Node):
 
         # Build audio dataframe from queue
         for (chunk_a) in self.streamer.stream(timeout=-1, backoff=1.0):
-            # self.get_logger().info("Chunk size: %s \n" % str(chunk_a[0].size()))
-            
-            
-            
+
+            # Roll the frame, and replace oldest contents with new chunk
+            self.frame = torch.roll(self.frame, -chunk_a[0].size(0), 0)
+            self.frame[-chunk_a[0].size(0):,:] = -chunk_a[0]
+
+
+            # self.get_logger().info("Chunk size: %s \n" % str(chunk_a[0].size()))         
             # self.get_logger().info("audio chunk data: %s \n" % str(chunk_a))            
-            self.audio_frame_data = self.cacher(chunk_a[0],self).view(-1)
-            torch.save(self.audio_frame_data,'frame_data_original.pt')
+            # self.audio_frame_data = self.cacher(chunk_a[0],self).view(-1)
+
+            torch.save(self.frame,'frame_data_original.pt')
             self.audio_frame_bytes = self.audio_frame_data.numpy().tobytes()
             # self.get_logger().info("audio frame data: %s \n" % str(self.audio_frame_data))
 
@@ -123,9 +133,11 @@ class AudioPublisherNode(Node):
 
         
             # Publish AudioDataStamped message (fill with actual audio data as needed)
-            audio_data_msg = AudioDataStamped()
-            audio_data_msg.audio.data = self.audio_frame_bytes # Placeholder data
-            self.audio_data_publisher.publish(audio_data_msg)
+            # self.audio_data_msg.audio.data = self.audio_frame_bytes
+
+            self.audio_data_msg.header.stamp = self.get_clock().now().to_msg()
+            self.audio_data_msg.audio.data = self.frame.view(-1).numpy().tobytes()
+            self.audio_data_publisher.publish(self.audio_data_msg)
             
             # Publish AudioInfo message
             self.audio_info_publisher.publish(self.audio_info_msg)

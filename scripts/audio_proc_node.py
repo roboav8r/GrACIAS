@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
+import torch
+import torchaudio
+
 import rclpy
 from rclpy.node import Node
 from audio_common_msgs.msg import AudioDataStamped
-from sensor_msgs.msg import Image
-import cv2
+# from sensor_msgs.msg import Image
+from std_msgs.msg import Float64MultiArray
+# import cv2
 import numpy as np
 
-import torch
-import torchaudio
-import librosa
 
 
 class AudioProcNode(Node):
@@ -22,8 +23,8 @@ class AudioProcNode(Node):
             self.audio_data_callback,
             10)
         self.publisher = self.create_publisher(
-            Image,
-            'image_data_topic',
+            Float64MultiArray,
+            'wav_float_data',
             10)
         
         # Declare parameters with default values
@@ -38,26 +39,59 @@ class AudioProcNode(Node):
         self.hop_size = self.get_parameter('hop_size').get_parameter_value().integer_value
         self.frame_size = self.get_parameter('frame_size').get_parameter_value().integer_value
 
+        # Channel position map
+        self.channel_data = {1: {'pos': [.2298, -.2298, 0.]}, 
+                             2: {'pos': [.2298, .2298, 0.]}, 
+                             3: {'pos': [-.2298, .2298, 0.]}, 
+                             4: {'pos': [-.2298, -.2298, 0.]}}
+        self.speed_sound = 343.0
+        # self.beam_azimuths = [0., 30., 60., 90., 120., 150., 180., 210., 240., 270., 300., 330.]
+        self.beam_data = {'12_o_clock': {'az': 0.}, 
+                          '11_o_clock': {'az': 30.}, 
+                          '10_o_clock': {'az': 60.}, 
+                          '1_o_clock': {'az': 300.}, 
+                          '2_o_clock': {'az': 330.}}
+
+        # Audio data storage
+        self.frame = torch.zeros([self.frame_size*self.n_channels],dtype=torch.float16)
+        self.channels = torch.zeros([self.frame_size, self.n_channels],dtype=torch.float16)
+
+    # def form_beams(self):
+    #     for az in self.beam_azimuths:
+    #         for channel in self.channel_data.keys():
+
+    #             # compute projection of position in az direction
+
+    #             # save max/closest to sound source - this is where signal arrives first
+
+    #             # find per-channel delay time = (dist_max - dist_i)/self.speed_sound
+                
+    #             # find per-channel sample shift (min should be 0)
+
+    #         self.beams = torch.zeros([self.frame_size - self.max_shift, self.n_channels],dtype=torch.float16):
+
+            # beam = 
+
     def audio_data_callback(self, msg):
 
-        self.frame = torch.from_numpy(np.frombuffer(msg.audio.data,dtype=np.float16)) # .view(self.n_channels,-1)
+        self.frame = torch.from_numpy(np.frombuffer(msg.audio.data,dtype=np.float16)).view(-1,self.n_channels) # .view(self.n_channels,-1)
+        # self.channels = self.frame.view(-1,self.n_channels)
         torch.save(self.frame,'frame_data_recovered.pt')
+
+        # Form beams
+        # for beam in beams
 
         # Process audio data and convert it to image
         # Here, we are just creating a dummy image for demonstration
         dummy_image = np.random.randint(0, 255, size=(480, 640, 3), dtype=np.uint8)
 
-        # Create a sensor_msgs/Image message
-        image_msg = Image()
-        image_msg.header = msg.header
-        image_msg.height = dummy_image.shape[0]
-        image_msg.width = dummy_image.shape[1]
-        image_msg.encoding = 'bgr8'  # Assuming OpenCV BGR encoding
-        image_msg.step = dummy_image.shape[1] * 3  # bytes per row
-        image_msg.data = dummy_image.tobytes()
+        # Create a float message
+        float_msg = Float64MultiArray()
+        for channel in self.channel_data.keys():
+            float_msg.data.append(self.frame[-1,channel])
 
         # Publish the image message
-        self.publisher.publish(image_msg)
+        self.publisher.publish(float_msg)
 
 
 def main(args=None):
