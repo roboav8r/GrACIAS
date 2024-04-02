@@ -50,8 +50,8 @@ class AudioPublisherNode(Node):
         self.declare_parameter('n_channels', 6)
         self.declare_parameter('src', 'hw:4,0')
         self.declare_parameter('sample_rate', 16000)
-        self.declare_parameter('hop_size', 160) # .1 seconds
-        self.declare_parameter('frame_size', 160)
+        self.declare_parameter('hop_size', 1600) # .1 seconds
+        self.declare_parameter('frame_size', 1600)
 
         # Retrieve parameters
         self.n_channels = self.get_parameter('n_channels').get_parameter_value().integer_value

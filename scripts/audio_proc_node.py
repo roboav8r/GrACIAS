@@ -40,7 +40,7 @@ class AudioProcNode(Node):
 
     def audio_data_callback(self, msg):
 
-        self.frame = torch.from_numpy(librosa.util.buf_to_float(np.frombuffer(msg.audio.data))).type(torch.float16) # .view(self.n_channels,-1)
+        self.frame = torch.from_numpy(np.frombuffer(msg.audio.data,dtype=np.float16)) # .view(self.n_channels,-1)
         torch.save(self.frame,'frame_data_recovered.pt')
 
         # Process audio data and convert it to image
