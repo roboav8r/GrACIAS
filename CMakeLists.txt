@@ -37,6 +37,8 @@ install(TARGETS
 # ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/int_mgr_node.py
+  scripts/audio_acq_node.py
+  scripts/audio_proc_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
