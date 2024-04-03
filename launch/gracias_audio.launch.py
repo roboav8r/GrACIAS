@@ -43,5 +43,14 @@ def generate_launch_description():
     )
     ld.add_action(proc_node)
 
+    # Foxglove bridge for visualization
+    viz_node = IncludeLaunchDescription(
+        XMLLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('marmot'),
+                'launch/foxglove_bridge_launch.xml'))
+    )
+    ld.add_action(viz_node)
+
 
     return ld
