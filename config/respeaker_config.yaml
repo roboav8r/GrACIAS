@@ -1,0 +1,8 @@
+audio_acq_node:
+  ros__parameters:
+    n_channels: 6
+    src: 'hw:4,0'
+    sample_rate: 16000
+    hop_size: 1600
+    frame_size: 16000
+    microphone_frame_id: 'respeaker_frame'

@@ -15,20 +15,20 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Config files
-    # audio_config = os.path.join(
-    #     get_package_share_directory('GrACIAS'),
-    #     'config',
-    #     'audio_config.yaml'
-    # )
+    audio_config = os.path.join(
+        get_package_share_directory('GrACIAS'),
+        'config',
+        'respeaker_config.yaml'
+    )
 
     # Audio acquisition node
     acq_node = Node(
         package='GrACIAS',
         executable='audio_acq_node.py',
-        name='respeaker_acq_node',
+        name='audio_acq_node',
         output='screen',
         # remappings=[('/detections','/converted_detections')],
-        # parameters=[tracker_config]
+        parameters=[audio_config]
     )
     ld.add_action(acq_node)
 
@@ -39,7 +39,7 @@ def generate_launch_description():
         name='audio_proc_node',
         output='screen',
         # remappings=[('/detections','/converted_detections')],
-        # parameters=[tracker_config]
+        parameters=[audio_config]
     )
     ld.add_action(proc_node)
 

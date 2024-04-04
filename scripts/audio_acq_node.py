@@ -32,7 +32,7 @@ class AudioPublisherNode(Node):
         self.frame_size = self.get_parameter('frame_size').get_parameter_value().integer_value
         self.microphone_frame_id = self.get_parameter('microphone_frame_id').get_parameter_value().string_value
         self.format = "alsa"
-        self.options = {"sample_rate": str(self.sample_rate),"channels": str(self.n_channels)}
+        self.options = {"sample_rate": str(self.sample_rate), "channels": str(self.n_channels)}
 
         # Create audio_info message
         self.audio_info_msg = AudioInfo()
@@ -45,10 +45,12 @@ class AudioPublisherNode(Node):
         self.audio_data_msg.header.frame_id = self.microphone_frame_id
 
         # Create frame cache and queue
+        # TODO - update for 16/32 bit
         self.frame = torch.zeros([self.frame_size, self.n_channels],dtype=torch.float16)
+        # self.frame = torch.zeros([self.frame_size, self.n_channels],dtype=torch.float32)
 
         # Create stream
-        self.get_logger().info("Building StreamReader...")
+        self.get_logger().info("Building StreamReader\nsrc: %s \nformat: %s \noptions: %s \nframes per chunk: %s" % (self.src, self.format, self.options, self.hop_size))
         self.streamer = torchaudio.io.StreamReader(src=self.src, format=self.format, option=self.options)
         self.streamer.add_basic_audio_stream(frames_per_chunk=self.hop_size, sample_rate=self.sample_rate, num_channels=self.n_channels)
 
