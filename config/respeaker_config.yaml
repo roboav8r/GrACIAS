@@ -6,3 +6,4 @@ audio_acq_node:
     hop_size: 1600
     frame_size: 16000
     microphone_frame_id: 'respeaker_frame'
+    array_info_path: 'config/respeaker_array.yaml'

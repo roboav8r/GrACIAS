@@ -18,7 +18,7 @@ def generate_launch_description():
     audio_config = os.path.join(
         get_package_share_directory('GrACIAS'),
         'config',
-        'respeaker_config.yaml'
+        'kinect_config.yaml'
     )
 
     # Audio acquisition node

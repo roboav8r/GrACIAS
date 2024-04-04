@@ -1,17 +1,20 @@
 audio_acq_node:
   ros__parameters:
     n_channels: 7
-    src: 'hw:5,0'
+    src: 'plughw:2,0'
     sample_rate: 48000
     hop_size: 4800
     frame_size: 48000
     microphone_frame_id: 'kinect_frame'
+    array_info_path: 'config/kinect_array.yaml'
 
 audio_proc_node:
   ros__parameters:
     n_channels: 7
-    src: 'hw:5,0'
+    src: 'plughw:2,0'
     sample_rate: 48000
     hop_size: 4800
     frame_size: 48000
     microphone_frame_id: 'kinect_frame'
+    array_info_path: 'config/kinect_array.yaml'
+    beam_info_path: 'config/beams.yaml'

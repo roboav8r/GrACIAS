@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 
+import os
+# import json
+import yaml
 import torch
-import torchaudio
+import numpy as np
+from pathlib import Path
 
 import rclpy
 from rclpy.node import Node
-from audio_common_msgs.msg import AudioDataStamped
-# from sensor_msgs.msg import Image
-from std_msgs.msg import Float64MultiArray
-# import cv2
-import numpy as np
+from ament_index_python.packages import get_package_share_directory
 
-from numba import jit
+from audio_common_msgs.msg import AudioDataStamped
+from std_msgs.msg import Float64MultiArray
+
+# from numba import jit
 
 class AudioProcNode(Node):
 
@@ -28,51 +31,30 @@ class AudioProcNode(Node):
             10)
         
         # Declare parameters with default values
-        self.declare_parameter('n_channels', 6)
-        self.declare_parameter('sample_rate', 16000)
-        self.declare_parameter('frame_size', 1600)
+        self.declare_parameter('n_channels', rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter('sample_rate', rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter('frame_size', rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter('array_info_path', rclpy.Parameter.Type.STRING)
+        self.declare_parameter('beam_info_path', rclpy.Parameter.Type.STRING)
 
         # Retrieve parameters
         self.n_channels = self.get_parameter('n_channels').get_parameter_value().integer_value
         self.sample_rate = self.get_parameter('sample_rate').get_parameter_value().integer_value
         self.frame_size = self.get_parameter('frame_size').get_parameter_value().integer_value
+        self.array_info_path = os.path.join(get_package_share_directory('GrACIAS'),self.get_parameter('array_info_path').get_parameter_value().string_value)
+        self.beam_info_path = os.path.join(get_package_share_directory('GrACIAS'),self.get_parameter('beam_info_path').get_parameter_value().string_value)
 
-        # Channel position map
-        # TODO - add this as param in config file
-        # respeaker
-        self.channel_data = {1: {'pos': [.02298, -.02298, 0.]}, 
-                             2: {'pos': [.02298, .02298, 0.]}, 
-                             3: {'pos': [-.02298, .02298, 0.]}, 
-                             4: {'pos': [-.02298, -.02298, 0.]}}
-        # kinect
-        # self.channel_data = {0: {'pos': [0., 0., 0.]},
-        #                      1: {'pos': [.04, 0., 0.]},
-        #                      2: {'pos': [.02, -.034641016, 0.]}, 
-        #                      3: {'pos': [-.02, -.034641016, 0.]},
-        #                      4: {'pos': [-.04, 0., 0.]},
-        #                      5: {'pos': [-.02, .034641016, 0.]}, 
-        #                      6: {'pos': [.02, .034641016, 0.]}}
-
+        # Channel position map and beam data
+        self.channel_data = yaml.safe_load(Path(self.array_info_path).read_text())
+        self.beam_data = yaml.safe_load(Path(self.beam_info_path).read_text())
 
         self.speed_sound = 343.0
-        # TODO - add this as param in config file
-        # self.beam_azimuths = [0., 30., 60., 90., 120., 150., 180., 210., 240., 270., 300., 330.]
-        self.beam_data = {'12_o_clock': {'az': 0.}, 
-                        #   '11_o_clock': {'az': 30.},
-                          'front_left': {'az': 45.}, 
-                        #   '10_o_clock': {'az': 60.}, 
-                        #   '1_o_clock': {'az': 300.},
-                          'front_right': {'az': 315.}} 
-                        #   '2_o_clock': {'az': 330.}}
         self.max_offset = np.iinfo(np.uint8).min
 
         # Audio data storage
         # TODO - get datatype from config file
         self.frame = torch.zeros([self.frame_size*self.n_channels],dtype=torch.float16)
         self.channels = torch.zeros([self.frame_size, self.n_channels],dtype=torch.float16)
-        # self.frame = torch.zeros([self.frame_size*self.n_channels],dtype=torch.float32)
-        # self.channels = torch.zeros([self.frame_size, self.n_channels],dtype=torch.float32)
-
 
         # Compute beam parameters
         self.compute_beam_params()
@@ -95,8 +77,6 @@ class AudioProcNode(Node):
         return np.sqrt(pos[0]**2 + pos[1]**2)*np.cos(delta_angle)
 
     def compute_beam_params(self):
-        self.get_logger().info('forming beams')
-
         for beam in self.beam_data.keys():
             self.beam_data[beam]['channel_proj'] = {}
             self.beam_data[beam]['sample_offset'] = {}
@@ -120,12 +100,8 @@ class AudioProcNode(Node):
                 self.beam_data[beam]['sample_offset'][channel] = offset
                 self.max_offset = np.max([self.max_offset,offset])
 
-        # Create empty beam tensor
+        # Create empty beam tensor # TODO - check data format
         self.beams = torch.zeros([self.frame_size - self.max_offset, len(self.beam_data.keys())],dtype=torch.float16)
-        self.beams = torch.zeros([self.frame_size - self.max_offset, len(self.beam_data.keys())],dtype=torch.float32)
-        
-       
-        self.get_logger().info(str(self.beam_data))
 
     def compute_beams(self):
         self.beams = torch.zeros([self.frame_size - self.max_offset, len(self.beam_data.keys())],dtype=torch.float16) # TODO
@@ -133,7 +109,7 @@ class AudioProcNode(Node):
         for ii,beam_key in enumerate(self.beam_data.keys()):
             for channel_key in self.channel_data.keys():
 
-                self.beams[:,ii] += self.frame[(self.max_offset - self.beam_data[beam_key]['sample_offset'][channel_key]):self.frame_size-self.beam_data[beam_key]['sample_offset'][channel_key],channel_key]
+                self.beams[:,ii] += self.frame[(self.max_offset - self.beam_data[beam_key]['sample_offset'][channel_key]):self.frame_size-self.beam_data[beam_key]['sample_offset'][channel_key],int(channel_key)]
 
             self.beams[:,ii] /= len(self.channel_data.keys())
 
@@ -145,9 +121,6 @@ class AudioProcNode(Node):
         torch.save(self.frame,'frame_data_recovered.pt')
         torch.save(self.beams,'beam_data.pt')
 
-        # Form beams
-        # for beam in beams
-
         # Process audio data and convert it to image
         # Here, we are just creating a dummy image for demonstration
         dummy_image = np.random.randint(0, 255, size=(480, 640, 3), dtype=np.uint8)
@@ -155,7 +128,7 @@ class AudioProcNode(Node):
         # Create a float message
         float_msg = Float64MultiArray()
         for channel in self.channel_data.keys():
-            float_msg.data.append(self.frame[-1,channel])
+            float_msg.data.append(self.frame[-1,int(channel)])
 
         # Publish the image message
         self.publisher.publish(float_msg)
