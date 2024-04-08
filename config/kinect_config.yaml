@@ -1,7 +1,7 @@
 audio_acq_node:
   ros__parameters:
     n_channels: 7
-    src: 'plughw:2,0'
+    src: 'plughw:1,0'
     sample_rate: 48000
     hop_size: 4800
     frame_size: 48000
@@ -11,7 +11,7 @@ audio_acq_node:
 audio_proc_node:
   ros__parameters:
     n_channels: 7
-    src: 'plughw:2,0'
+    src: 'plughw:1,0'
     sample_rate: 48000
     hop_size: 4800
     frame_size: 48000
