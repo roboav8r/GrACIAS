@@ -1,0 +1,57 @@
+Total Params: 247562 size: 495124 bytes = 483 KB 
+
+
+ type Conv2d, weight,  3200, 3200, torch.float32, count 
+type BatchNorm2d, weight,  64, 64, torch.float32, skip 
+type BatchNorm2d, bias,  64, 64, torch.float32, skip 
+type Conv2dDamped, weight,  36864, 36864, torch.float32, count 
+type BatchNorm2d, weight,  64, 64, torch.float32, skip 
+type BatchNorm2d, bias,  64, 64, torch.float32, skip 
+type Conv2dPrune, weight,  4096, 2698, torch.float32, count 
+type Conv2dPrune, prune_mask,  4096, 0, torch.float32, count 
+type BatchNorm2d, weight,  64, 64, torch.float32, skip 
+type BatchNorm2d, bias,  64, 64, torch.float32, skip 
+type Conv2dDamped, weight,  36864, 36864, torch.float32, count 
+type BatchNorm2d, weight,  64, 64, torch.float32, skip 
+type BatchNorm2d, bias,  64, 64, torch.float32, skip 
+type Conv2dDamped, weight,  36864, 36864, torch.float32, count 
+type BatchNorm2d, weight,  64, 64, torch.float32, skip 
+type BatchNorm2d, bias,  64, 64, torch.float32, skip 
+type Conv2dDamped, weight,  36864, 36864, torch.float32, count 
+type BatchNorm2d, weight,  64, 64, torch.float32, skip 
+type BatchNorm2d, bias,  64, 64, torch.float32, skip 
+type Conv2dDamped, weight,  36864, 36864, torch.float32, count 
+type BatchNorm2d, weight,  64, 64, torch.float32, skip 
+type BatchNorm2d, bias,  64, 64, torch.float32, skip 
+type Conv2dPrune, weight,  4096, 3438, torch.float32, count 
+type Conv2dPrune, prune_mask,  4096, 0, torch.float32, count 
+type BatchNorm2d, weight,  64, 64, torch.float32, skip 
+type BatchNorm2d, bias,  64, 64, torch.float32, skip 
+type Conv2dPrune, weight,  4096, 2985, torch.float32, count 
+type Conv2dPrune, prune_mask,  4096, 0, torch.float32, count 
+type BatchNorm2d, weight,  64, 64, torch.float32, skip 
+type BatchNorm2d, bias,  64, 64, torch.float32, skip 
+type Conv2dPrune, weight,  8192, 6731, torch.float32, count 
+type Conv2dPrune, prune_mask,  8192, 0, torch.float32, count 
+type BatchNorm2d, weight,  128, 128, torch.float32, skip 
+type BatchNorm2d, bias,  128, 128, torch.float32, skip 
+type Conv2dPrune, weight,  16384, 11589, torch.float32, count 
+type Conv2dPrune, prune_mask,  16384, 0, torch.float32, count 
+type BatchNorm2d, weight,  128, 128, torch.float32, skip 
+type BatchNorm2d, bias,  128, 128, torch.float32, skip 
+type Conv2dPrune, weight,  8192, 6981, torch.float32, count 
+type Conv2dPrune, prune_mask,  8192, 0, torch.float32, count 
+type BatchNorm2d, weight,  128, 128, torch.float32, skip 
+type BatchNorm2d, bias,  128, 128, torch.float32, skip 
+type Conv2dPrune, weight,  16384, 13910, torch.float32, count 
+type Conv2dPrune, prune_mask,  16384, 0, torch.float32, count 
+type BatchNorm2d, weight,  128, 128, torch.float32, skip 
+type BatchNorm2d, bias,  128, 128, torch.float32, skip 
+type Conv2dPrune, weight,  16384, 11326, torch.float32, count 
+type Conv2dPrune, prune_mask,  16384, 0, torch.float32, count 
+type BatchNorm2d, weight,  128, 128, torch.float32, skip 
+type BatchNorm2d, bias,  128, 128, torch.float32, skip 
+type Conv2d, weight,  384, 384, torch.float32, count 
+type BatchNorm2d, weight,  3, 3, torch.float32, skip 
+type BatchNorm2d, bias,  3, 3, torch.float32, skip 
+
