@@ -8,6 +8,8 @@ endif()
 # Install launch and config files
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY pretrained_models DESTINATION share/${PROJECT_NAME}/)
+# install(DIRECTORY datasets DESTINATION share/${PROJECT_NAME}/)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -34,11 +36,12 @@ install(TARGETS
 )
 
 # Install Python
-# ament_python_install_package(${PROJECT_NAME})
+ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/int_mgr_node.py
   scripts/audio_acq_node.py
   scripts/audio_proc_node.py
+  scripts/scene_rec_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

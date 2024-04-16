@@ -1,20 +1,28 @@
 audio_acq_node:
   ros__parameters:
     n_channels: 7
-    src: 'plughw:1,0'
+    src: 'plughw:4,0'
     sample_rate: 48000
-    hop_size: 4800
-    frame_size: 48000
+    hop_size: 48000
+    frame_size: 480000 # publish 10 seconds every second
     microphone_frame_id: 'kinect_frame'
     array_info_path: 'config/kinect_array.yaml'
 
-audio_proc_node:
+scene_rec_node:
   ros__parameters:
     n_channels: 7
-    src: 'plughw:1,0'
+    src: 'plughw:4,0'
     sample_rate: 48000
-    hop_size: 4800
-    frame_size: 48000
-    microphone_frame_id: 'kinect_frame'
-    array_info_path: 'config/kinect_array.yaml'
-    beam_info_path: 'config/beams.yaml'
+    downsample_rate: 22050
+    # hop_size: 4800
+    frame_size: 480000
+    scene_size: 220500
+    scene_index: [0, 1]
+    labels: ['indoor','outdoor','transportation']
+    scene_est_interval: 1.0
+    model_path: 'pretrained_models/sub2/'
+    mean_path: 'config/tr_mean_676d70_f1_apd18_stereo_obj.pt'
+    std_path: 'config/tr_std_676d70_f1_apd18_stereo_obj.pt'
+    # microphone_frame_id: 'kinect_frame'
+    # array_info_path: 'config/kinect_array.yaml'
+    # beam_info_path: 'config/beams.yaml'

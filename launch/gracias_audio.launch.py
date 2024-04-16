@@ -32,16 +32,16 @@ def generate_launch_description():
     )
     ld.add_action(acq_node)
 
-    # Audio processing node
-    proc_node = Node(
+    # Scene recognition node
+    rec_node = Node(
         package='GrACIAS',
-        executable='audio_proc_node.py',
-        name='audio_proc_node',
+        executable='scene_rec_node.py',
+        name='scene_rec_node',
         output='screen',
         # remappings=[('/detections','/converted_detections')],
         parameters=[audio_config]
     )
-    ld.add_action(proc_node)
+    ld.add_action(rec_node)
 
     # Foxglove bridge for visualization
     viz_node = IncludeLaunchDescription(
