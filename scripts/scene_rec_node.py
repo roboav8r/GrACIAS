@@ -2,10 +2,8 @@
 
 import os
 import json
-import yaml
 import torch
 import numpy as np
-from pathlib import Path
 import importlib
 import librosa
 import torchaudio.transforms as T
@@ -20,7 +18,7 @@ from std_msgs.msg import String
 class SceneRecNode(Node):
 
     def __init__(self):
-        super().__init__('audio_buffer_node')
+        super().__init__('scene_rec_node')
         self.subscription = self.create_subscription(AudioDataStamped, 'audio_data', self.audio_data_callback, 10)
         self.audio_scene_publisher = self.create_publisher(String, 'audio_scene', 10)
         
@@ -67,11 +65,7 @@ class SceneRecNode(Node):
 
         with open(self.model_path+'model_config.json',"r")as f:
             model_config=json.load(f)
-
-
-        # self.get_logger().info('from GrACIAS.models.' + model_config['arch'] + ' import Network')
-        # exec('from GrACIAS.models.' + model_config['arch'] + ' import Network')
-        
+       
         module = importlib.import_module('GrACIAS.models.{}'.format(model_config['arch']))
         Network = getattr(module, 'Network')
         self.model=Network(model_config)
@@ -133,7 +127,16 @@ class SceneRecNode(Node):
 
     def audio_data_callback(self, msg):
 
-        self.frame = torch.from_numpy(np.frombuffer(msg.audio.data,dtype=np.float16)).view(-1,self.n_channels)
+        chunk = torch.from_numpy(np.frombuffer(msg.audio.data,dtype=np.float16)).view(-1,self.n_channels)
+
+        # self.get_logger().info('Got chunk with size %s' % (str(chunk.size())))
+
+        # Roll the frame, and replace oldest contents with new chunk
+        self.frame = torch.roll(self.frame, -chunk.size(0), 0)
+        self.frame[-chunk.size(0):,:] = -chunk
+
+        # self.get_logger().info('Computed frame with size %s' % (str(self.frame.size())))
+
         torch.save(self.frame,'frame_data_recovered.pt')
 
         self.scene_audio = self.frame[:,self.scene_idx]

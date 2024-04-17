@@ -43,6 +43,17 @@ def generate_launch_description():
     )
     ld.add_action(rec_node)
 
+    # Voice processing node
+    voice_node = Node(
+        package='GrACIAS',
+        executable='voice_proc_node.py',
+        name='voice_proc_node',
+        output='screen',
+        # remappings=[('/detections','/converted_detections')],
+        parameters=[audio_config]
+    )
+    ld.add_action(voice_node)
+
     # Foxglove bridge for visualization
     viz_node = IncludeLaunchDescription(
         XMLLaunchDescriptionSource(
