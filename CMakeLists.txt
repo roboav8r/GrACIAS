@@ -40,6 +40,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/int_mgr_node.py
   scripts/audio_acq_node.py
+  scripts/audio_bf_node.py
   scripts/audio_proc_node.py
   scripts/scene_rec_node.py
   scripts/voice_proc_node.py

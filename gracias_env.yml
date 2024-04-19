@@ -1,7 +1,9 @@
 name: gracias
+# channel_priority: "strict"
 channels:
+  - local
   - conda-forge
-  - pytorch3d
+  # - pytorch3d
   - pytorch
   - nvidia
 dependencies:
@@ -9,10 +11,11 @@ dependencies:
 - pyyaml
 - pip
 - lark
-- pyroomacoustics
 # - pytorch=1.13.0=py3.10_cuda11.7_cudnn8.5.0_0
 # - cudatoolkit=11.7.1
 # - pytorch3d
+- librosa
+- typing
 # - ffmpeg=6.1.1
 - pip:
     - pyquaternion==0.9.9
@@ -21,7 +24,12 @@ dependencies:
     - catkin_pkg
     - gtsam==4.2.0
     - numba
+    - pandas
     - torch==2.1.0 #+cu121 --index-url https://download.pytorch.org/whl/cu121
     - torchaudio==2.1.0 #+cu121 --index-url https://download.pytorch.org/whl/cu121
     - torchvision==0.16.0 # +cu121 --index-url https://download.pytorch.org/whl/cu121
     - notebook
+    - pyroomacoustics
+    - sed_eval
+    - dcase_util
+    - IPython

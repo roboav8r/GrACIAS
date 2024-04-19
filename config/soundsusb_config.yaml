@@ -1,0 +1,17 @@
+audio_acq_node:
+  ros__parameters:
+    n_channels: 16
+    src: 'plughw:4,0'
+    sample_rate: 44100
+    hop_size: 4410
+    frame_size: 4410 # publish 1 second every second
+    microphone_frame_id: 'kinect_frame'
+    array_info_path: 'config/kinect_array.yaml'
+
+audio_bf_node:
+  ros__parameters:
+    n_channels: 16
+    sample_rate: 41000
+    chunk_length: 4100
+    buffer_length: 820000
+    channel_index: [0, 1, 2, 3, 4, 5, 6, 7]
