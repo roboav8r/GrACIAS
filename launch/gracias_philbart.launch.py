@@ -16,14 +16,14 @@ def generate_launch_description():
 
     # Config files
     audio_config = os.path.join(
-        get_package_share_directory('GrACIAS'),
+        get_package_share_directory('situated_interaction'),
         'config',
         'soundsusb_config.yaml'
     )
 
     # Audio acquisition node
     acq_node = Node(
-        package='GrACIAS',
+        package='situated_interaction',
         executable='audio_acq_node.py',
         name='audio_acq_node',
         output='screen',
@@ -34,7 +34,7 @@ def generate_launch_description():
 
     # Beamformer node
     bf_node = Node(
-        package='GrACIAS',
+        package='situated_interaction',
         executable='audio_bf_node.py',
         name='audio_bf_node',
         output='screen',
@@ -46,7 +46,7 @@ def generate_launch_description():
 
     # # Scene recognition node
     # rec_node = Node(
-    #     package='GrACIAS',
+    #     package='situated_interaction',
     #     executable='scene_rec_node.py',
     #     name='scene_rec_node',
     #     output='screen',
@@ -57,7 +57,7 @@ def generate_launch_description():
 
     # # Voice processing node
     # voice_node = Node(
-    #     package='GrACIAS',
+    #     package='situated_interaction',
     #     executable='voice_proc_node.py',
     #     name='voice_proc_node',
     #     output='screen',

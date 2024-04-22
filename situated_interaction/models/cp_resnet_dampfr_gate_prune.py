@@ -16,7 +16,7 @@ import collections.abc as container_abcs
 from torch.nn.modules.conv import _ConvNd
 from torch.utils.checkpoint import checkpoint_sequential
 import numpy as np
-import GrACIAS.shared_globals
+import situated_interaction.shared_globals
 from librosa.filters import mel as librosa_mel_fn
 
 from itertools import repeat
@@ -571,7 +571,7 @@ class Network(nn.Module):
         n_blocks_per_stage = [n_blocks_per_stage, n_blocks_per_stage, n_blocks_per_stage]
 
         if config.get("n_blocks_per_stage") is not None:
-            GrACIAS.shared_globals.console.warning(
+            situated_interaction.shared_globals.console.warning(
                 "n_blocks_per_stage is specified ignoring the depth param, nc=" + str(config.get("n_channels")))
             n_blocks_per_stage = config.get("n_blocks_per_stage")
 
