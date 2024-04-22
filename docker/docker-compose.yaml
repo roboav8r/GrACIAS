@@ -2,15 +2,16 @@ version: "3"
 
 services:
 
-  ar_bridge_srv:
+  # Bridge ROS1->ROS2 messages
+  bridge_srv:
 
-    image: ar_bridge_img
-    container_name: ar_bridge_cont
+    image: bridge_img
+    container_name: bridge_cont
     
     build:
       # set the build context to the directory containing build files
       context: .
-      dockerfile: ar_bridge.Dockerfile
+      dockerfile: bridge.Dockerfile
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
@@ -23,9 +24,9 @@ services:
     pid: host
     stdin_open: true
     tty: true
-    entrypoint: /ar_bridge_entrypoint.sh
+    entrypoint: /bridge_entrypoint.sh
 
-
+  # Launch ar_track_alvar in ros1 environment
   ar_track_srv:
 
     image: ar_track_img
@@ -54,3 +55,20 @@ services:
     stdin_open: true
     tty: true
     entrypoint: /ar_track_entrypoint.sh
+
+  perception_srv:
+    image: perception_img
+    container_name: perception_cont
+    
+    build:
+      # set the build context to the directory containing build files
+      context: .
+      dockerfile: perception.Dockerfile
+
+    environment:
+      - MARKER_SIZE=15.2
+      - AR_CAM_TOPIC=/oak/rgb/image_raw
+      - AR_INFO_TOPIC=/oak/stereo/camera_info
+      - OUTPUT_FRAME=oak_rgb_camera_optical_frame
+
+    entrypoint: /perception_entrypoint.sh

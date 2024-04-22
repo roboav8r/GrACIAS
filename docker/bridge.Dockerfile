@@ -11,6 +11,7 @@ ENV ROS2_DISTRO galactic
 
 # install ros1 debian packages 
 RUN apt-get update && apt-get install -y --no-install-recommends \ 
+ros-noetic-audio-common \
 ros-noetic-ros-comm \
 ros-noetic-tf2-msgs \
 ros-noetic-cmake-modules \ 
@@ -49,9 +50,10 @@ catkin_make
 RUN mkdir -p /ros2_ws/src 
 WORKDIR /ros2_ws/src 
 RUN git clone -b ros2 https://github.com/roboav8r/ar_track_alvar_msgs.git
+RUN git clone -b ros2 https://github.com/ros-drivers/audio_common.git
 WORKDIR /ros2_ws 
 RUN source /opt/ros/${ROS2_DISTRO}/setup.bash && \ 
-colcon build
+colcon build --packages-select audio_common_msgs ar_track_alvar_msgs
 
 # Clone bridge source code and build from source 
 RUN mkdir -p /bridge_ws/src 
