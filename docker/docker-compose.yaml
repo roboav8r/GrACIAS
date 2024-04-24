@@ -3,10 +3,10 @@ version: "3"
 services:
 
   # Bridge ROS1->ROS2 messages
-  bridge_srv:
+  philbart_bridge_srv:
 
-    image: bridge_img
-    container_name: bridge_cont
+    image: philbart_bridge_img
+    container_name: philbart_bridge_cont
     
     build:
       # set the build context to the directory containing build files
@@ -24,7 +24,7 @@ services:
     pid: host
     stdin_open: true
     tty: true
-    entrypoint: /bridge_entrypoint.sh
+    entrypoint: /philbart_bridge_entrypoint.sh
 
   # Launch ar_track_alvar in ros1 environment
   ar_track_srv:
@@ -65,10 +65,10 @@ services:
       context: .
       dockerfile: perception.Dockerfile
 
-    environment:
-      - MARKER_SIZE=15.2
-      - AR_CAM_TOPIC=/oak/rgb/image_raw
-      - AR_INFO_TOPIC=/oak/stereo/camera_info
-      - OUTPUT_FRAME=oak_rgb_camera_optical_frame
+    # environment:
+    #   - MARKER_SIZE=15.2
+    #   - AR_CAM_TOPIC=/oak/rgb/image_raw
+    #   - AR_INFO_TOPIC=/oak/stereo/camera_info
+    #   - OUTPUT_FRAME=oak_rgb_camera_optical_frame
 
     entrypoint: /perception_entrypoint.sh

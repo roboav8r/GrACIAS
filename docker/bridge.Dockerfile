@@ -70,4 +70,4 @@ RUN source /ros1_ws/devel/setup.bash && \
 source /ros2_ws/install/setup.bash && \
 colcon build --packages-select ros1_bridge --cmake-force-configure
 
-COPY ./ar_bridge_entrypoint.sh /
+COPY ./philbart_bridge_entrypoint.sh /

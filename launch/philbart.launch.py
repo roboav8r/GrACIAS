@@ -15,45 +15,44 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # Config files
-    audio_config = os.path.join(
+    config = os.path.join(
         get_package_share_directory('situated_interaction'),
         'config',
-        'soundsusb_config.yaml'
+        'philbart_config.yaml'
     )
 
-    # Audio acquisition node
-    acq_node = Node(
-        package='situated_interaction',
-        executable='audio_acq_node.py',
-        name='audio_acq_node',
-        output='screen',
-        # remappings=[('/detections','/converted_detections')],
-        parameters=[audio_config]
+
+    # MaRMOT OAK-D preprocessing
+    oakd_preproc_node = Node(
+        package='marmot',
+        executable='depthai_preproc',
+        name='depthai_preproc_node',
+        remappings=[('/depthai_detections','/oak/nn/spatial_detections'), ('/converted_detections','/converted_detections_oakd')],
+        parameters=[config]
     )
-    ld.add_action(acq_node)
+    ld.add_action(oakd_preproc_node)
 
-    # Beamformer node
-    bf_node = Node(
-        package='situated_interaction',
-        executable='audio_bf_node.py',
-        name='audio_bf_node',
-        output='screen',
-        # remappings=[('/detections','/converted_detections')],
-        parameters=[audio_config]
-    )
-    ld.add_action(bf_node)
-
-
-    # # Scene recognition node
-    # rec_node = Node(
-    #     package='situated_interaction',
-    #     executable='scene_rec_node.py',
-    #     name='scene_rec_node',
-    #     output='screen',
-    #     # remappings=[('/detections','/converted_detections')],
-    #     parameters=[audio_config]
+    # Hololens preprocessing
+    # headset_1_node = Node(
+    #     package='marmot',
+    #     executable='pose_preproc',
+    #     name='headset_1_preproc_node',
+    #     remappings=[('/pose_detections','/vrpn_client_node/headset_1/pose'), ('/converted_detections','/converted_detections_headset_1')],
+    #     parameters=[exp_config]
     # )
-    # ld.add_action(rec_node)
+    # ld.add_action(headset_1_node)
+
+
+    # Scene recognition node
+    rec_node = Node(
+        package='situated_interaction',
+        executable='scene_rec_node.py',
+        name='scene_rec_node',
+        output='screen',
+        # remappings=[('/detections','/converted_detections')],
+        parameters=[config]
+    )
+    ld.add_action(rec_node)
 
     # # Voice processing node
     # voice_node = Node(
