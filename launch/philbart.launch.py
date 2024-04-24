@@ -21,8 +21,13 @@ def generate_launch_description():
         'philbart_config.yaml'
     )
 
+    tf_node = Node(package = "tf2_ros", 
+                    executable = "static_transform_publisher",
+                    arguments = [".15", "0", ".55", "0", "-0.261799", "0", "philbart/base_link", "oak-d-base-frame"]
+    )
+    ld.add_action(tf_node)
 
-    # MaRMOT OAK-D preprocessing
+    # MaRMOT / multiple object tracking
     oakd_preproc_node = Node(
         package='marmot',
         executable='depthai_preproc',
@@ -32,7 +37,6 @@ def generate_launch_description():
     )
     ld.add_action(oakd_preproc_node)
 
-    # Hololens preprocessing
     # headset_1_node = Node(
     #     package='marmot',
     #     executable='pose_preproc',
@@ -42,17 +46,27 @@ def generate_launch_description():
     # )
     # ld.add_action(headset_1_node)
 
-
-    # Scene recognition node
-    rec_node = Node(
-        package='situated_interaction',
-        executable='scene_rec_node.py',
-        name='scene_rec_node',
+    trk_node = Node(
+        package='marmot',
+        executable='tbd_node.py',
+        name='tbd_tracker_node',
         output='screen',
-        # remappings=[('/detections','/converted_detections')],
+        remappings=[('/detections','/converted_detections')],
         parameters=[config]
     )
-    ld.add_action(rec_node)
+    ld.add_action(trk_node)
+
+
+    # Scene recognition node
+    # rec_node = Node(
+    #     package='situated_interaction',
+    #     executable='scene_rec_node.py',
+    #     name='scene_rec_node',
+    #     output='screen',
+    #     # remappings=[('/detections','/converted_detections')],
+    #     parameters=[config]
+    # )
+    # ld.add_action(rec_node)
 
     # # Voice processing node
     # voice_node = Node(

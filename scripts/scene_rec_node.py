@@ -43,9 +43,9 @@ class SceneRecNode(Node):
         self.scene_size = self.get_parameter('scene_size').get_parameter_value().integer_value
         self.scene_idx = self.get_parameter('scene_index').get_parameter_value().integer_array_value
         self.scene_est_interval = self.get_parameter('scene_est_interval').get_parameter_value().double_value
-        self.model_path = os.path.join(get_package_share_directory('GrACIAS'),self.get_parameter('model_path').get_parameter_value().string_value)
-        self.mean_path = os.path.join(get_package_share_directory('GrACIAS'),self.get_parameter('mean_path').get_parameter_value().string_value)
-        self.std_path = os.path.join(get_package_share_directory('GrACIAS'),self.get_parameter('std_path').get_parameter_value().string_value)
+        self.model_path = os.path.join(get_package_share_directory('situated_interaction'),self.get_parameter('model_path').get_parameter_value().string_value)
+        self.mean_path = os.path.join(get_package_share_directory('situated_interaction'),self.get_parameter('mean_path').get_parameter_value().string_value)
+        self.std_path = os.path.join(get_package_share_directory('situated_interaction'),self.get_parameter('std_path').get_parameter_value().string_value)
         self.audio_scene_labels = self.get_parameter('labels').get_parameter_value().string_array_value
 
         # Audio data storage
@@ -66,7 +66,7 @@ class SceneRecNode(Node):
         with open(self.model_path+'model_config.json',"r")as f:
             model_config=json.load(f)
        
-        module = importlib.import_module('GrACIAS.models.{}'.format(model_config['arch']))
+        module = importlib.import_module('situated_interaction.models.{}'.format(model_config['arch']))
         Network = getattr(module, 'Network')
         self.model=Network(model_config)
 

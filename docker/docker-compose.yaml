@@ -1,4 +1,3 @@
-version: "3"
 
 services:
 
@@ -56,19 +55,19 @@ services:
     tty: true
     entrypoint: /ar_track_entrypoint.sh
 
-  perception_srv:
-    image: perception_img
-    container_name: perception_cont
+  # perception_srv:
+  #   image: perception_img
+  #   container_name: perception_cont
     
-    build:
-      # set the build context to the directory containing build files
-      context: .
-      dockerfile: perception.Dockerfile
+  #   build:
+  #     # set the build context to the directory containing build files
+  #     context: .
+  #     dockerfile: perception.Dockerfile
 
-    # environment:
-    #   - MARKER_SIZE=15.2
-    #   - AR_CAM_TOPIC=/oak/rgb/image_raw
-    #   - AR_INFO_TOPIC=/oak/stereo/camera_info
-    #   - OUTPUT_FRAME=oak_rgb_camera_optical_frame
+  #   # environment:
+  #   #   - MARKER_SIZE=15.2
+  #   #   - AR_CAM_TOPIC=/oak/rgb/image_raw
+  #   #   - AR_INFO_TOPIC=/oak/stereo/camera_info
+  #   #   - OUTPUT_FRAME=oak_rgb_camera_optical_frame
 
-    entrypoint: /perception_entrypoint.sh
+  #   entrypoint: /perception_entrypoint.sh
