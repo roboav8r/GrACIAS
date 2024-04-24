@@ -1,5 +1,4 @@
 channels:
-  - local
   - conda-forge
   # - pytorch3d
   - pytorch
