@@ -12,6 +12,10 @@ services:
       context: .
       dockerfile: bridge.Dockerfile
 
+    environment:
+      - ROS_MASTER_URI=http://192.168.131.1:11311
+      - ROS_IP=192.168.131.113
+
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
       - apparmor:unconfined
@@ -24,6 +28,8 @@ services:
     stdin_open: true
     tty: true
     entrypoint: /philbart_bridge_entrypoint.sh
+
+
 
   # Launch ar_track_alvar in ros1 environment
   ar_track_srv:
