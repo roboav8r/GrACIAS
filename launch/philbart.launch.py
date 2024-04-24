@@ -27,6 +27,19 @@ def generate_launch_description():
     )
     ld.add_action(tf_node)
 
+    # ROS2 Sensor nodes
+    cam_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('depthai_ros_driver'),
+                'launch',
+                'rgbd_pcl.launch.py'
+            ])
+        ]),
+        launch_arguments={'params_file': config }.items()
+    )
+    ld.add_action(cam_node)
+
     # MaRMOT / multiple object tracking
     oakd_preproc_node = Node(
         package='marmot',
