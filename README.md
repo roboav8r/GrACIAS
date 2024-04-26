@@ -5,7 +5,7 @@
 ## Create environment
 sudo apt-get install libasound2-dev
 sudo apt-get install ffmpeg # 4.4.2, check alsa support with ffmpeg -devices
-mamba env create -f gracias_env.yml --use-local
+mamba env create -f sit_int_env.yml
 
 
 # Improves

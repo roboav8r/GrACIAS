@@ -18,11 +18,12 @@ class AudioPublisherNode(Node):
         
         # Declare parameters with default values
         self.declare_parameter('n_channels', 6)
-        self.declare_parameter('src', 'hw:4,0')
+        self.declare_parameter('src', 'plughw:1,0')
         self.declare_parameter('sample_rate', 16000)
         self.declare_parameter('hop_size', 1600) # .1 seconds
         self.declare_parameter('frame_size', 1600)
         self.declare_parameter('microphone_frame_id','respeaker_frame')
+        self.declare_parameter('codec', 'pcm_s16le')
 
         # Retrieve parameters
         self.n_channels = self.get_parameter('n_channels').get_parameter_value().integer_value
@@ -31,6 +32,7 @@ class AudioPublisherNode(Node):
         self.hop_size = self.get_parameter('hop_size').get_parameter_value().integer_value
         self.frame_size = self.get_parameter('frame_size').get_parameter_value().integer_value
         self.microphone_frame_id = self.get_parameter('microphone_frame_id').get_parameter_value().string_value
+        self.codec= self.get_parameter('codec').get_parameter_value().string_value
         self.format = "alsa"
         self.options = {"sample_rate": str(self.sample_rate), "channels": str(self.n_channels)}
 
@@ -38,8 +40,6 @@ class AudioPublisherNode(Node):
         self.audio_info_msg = AudioInfo()
         self.audio_info_msg.channels = self.n_channels
         self.audio_info_msg.sample_rate = self.sample_rate
-        # Example additional fields setup
-        # audio_info_msg.sample_format = "16-bit"
 
         self.audio_data_msg = AudioDataStamped()
         self.audio_data_msg.header.frame_id = self.microphone_frame_id
@@ -52,7 +52,7 @@ class AudioPublisherNode(Node):
         # Create stream
         self.get_logger().info("Building StreamReader\nsrc: %s \nformat: %s \noptions: %s \nframes per chunk: %s" % (self.src, self.format, self.options, self.hop_size))
         self.streamer = torchaudio.io.StreamReader(src=self.src, format=self.format, option=self.options)
-        self.streamer.add_basic_audio_stream(frames_per_chunk=self.hop_size, sample_rate=self.sample_rate, num_channels=self.n_channels)
+        self.streamer.add_basic_audio_stream(frames_per_chunk=self.hop_size, decoder='pcm_s32le', sample_rate=self.sample_rate, num_channels=self.n_channels)
 
         self.get_logger().info(str(self.streamer.get_src_stream_info(0)))
 

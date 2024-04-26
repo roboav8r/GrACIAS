@@ -1,4 +1,4 @@
-name: gracias
+name: sit_int
 channels:
   - local
   - conda-forge
@@ -7,12 +7,14 @@ channels:
   - nvidia
 dependencies:
 - python==3.10
+- ffmpeg=4.4.2-0ubuntu0.22.04.1
 - pyyaml
 - pip
 - lark
-- pytorch=1.13.0=py3.10_cuda11.7_cudnn8.5.0_0
+- pytorch=2.1.0=py3.10_cuda12.1_cudnn8.9.2_0
 - torchvision
-- pytorch-cuda=11.7
+- torchaudio=2.1.0
+- pytorch-cuda=12.1
 - pytorch3d
 - librosa
 - typing
@@ -24,7 +26,6 @@ dependencies:
     - gtsam==4.2.0
     - numba
     - pandas
-    - torchaudio==0.13.0
     - notebook
     - pyroomacoustics
     - sed_eval

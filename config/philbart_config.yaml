@@ -1,4 +1,15 @@
 # Sensor parameters
+audio_acq_node:
+  ros__parameters:
+    n_channels: 16
+    src: 'plughw:1,0'
+    sample_rate: 44100
+    hop_size: 4410
+    frame_size: 4410 # publish 1 second every second
+    microphone_frame_id: 'kinect_frame'
+    array_info_path: 'config/kinect_array.yaml'
+    codec: 'pcm_s32le' # 'pcm_s16le'
+
 /oak:
   ros__parameters:
     camera:

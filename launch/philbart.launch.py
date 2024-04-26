@@ -40,6 +40,16 @@ def generate_launch_description():
     )
     ld.add_action(cam_node)
 
+    # Audio acquisition node
+    acq_node = Node(
+        package='situated_interaction',
+        executable='audio_acq_node.py',
+        name='audio_acq_node',
+        output='screen',
+        parameters=[config]
+    )
+    ld.add_action(acq_node)
+
     # MaRMOT / multiple object tracking
     oakd_preproc_node = Node(
         package='marmot',
@@ -71,15 +81,14 @@ def generate_launch_description():
 
 
     # Scene recognition node
-    # rec_node = Node(
-    #     package='situated_interaction',
-    #     executable='scene_rec_node.py',
-    #     name='scene_rec_node',
-    #     output='screen',
-    #     # remappings=[('/detections','/converted_detections')],
-    #     parameters=[config]
-    # )
-    # ld.add_action(rec_node)
+    rec_node = Node(
+        package='situated_interaction',
+        executable='scene_rec_node.py',
+        name='scene_rec_node',
+        output='screen',
+        parameters=[config]
+    )
+    ld.add_action(rec_node)
 
     # # Voice processing node
     # voice_node = Node(

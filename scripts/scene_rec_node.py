@@ -127,6 +127,8 @@ class SceneRecNode(Node):
 
     def audio_data_callback(self, msg):
 
+        # self.get_logger().info('Got audio data with size %s' % (str(len(msg.audio.data))))
+
         chunk = torch.from_numpy(np.frombuffer(msg.audio.data,dtype=np.float16)).view(-1,self.n_channels)
 
         # self.get_logger().info('Got chunk with size %s' % (str(chunk.size())))
@@ -137,10 +139,12 @@ class SceneRecNode(Node):
 
         # self.get_logger().info('Computed frame with size %s' % (str(self.frame.size())))
 
-        torch.save(self.frame,'frame_data_recovered.pt')
+        # torch.save(self.frame,'frame_data_recovered.pt')
 
         self.scene_audio = self.frame[:,self.scene_idx]
+        # self.get_logger().info('Computed scene audio with size %s' % (str(self.scene_audio.size())))
         self.scene_audio = self.scene_audio.to('cuda')
+        torch.save(self.scene_audio,'scene_data_recovered.pt')
 
         resampled_sig = self.resampler(self.scene_audio.T)
 
@@ -163,7 +167,7 @@ class SceneRecNode(Node):
         conf, class_idx = torch.max(probs, 1)
 
         scene_msg = String()
-        scene_msg.data = "Class: %s, %s%%" % (self.audio_scene_labels[class_idx], conf.item())
+        scene_msg.data = "Class: %s, %s%%; probs: %s" % (self.audio_scene_labels[class_idx], conf.item(), str(probs))
         self.audio_scene_publisher.publish(scene_msg)
 
 def main(args=None):
