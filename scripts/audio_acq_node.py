@@ -52,7 +52,7 @@ class AudioPublisherNode(Node):
         # Create stream
         self.get_logger().info("Building StreamReader\nsrc: %s \nformat: %s \noptions: %s \nframes per chunk: %s" % (self.src, self.format, self.options, self.hop_size))
         self.streamer = torchaudio.io.StreamReader(src=self.src, format=self.format, option=self.options)
-        self.streamer.add_basic_audio_stream(frames_per_chunk=self.hop_size, decoder='pcm_s32le', sample_rate=self.sample_rate, num_channels=self.n_channels)
+        self.streamer.add_basic_audio_stream(frames_per_chunk=self.hop_size, sample_rate=self.sample_rate)
 
         self.get_logger().info(str(self.streamer.get_src_stream_info(0)))
 

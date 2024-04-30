@@ -139,7 +139,7 @@ class SceneRecNode(Node):
 
         # self.get_logger().info('Computed frame with size %s' % (str(self.frame.size())))
 
-        # torch.save(self.frame,'frame_data_recovered.pt')
+        torch.save(self.frame,'frame_data_recovered.pt')
 
         self.scene_audio = self.frame[:,self.scene_idx]
         # self.get_logger().info('Computed scene audio with size %s' % (str(self.scene_audio.size())))
@@ -147,6 +147,8 @@ class SceneRecNode(Node):
         torch.save(self.scene_audio,'scene_data_recovered.pt')
 
         resampled_sig = self.resampler(self.scene_audio.T)
+
+        torch.save(resampled_sig,'scene_data_resampled.pt')
 
         self.processor_d18_stereo_tensor(resampled_sig)
 
