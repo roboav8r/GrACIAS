@@ -11,15 +11,18 @@ dependencies:
 - pyyaml
 - pip
 - lark
-- pytorch=2.1.0=py3.10_cuda12.1_cudnn8.9.2_0
+- ninja
+- pytorch=2.0.1=py3.10_cuda11.7_cudnn8.5.0_0
 - torchvision
 # - torchaudio=2.1.0
-- pytorch-cuda=12.1
+- pytorch-cuda=11.7
+# - conda-forge::cuda-nvcc=12.1
+# - cudatoolkit-dev=11.7
 - pytorch3d::pytorch3d
 - librosa
 - typing
 - pip:
-    # - torchaudio==2.1.0
+    - torchaudio==2.0.2
     - pyquaternion==0.9.9
     - nuscenes-devkit==1.1.11
     - empy==3.3.4
