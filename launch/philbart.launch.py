@@ -81,25 +81,25 @@ def generate_launch_description():
 
 
     # Scene recognition node
-    rec_node = Node(
+    scene_rec_node = Node(
         package='situated_interaction',
         executable='scene_rec_node.py',
         name='scene_rec_node',
         output='screen',
         parameters=[config]
     )
-    ld.add_action(rec_node)
+    ld.add_action(scene_rec_node)
 
-    # # Voice processing node
-    # voice_node = Node(
-    #     package='situated_interaction',
-    #     executable='voice_proc_node.py',
-    #     name='voice_proc_node',
-    #     output='screen',
-    #     # remappings=[('/detections','/converted_detections')],
-    #     parameters=[audio_config]
-    # )
-    # ld.add_action(voice_node)
+    # Voice processing node
+    scene_voice_node = Node(
+        package='situated_interaction',
+        executable='scene_voice_node.py',
+        name='scene_voice_node',
+        output='screen',
+        # remappings=[('/detections','/converted_detections')],
+        parameters=[config]
+    )
+    ld.add_action(scene_voice_node)
 
     # # Foxglove bridge for visualization
     # viz_node = IncludeLaunchDescription(

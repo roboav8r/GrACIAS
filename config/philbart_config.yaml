@@ -1,14 +1,36 @@
-# Sensor parameters
+# Audition parameters
 audio_acq_node:
   ros__parameters:
     n_channels: 16
     src: 'plughw:4,0'
     sample_rate: 44100
-    hop_size: 4410
-    frame_size: 4410 # publish 1 second every second
-    microphone_frame_id: 'kinect_frame'
-    array_info_path: 'config/kinect_array.yaml'
-    codec: 'pcm_s32le' # 'pcm_s16le'
+    hop_size: 8820
+    frame_size: 8820 # publish .2 seconds every iteration
+    microphone_frame_id: 'soundsusb_frame'
+    array_info_path: 'config/soundsusb_array.yaml'
+
+scene_rec_node:
+  ros__parameters:
+    n_channels: 16
+    sample_rate: 44100
+    downsample_rate: 22050
+    frame_size: 441000 # Buffer 10 seconds of audio at full quality
+    scene_size: 220500 # 10 seconds to classify audio
+    scene_index: [0, 1]
+    labels: ['indoor','outdoor','transportation']
+    scene_est_interval: 1.0
+    model_path: 'pretrained_models/sub2/'
+    mean_path: 'config/tr_mean_676d70_f1_apd18_stereo_obj.pt'
+    std_path: 'config/tr_std_676d70_f1_apd18_stereo_obj.pt'
+
+scene_voice_node:
+  ros__parameters:
+    n_channels: 16
+    audio_sample_rate: 44100
+    hop_size: 8820
+    frame_size: 44100
+    voice_index: [0, 1, 2, 3]
+    lexicon_file: 'config/lexicon.txt'
 
 /oak:
   ros__parameters:
@@ -2061,18 +2083,3 @@ tbd_tracker_node:
                 size_obs_var: [1., 1., 1.]
                 object_class: 'toothbrush'
                 ignore: False
-
-# Audition parameters
-scene_rec_node:
-  ros__parameters:
-    n_channels: 16
-    sample_rate: 44100
-    downsample_rate: 22050
-    frame_size: 441000 # Buffer 10 seconds of audio
-    scene_size: 220500 # 10 seconds to classify audio
-    scene_index: [0, 1]
-    labels: ['indoor','outdoor','transportation']
-    scene_est_interval: 1.0
-    model_path: 'pretrained_models/sub2/'
-    mean_path: 'config/tr_mean_676d70_f1_apd18_stereo_obj.pt'
-    std_path: 'config/tr_std_676d70_f1_apd18_stereo_obj.pt'

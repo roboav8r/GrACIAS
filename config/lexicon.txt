@@ -1,0 +1,22 @@
+robo	r o b o |
+robot	r o b o t |
+robot's	r o b o t ' s |
+robotcab	r o b o t c a b |
+robotic	r o b o t i c |
+robotics	r o b o t i c s |
+robotron	r o b o t r o n |
+robots	r o b o t s |
+estop	e s t o p |
+stop	s t o p |
+go	g o |
+continue	c o n t i n u e |
+halt	h a l t |
+here	h e r e |
+there	t h e r e |
+home	h o m e |
+move	m o v e |
+forward	f o r w a r d |
+one	o n e |
+oclock	o c l o c k |
+o'clock	o ' c l o c k |
+meter	m e t e r |
