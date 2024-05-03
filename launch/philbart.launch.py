@@ -50,6 +50,39 @@ def generate_launch_description():
     )
     ld.add_action(acq_node)
 
+    # Scene recognition node
+    scene_rec_node = Node(
+        package='situated_interaction',
+        executable='scene_rec_node.py',
+        name='scene_rec_node',
+        output='screen',
+        parameters=[config]
+    )
+    ld.add_action(scene_rec_node)
+
+    # Voice processing node
+    scene_voice_node = Node(
+        package='situated_interaction',
+        executable='scene_voice_node.py',
+        name='scene_voice_node',
+        output='screen',
+        # remappings=[('/detections','/converted_detections')],
+        parameters=[config]
+    )
+    ld.add_action(scene_voice_node)
+
+    # Veamformer voice processing node
+    bf_voice_node = Node(
+        package='situated_interaction',
+        executable='audio_bf_node.py',
+        name='bf_voice_node',
+        output='screen',
+        # remappings=[('/detections','/converted_detections')],
+        parameters=[config]
+    )
+    ld.add_action(bf_voice_node)
+
+
     # # MaRMOT / multiple object tracking
     # oakd_preproc_node = Node(
     #     package='marmot',
@@ -78,28 +111,6 @@ def generate_launch_description():
     #     parameters=[config]
     # )
     # ld.add_action(trk_node)
-
-
-    # Scene recognition node
-    scene_rec_node = Node(
-        package='situated_interaction',
-        executable='scene_rec_node.py',
-        name='scene_rec_node',
-        output='screen',
-        parameters=[config]
-    )
-    ld.add_action(scene_rec_node)
-
-    # Voice processing node
-    scene_voice_node = Node(
-        package='situated_interaction',
-        executable='scene_voice_node.py',
-        name='scene_voice_node',
-        output='screen',
-        # remappings=[('/detections','/converted_detections')],
-        parameters=[config]
-    )
-    ld.add_action(scene_voice_node)
 
     # # Foxglove bridge for visualization
     # viz_node = IncludeLaunchDescription(

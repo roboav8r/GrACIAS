@@ -18,42 +18,45 @@ from std_msgs.msg import String
 class AudioBeamformerNode(Node):
 
     def __init__(self):
-        super().__init__('audio_bf_node')
+        super().__init__('bf_voice_node')
         self.subscription = self.create_subscription(AudioDataStamped, 'audio_data', self.audio_data_callback, 10)
         self.audio_scene_publisher = self.create_publisher(String, 'audio_scene', 10)
         
         # Declare parameters with default values
         self.declare_parameter('n_channels', rclpy.Parameter.Type.INTEGER)
-        self.declare_parameter('sample_rate', rclpy.Parameter.Type.INTEGER)
-        self.declare_parameter('chunk_length', rclpy.Parameter.Type.INTEGER)
-        self.declare_parameter('buffer_length', rclpy.Parameter.Type.INTEGER)
-        self.declare_parameter('channel_index', rclpy.Parameter.Type.INTEGER_ARRAY)
+        self.declare_parameter('audio_sample_rate', rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter('hop_size', rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter('frame_size', rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter('voice_index', rclpy.Parameter.Type.INTEGER_ARRAY)
 
         # Retrieve parameters
         self.n_channels = self.get_parameter('n_channels').get_parameter_value().integer_value
-        self.sample_rate = self.get_parameter('sample_rate').get_parameter_value().integer_value
-        self.chunk_length = self.get_parameter('chunk_length').get_parameter_value().integer_value
-        self.buffer_length = self.get_parameter('buffer_length').get_parameter_value().integer_value
-        self.channel_idx = self.get_parameter('channel_index').get_parameter_value().integer_array_value
+        self.sample_rate = self.get_parameter('audio_sample_rate').get_parameter_value().integer_value
+        self.hop_size = self.get_parameter('hop_size').get_parameter_value().integer_value
+        self.frame_size = self.get_parameter('frame_size').get_parameter_value().integer_value
+        self.voice_index = self.get_parameter('voice_index').get_parameter_value().integer_array_value
 
         # Audio data storage
-        self.chunk = torch.zeros([self.chunk_length, self.n_channels],dtype=torch.float16)
-        self.buffer = torch.zeros([self.buffer_length, len(self.channel_idx)],dtype=torch.float16)
+        self.torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.hop = torch.zeros([self.hop_size, self.n_channels],dtype=torch.float16)
+        self.frame = torch.zeros([self.frame_size, self.n_channels],dtype=torch.float16)
+        self.voice_frame = torch.zeros([self.frame_size, len(self.voice_index)],dtype=torch.float16) 
+        self.hop = self.hop.to(self.torch_device)
+        self.frame = self.frame.to(self.torch_device)
+        self.voice_frame = self.voice_frame.to(self.torch_device)
+
 
     def audio_data_callback(self, msg):
 
-        chunk = torch.from_numpy(np.frombuffer(msg.audio.data,dtype=np.float16)).view(-1,self.n_channels)
-
-        self.get_logger().info('Got chunk with size %s' % (str(chunk.size())))
-        self.get_logger().info('Buffer has size %s' % (str(self.buffer.size())))
+        self.hop = torch.from_numpy(np.frombuffer(msg.audio.data,dtype=np.float16)).view(-1,self.n_channels)
 
         # Roll the frame, and replace oldest contents with new chunk
-        self.buffer = torch.roll(self.buffer, -chunk.size(0), 0)
-        self.buffer[-chunk.size(0):,:] = -chunk[:,self.channel_idx]
+        self.frame = torch.roll(self.frame, -self.hop.size(0), 0)
+        self.frame[-self.hop.size(0):,:] = -self.hop
 
-        # self.get_logger().info('Computed frame with size %s' % (str(self.frame.size())))
+        self.voice_frame = self.frame[:,self.voice_index]
 
-        torch.save(self.buffer,'buffer_data_recovered.pt')
+        torch.save(self.voice_frame.T,'beamformer_voice_frame.pt')
 
     
 def main(args=None):

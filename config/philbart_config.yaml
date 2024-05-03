@@ -35,6 +35,14 @@ scene_voice_node:
     n_silent_frames: 2
     pre_trigger_time: 0.25
 
+bf_voice_node:
+  ros__parameters:
+    n_channels: 16
+    audio_sample_rate: 44100
+    hop_size: 8820
+    frame_size: 441000
+    voice_index: [0, 1, 2, 3]
+
 /oak:
   ros__parameters:
     camera:

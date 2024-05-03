@@ -147,7 +147,6 @@ class SceneVoiceNode(Node):
             self.transcript_msg.data = beam_search_transcript
             self.scene_transcript_publisher.publish(self.transcript_msg)
 
-
     def audio_data_callback(self, msg):
         self.hop = torch.from_numpy(np.frombuffer(msg.audio.data,dtype=np.float16)).view(-1,self.n_channels)
 
@@ -168,11 +167,11 @@ class SceneVoiceNode(Node):
         # run VAD on voice channels
         self.voice_data = torchaudio.functional.vad(self.voice_frame_sum, self.audio_sample_rate, trigger_level=self.voice_threshold, pre_trigger_time=self.pre_trigger_time) # TODO - make these reconfigurable params
 
-        self.get_logger().info('voice data size(): %s' % self.voice_data.size())
+        # self.get_logger().info('voice data size(): %s' % self.voice_data.size())
 
         # If contains voice data
         if len(self.voice_data) > self.min_voice_len:
-            self.get_logger().info('Got voice data')
+            # self.get_logger().info('Got voice data')
 
             self.n_silent = 0
 
