@@ -15,10 +15,10 @@ from ament_index_python.packages import get_package_share_directory
 from audio_common_msgs.msg import AudioDataStamped
 from std_msgs.msg import String
 
-class SceneRecNode(Node):
+class AudioBeamformerNode(Node):
 
     def __init__(self):
-        super().__init__('scene_rec_node')
+        super().__init__('audio_bf_node')
         self.subscription = self.create_subscription(AudioDataStamped, 'audio_data', self.audio_data_callback, 10)
         self.audio_scene_publisher = self.create_publisher(String, 'audio_scene', 10)
         
@@ -58,11 +58,10 @@ class SceneRecNode(Node):
     
 def main(args=None):
     rclpy.init(args=args)
-    audio_proc_node = SceneRecNode()
-    rclpy.spin(audio_proc_node)
-    audio_proc_node.destroy_node()
+    audio_bf_node = AudioBeamformerNode()
+    rclpy.spin(audio_bf_node)
+    audio_bf_node.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
