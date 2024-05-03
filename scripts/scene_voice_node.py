@@ -48,6 +48,7 @@ class SceneVoiceNode(Node):
 
         self.subscription = self.create_subscription(AudioDataStamped, 'audio_data', self.audio_data_callback, 10)
         self.scene_transcript_publisher = self.create_publisher(String, 'scene_voice_data', 10)
+        self.transcript_msg = String()
         
         # Declare parameters with default values
         self.declare_parameter('n_channels', rclpy.Parameter.Type.INTEGER)
@@ -56,6 +57,9 @@ class SceneVoiceNode(Node):
         self.declare_parameter('frame_size', rclpy.Parameter.Type.INTEGER)
         self.declare_parameter('voice_index', rclpy.Parameter.Type.INTEGER_ARRAY)
         self.declare_parameter('lexicon_file', rclpy.Parameter.Type.STRING)
+        self.declare_parameter('voice_threshold', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('n_silent_frames', rclpy.Parameter.Type.INTEGER)
+        self.declare_parameter('pre_trigger_time', rclpy.Parameter.Type.DOUBLE)
 
         # Retrieve parameters
         self.n_channels = self.get_parameter('n_channels').get_parameter_value().integer_value
@@ -64,6 +68,9 @@ class SceneVoiceNode(Node):
         self.frame_size = self.get_parameter('frame_size').get_parameter_value().integer_value
         self.voice_index = self.get_parameter('voice_index').get_parameter_value().integer_array_value
         self.lexicon_file = self.get_parameter('lexicon_file').get_parameter_value().string_value
+        self.voice_threshold = self.get_parameter('voice_threshold').get_parameter_value().double_value
+        self.n_silent_frames = self.get_parameter('n_silent_frames').get_parameter_value().integer_value # prevent early cutoff. Only stop recording if silent >= n consecutive frames.
+        self.pre_trigger_time = self.get_parameter('pre_trigger_time').get_parameter_value().double_value
 
         # Audio data storage
         self.torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -77,8 +84,8 @@ class SceneVoiceNode(Node):
         self.voice_frame = self.voice_frame.to(self.torch_device)
         self.voice_frame_sum = self.voice_frame_sum.to(self.torch_device)
         
-        self.min_voice_len = 6615 # TODO compute this based on f_sampling, VAD times
-        self.n_trailing_frames = 2 # prevent early cutoff. Only stop recording if silent for n consecutive frames.
+        self.min_voice_len = 17640 # TODO compute this based on f_sampling, VAD times
+        # self.n_trailing_frames = 2 
         self.n_silent = 0 
         self.recording = False
 
@@ -108,7 +115,6 @@ class SceneVoiceNode(Node):
         self.asr_model = self.bundle.get_model().to(self.torch_device)
 
         self.lm_files = download_pretrained_files("librispeech-4-gram")
-        self.get_logger().info("LM Files: %s" % str(self.lm_files))
         LM_WEIGHT = 3.23
         WORD_SCORE = -0.26
 
@@ -122,48 +128,24 @@ class SceneVoiceNode(Node):
             word_score=WORD_SCORE,
         )
 
-        self.greedy_decoder = GreedyCTCDecoder(labels=self.bundle.get_labels())
-        self.cuda_decoder = cuda_ctc_decoder(self.tokens, nbest=10, beam_size=10, blank_skip_threshold=0.95)
-
         self.acoustic_model = torch.jit.load(self.model_path)
         self.acoustic_model.to(self.torch_device)
         self.acoustic_model.eval()
 
-        self.get_logger().info("Decoder type: %s" % str(type(self.beam_search_decoder)))
-        self.get_logger().info("Decoder dir: %s" % str(dir(self.beam_search_decoder)))
-        
-
     def asr(self):
 
-        # Resample to bundle sample rate
-        # self.get_logger().info("Voice tensor resample input size: %s" % str(self.voice_tensor.T[0,:]))
-
         self.voice_tensor_resampled = self.resampler(self.voice_tensor).to(self.torch_device)
-        torch.save(self.voice_tensor_resampled,'voice_data_resampled.pt')
+        # torch.save(self.voice_tensor_resampled,'voice_data_resampled.pt')
 
         with torch.inference_mode():
             emission, _ = self.asr_model(self.voice_tensor_resampled.view(1,-1).float())
 
-            # CPU beam search decoder
+            # CPU CTC beam search decoder
             beam_search_result = self.beam_search_decoder(emission.cpu())
             beam_search_transcript = " ".join(beam_search_result[0][0].words).strip()
 
-            # greedy decoder
-            # transcript = self.greedy_decoder(emission[0])
-
-            # # CUDA decoder
-            # feat = torchaudio.compliance.kaldi.fbank(self.voice_tensor_resampled.view(1,-1).float(), num_mel_bins=80, snip_edges=False)
-            # feat = feat.unsqueeze(0)
-            # feat_lens = torch.tensor(feat.size(1), device=self.torch_device).unsqueeze(0)
-
-            # encoder_out, encoder_out_lens = self.acoustic_model.encoder(feat, feat_lens)
-            # nnet_output = self.acoustic_model.ctc_output(encoder_out)
-            # log_prob = torch.nn.functional.log_softmax(nnet_output, -1)
-
-            # results = self.cuda_decoder(log_prob, encoder_out_lens.to(torch.int32))
-            # transcript = self.bpe_model.decode(results[0][0].tokens).lower()
-
-            self.get_logger().info("Transcript: %s" % beam_search_transcript)
+            self.transcript_msg.data = beam_search_transcript
+            self.scene_transcript_publisher.publish(self.transcript_msg)
 
 
     def audio_data_callback(self, msg):
@@ -175,50 +157,46 @@ class SceneVoiceNode(Node):
 
         self.voice_frame = self.frame[:,self.voice_index]
 
-        torch.save(self.voice_frame.T,'voice_frame.pt')
+        # torch.save(self.voice_frame.T,'voice_frame.pt')
 
         self.voice_frame_sum = torch.mean(self.voice_frame, 1)
         self.voice_hop_sum = torch.mean(self.hop[:,self.voice_index],1)
 
-        torch.save(self.voice_frame_sum,'voice_frame_sum.pt')
-        torch.save(self.voice_hop_sum,'voice_hop_sum.pt')
+        # torch.save(self.voice_frame_sum,'voice_frame_sum.pt')
+        # torch.save(self.voice_hop_sum,'voice_hop_sum.pt')
 
         # run VAD on voice channels
-        self.voice_data = torchaudio.functional.vad(self.voice_frame_sum, self.audio_sample_rate, trigger_level=3.0) # TODO - make these reconfigurable params
+        self.voice_data = torchaudio.functional.vad(self.voice_frame_sum, self.audio_sample_rate, trigger_level=self.voice_threshold, pre_trigger_time=self.pre_trigger_time) # TODO - make these reconfigurable params
 
-        # self.get_logger().info('Got voice_data with size %s' % (str(self.voice_data.size())))
-
+        self.get_logger().info('voice data size(): %s' % self.voice_data.size())
 
         # If contains voice data
         if len(self.voice_data) > self.min_voice_len:
+            self.get_logger().info('Got voice data')
 
             self.n_silent = 0
 
-            self.get_logger().info('Voice data detected')
-
             # if already recording, append to existing voice tensor
             if self.recording:
-                # self.get_logger().info('Continuing recording')
                 self.voice_tensor = torch.cat((self.voice_tensor,self.voice_hop_sum),0)
 
-            # If not recording, start recording with existing voice chunk
+            # If not recording, start recording with existing voice data
             else:
-                # self.get_logger().info('Starting recording')
                 self.recording = True
-                self.voice_tensor = self.voice_hop_sum
-                
+                self.voice_tensor = self.voice_hop_sum   
 
         # If it doesn't contain voice data
         else:
-            # self.get_logger().info('NO voice data detected')
             self.n_silent +=1
 
             # If recording, stop recording and process
             if self.recording:
 
-                if self.n_silent >= self.n_trailing_frames:
+                # self.get_logger().info('n silent frames: %s / %s' % (self.n_silent, self.n_silent_frames) )
 
+                if self.n_silent >= self.n_silent_frames:
                     # self.get_logger().info('Ending recording')
+
                     self.recording = False
                     torch.save(self.voice_tensor,'voice_data.pt')
                     self.voice_tensor = self.voice_tensor.to(self.torch_device)
@@ -227,8 +205,6 @@ class SceneVoiceNode(Node):
                 else: 
                     # self.get_logger().info('Continuing recording')
                     self.voice_tensor = torch.cat((self.voice_tensor,self.voice_hop_sum),0)
-
-            # If not recording, do nothing
 
 def main(args=None):
     rclpy.init(args=args)

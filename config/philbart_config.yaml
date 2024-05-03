@@ -2,7 +2,7 @@
 audio_acq_node:
   ros__parameters:
     n_channels: 16
-    src: 'plughw:4,0'
+    src: 'plughw:1,0'
     sample_rate: 44100
     hop_size: 8820
     frame_size: 8820 # publish .2 seconds every iteration
@@ -31,6 +31,9 @@ scene_voice_node:
     frame_size: 44100
     voice_index: [0, 1, 2, 3]
     lexicon_file: 'config/lexicon.txt'
+    voice_threshold: 3.0
+    n_silent_frames: 2
+    pre_trigger_time: 0.25
 
 /oak:
   ros__parameters:
