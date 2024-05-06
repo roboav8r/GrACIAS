@@ -59,6 +59,12 @@ bf_voice_node:
       i_preview_size: 416
 
 # Tracking parameters
+headset_preproc_node:
+  ros__parameters:
+    tracker_frame: 'philbart/map'
+    source_frame: 'hololens989/base_link'
+    labels: ["person"]
+
 depthai_preproc_node:
   ros__parameters:
     tracker_frame: 'philbart/map'
@@ -1605,9 +1611,21 @@ tbd_tracker_node:
 
     detectors:
       #Declare names of detectors upfront
-      detector_names: ['oakd']
+      detector_names: ['headset', 'oakd']
 
       # For each named detector, give detector model information
+      headset:
+        topic: 'converted_detections_headset'
+        msg_type: 'Detections3D'
+        detector_type: 'pos_3d'
+        detection_classes: ["person"]
+        detection_properties:
+            person:
+                pos_obs_var: [1., 1., 1.]
+                yaw_obs_var: [1.]
+                size_obs_var: [1., 1., 1.]
+                ignore: False
+                object_class: 'person'
       oakd:
         topic: 'converted_detections_oakd'
         msg_type: 'Detections3D'

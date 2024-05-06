@@ -29,18 +29,16 @@ services:
     tty: true
     entrypoint: /philbart_bridge_entrypoint.sh
 
+  # Launch ar_track_alvar and audio_capture in ros1 environment
+  ros1_srv:
 
-
-  # Launch ar_track_alvar in ros1 environment
-  ar_track_srv:
-
-    image: ar_track_img
-    container_name: ar_track_cont
+    image: ros1_img
+    container_name: ros1_cont
     
     build:
       # set the build context to the directory containing build files
       context: .
-      dockerfile: ar_track.Dockerfile
+      dockerfile: ros1.Dockerfile
 
     environment:
       - MARKER_SIZE=15.2
@@ -59,7 +57,7 @@ services:
     pid: host
     stdin_open: true
     tty: true
-    entrypoint: /ar_track_entrypoint.sh
+    entrypoint: /ros1_entrypoint.sh
 
   # perception_srv:
   #   image: perception_img

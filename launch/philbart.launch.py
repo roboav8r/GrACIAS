@@ -71,55 +71,53 @@ def generate_launch_description():
     )
     ld.add_action(scene_voice_node)
 
-    # Veamformer voice processing node
+    # Beamformer voice processing node
     bf_voice_node = Node(
         package='situated_interaction',
         executable='audio_bf_node.py',
         name='bf_voice_node',
         output='screen',
-        # remappings=[('/detections','/converted_detections')],
+        remappings = [('/converted_detections','/converted_detections_headset')],
         parameters=[config]
     )
     ld.add_action(bf_voice_node)
 
+    # MaRMOT / multiple object tracking
+    headset_preproc_node = Node(
+        package='marmot',
+        executable='tf_preproc',
+        name='headset_preproc_node',
+        parameters=[config]
+    )
+    ld.add_action(headset_preproc_node)
 
-    # # MaRMOT / multiple object tracking
-    # oakd_preproc_node = Node(
-    #     package='marmot',
-    #     executable='depthai_preproc',
-    #     name='depthai_preproc_node',
-    #     remappings=[('/depthai_detections','/oak/nn/spatial_detections'), ('/converted_detections','/converted_detections_oakd')],
-    #     parameters=[config]
-    # )
-    # ld.add_action(oakd_preproc_node)
+    oakd_preproc_node = Node(
+        package='marmot',
+        executable='depthai_preproc',
+        name='depthai_preproc_node',
+        remappings=[('/depthai_detections','/oak/nn/spatial_detections'), ('/converted_detections','/converted_detections_oakd')],
+        parameters=[config]
+    )
+    ld.add_action(oakd_preproc_node)
 
-    # headset_1_node = Node(
-    #     package='marmot',
-    #     executable='pose_preproc',
-    #     name='headset_1_preproc_node',
-    #     remappings=[('/pose_detections','/vrpn_client_node/headset_1/pose'), ('/converted_detections','/converted_detections_headset_1')],
-    #     parameters=[exp_config]
-    # )
-    # ld.add_action(headset_1_node)
+    trk_node = Node(
+        package='marmot',
+        executable='tbd_node.py',
+        name='tbd_tracker_node',
+        output='screen',
+        remappings=[('/detections','/converted_detections')],
+        parameters=[config]
+    )
+    ld.add_action(trk_node)
 
-    # trk_node = Node(
-    #     package='marmot',
-    #     executable='tbd_node.py',
-    #     name='tbd_tracker_node',
-    #     output='screen',
-    #     remappings=[('/detections','/converted_detections')],
-    #     parameters=[config]
-    # )
-    # ld.add_action(trk_node)
-
-    # # Foxglove bridge for visualization
-    # viz_node = IncludeLaunchDescription(
-    #     XMLLaunchDescriptionSource(
-    #         os.path.join(
-    #             get_package_share_directory('marmot'),
-    #             'launch/foxglove_bridge_launch.xml'))
-    # )
-    # ld.add_action(viz_node)
+    # Foxglove bridge for visualization
+    viz_node = IncludeLaunchDescription(
+        XMLLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('marmot'),
+                'launch/foxglove_bridge_launch.xml'))
+    )
+    ld.add_action(viz_node)
 
 
     return ld
