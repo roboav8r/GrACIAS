@@ -54,7 +54,7 @@ def generate_launch_description():
     # Detector preprocessing node
     preproc_node = Node(
         package='marmot',
-        executable='depthai_clip_preproc',
+        executable='depthai_img_preproc',
         name='depthai_preproc_node',
         remappings=[('/depthai_detections','/oak/nn/spatial_detections')],
         output='screen',
