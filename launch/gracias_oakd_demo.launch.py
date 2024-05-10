@@ -56,7 +56,7 @@ def generate_launch_description():
         package='marmot',
         executable='depthai_img_preproc',
         name='depthai_preproc_node',
-        remappings=[('/depthai_detections','/oak/nn/spatial_detections')],
+        remappings=[('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
         output='screen',
         parameters=[cam_config])    
     ld.add_action(preproc_node)
