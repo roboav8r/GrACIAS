@@ -35,3 +35,8 @@ dependencies:
     - flashlight-text
     - kenlm
     - sentencepiece
+    - ftfy
+    - regex
+    - tqdm
+    - git+https://github.com/openai/CLIP.git
+    - setuptools==69.0.0
