@@ -35,10 +35,17 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "srv/PersonVisRec.srv"
+  DEPENDENCIES builtin_interfaces sensor_msgs # Add packages that above messages depend on
+)
+
+
 # Install Python
 ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/int_mgr_node.py
+  scripts/person_vis_rec_server.py
   scripts/audio_acq_node.py
   scripts/audio_bf_node.py
   # scripts/audio_proc_node.py

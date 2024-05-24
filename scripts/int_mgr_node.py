@@ -24,6 +24,16 @@ class Person():
         self.det_thresh = det_thresh
         self.del_thresh = del_thresh
         self.score_decay = score_decay
+        
+        if msg.image_available == True:
+            self.image_available = True
+            self.image = msg.image
+        else:
+            self.image_available = False
+            self.image = None
+        
+        self.vis_rec_complete = False
+    
 
     def update(self, ar_msg, type):
         if type=='authentication':
