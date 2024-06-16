@@ -1,5 +1,0 @@
-uint64                      person_id
-sensor_msgs/Image           image
----
-string[]                    attributes
-float64[]                   attribute_probs

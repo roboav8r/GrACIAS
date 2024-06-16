@@ -59,7 +59,7 @@ def generate_launch_description():
     )
     ld.add_action(tf_node)
 
-    # Sensor node
+    # Sensor nodes
     cam_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
@@ -80,6 +80,24 @@ def generate_launch_description():
         parameters=[mic_params]
     )
     ld.add_action(audio_acq_node)
+
+    # Detector preprocessing nodes
+    preproc_node = Node(
+        package='marmot',
+        executable='depthai_img_preproc',
+        name='depthai_img_preproc_node',
+        remappings=[('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
+        output='screen',
+        parameters=[oakd_params])    
+    ld.add_action(preproc_node)
+
+    # ar_node = Node(
+    #     package='situated_interaction',
+    #     executable='ar_preproc',
+    #     name='ar_preproc_node',
+    #     output='screen',
+    #     parameters=[ar_params])    
+    # ld.add_action(ar_node)
 
     # Scene recognition nodes
     clip_rec_node = Node(package = "mm_scene_rec", 
@@ -107,25 +125,6 @@ def generate_launch_description():
     )
     ld.add_action(fused_scene_rec_node)
 
-
-    # Detector preprocessing node
-    preproc_node = Node(
-        package='marmot',
-        executable='depthai_img_preproc',
-        name='depthai_img_preproc_node',
-        remappings=[('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
-        output='screen',
-        parameters=[oakd_params])    
-    ld.add_action(preproc_node)
-
-    # ar_node = Node(
-    #     package='situated_interaction',
-    #     executable='ar_preproc',
-    #     name='ar_preproc_node',
-    #     output='screen',
-    #     parameters=[ar_params])    
-    # ld.add_action(ar_node)
-
     # Tracker node
     trk_node = Node(
         package='marmot',
@@ -136,6 +135,15 @@ def generate_launch_description():
         parameters=[tracker_params]
     )
     ld.add_action(trk_node)
+
+    # Object recognition
+    clip_obj_rec_server = Node(package = "situated_interaction", 
+                    executable = "clip_vis_rec_server.py",
+                    name = "clip_obj_rec_server"
+                    # remappings=[('/clip_scene_image','/oak/rgb/image_raw')],
+                    # parameters=[clip_person_rec_config]
+    )
+    ld.add_action(clip_obj_rec_server)
 
     # # situated_interaction track -> tracked person preprocessor node
     # person_preproc_node = Node(
@@ -153,8 +161,6 @@ def generate_launch_description():
     #     output='screen',
     # )
     # ld.add_action(int_mgr_node)
-
-
 
     # Foxglove bridge for visualization
     viz_node = IncludeLaunchDescription(
