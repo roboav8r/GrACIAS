@@ -7,7 +7,7 @@ semantic_tracking_node:
       del_thresh: .25
       score_decay: .05
 
-      states:
+      attributes:
         variables: ['age','gender']
         age:
           labels: ['unknown','baby','toddler','child','young_adult','adult','elder']
@@ -16,7 +16,7 @@ semantic_tracking_node:
           labels: ['unknown','male','female','nonbinary']
           probs: [10., 1., 1., 1.]
 
-      attributes:
+      states:
         variables: ['role','movement','emotion']
         role:
           labels: ['unknown','civilian','military']

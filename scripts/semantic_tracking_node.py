@@ -42,7 +42,7 @@ class SemanticObject():
             self.attributes[att] = {}
             self.attributes[att]['symbol'] = gtsam.Symbol(alc[symbol_idx],self.track_id)
             self.attributes[att]['labels'] = params['attributes'][att]['labels']
-            self.attributes[att]['prob'] = gtsam.DiscreteDistribution((self.attributes[att]['symbol'].key(),len(self.attributes[att]['labels'])), params['attributes'][att]['probs'])
+            self.attributes[att]['probs'] = gtsam.DiscreteDistribution((self.attributes[att]['symbol'].key(),len(self.attributes[att]['labels'])), params['attributes'][att]['probs'])
             
             symbol_idx+=1
 
@@ -51,7 +51,7 @@ class SemanticObject():
             self.states[state] = {}
             self.states[state]['symbol'] = gtsam.Symbol(alc[symbol_idx],self.track_id)
             self.states[state]['labels'] = params['states'][state]['labels']
-            self.states[state]['prob'] = gtsam.DiscreteDistribution((self.states[state]['symbol'].key(),len(self.states[state]['labels'])), params['states'][state]['probs'])
+            self.states[state]['probs'] = gtsam.DiscreteDistribution((self.states[state]['symbol'].key(),len(self.states[state]['labels'])), params['states'][state]['probs'])
             self.states[state]['last_updated'] = msg.time_updated
             
             symbol_idx+=1   
@@ -271,10 +271,19 @@ class SemanticTrackerNode(Node):
             text.pose.position.x = object.pos_x
             text.pose.position.y = object.pos_y
             text.pose.position.z = object.pos_z
-            text.text = "%s #%s: \nID: %s \nAuth: %s\n" % (object.class_string, object.track_id, object.identity, object.auth)
-            for word in object.comms.keys():
-                text.text += "%s (%.2f) " % (word, object.comms[word]*100)
-            text.text
+            # text.text = "%s #%s: \nID: %s \nAuth: %s\n" % (object.class_string, object.track_id, object.identity, object.auth)
+            text.text = "%s #%s: \n" % (object.class_string, object.track_id)
+            
+            text.text += '\n'
+            for att in object.attributes:
+                text.text += "%s: %s %2.0f%%\n" % (att, object.attributes[att]['labels'][object.attributes[att]['probs'].argmax()], 100*object.attributes[att]['probs'](object.attributes[att]['probs'].argmax()))
+
+            text.text += '\n'
+            for state in object.states:
+                text.text += "%s: %s %2.0f%%\n" % (state, object.states[state]['labels'][object.states[state]['probs'].argmax()], 100*object.states[state]['probs'](object.states[state]['probs'].argmax()))
+
+            # for word in object.comms.keys():
+            #     text.text += "%s (%.2f) " % (word, object.comms[word]*100)
             entity_msg.texts.append(text)
 
             self.scene_out_msg.entities.append(entity_msg)
