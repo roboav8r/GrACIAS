@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import time
 from string import ascii_lowercase as alc
 
 import numpy as np
@@ -56,8 +57,7 @@ class SemanticObject():
             
             symbol_idx+=1   
 
-
-    
+        self.state_timeout = params['state_timeout']
 
     # def update(self, ar_msg, type):
     #     if type=='authentication':
@@ -112,6 +112,11 @@ class SemanticTrackerNode(Node):
             SceneUpdate,
             'semantic_scene',
             10)
+        
+        # Create timer
+        self.declare_parameter('loop_time_sec', rclpy.Parameter.Type.DOUBLE)
+        self.loop_time_sec = self.get_parameter('loop_time_sec').get_parameter_value().double_value
+        self.timer = self.create_timer(self.loop_time_sec, self.timer_callback)
 
         # self.subscription_auth = self.create_subscription(
         #     Auth,
@@ -139,7 +144,6 @@ class SemanticTrackerNode(Node):
         self.tracks_msg = Tracks3D()
         self.scene_out_msg = SceneUpdate()
 
-
         # Generate object att/state variable dictionary
         self.object_params = {}
         self.declare_parameter('objects_of_interest', rclpy.Parameter.Type.STRING_ARRAY)
@@ -148,6 +152,9 @@ class SemanticTrackerNode(Node):
         for obj in self.objects_of_interest:
 
             self.object_params[obj] = {}
+
+            self.declare_parameter(obj + '.state_timeout', rclpy.Parameter.Type.DOUBLE)
+            self.object_params[obj]['state_timeout'] = self.get_parameter(obj + '.state_timeout').get_parameter_value().double_value
 
             self.object_params[obj]['attributes'] = {}
             self.declare_parameter(obj + '.attributes.variables', rclpy.Parameter.Type.STRING_ARRAY)
@@ -181,6 +188,16 @@ class SemanticTrackerNode(Node):
             similarity_vector[ii] = np.linalg.norm([pos.x - self.semantic_objects[key].pos_x, pos.y - self.semantic_objects[key].pos_y, pos.z - self.semantic_objects[key].pos_z])
 
         return list(self.semantic_objects.keys())[np.argmin(similarity_vector)]
+
+    def timer_callback(self):
+        start_time = time.time()
+
+
+        # TODO - for each object, check if state is stale. If so, send state update request.
+
+        self.visualize()
+
+        self.get_logger().debug("Timer callback time (s): %s" % (time.time() - start_time))
 
     def listener_callback_tracks(self, msg):
         self.tracks_msg = msg

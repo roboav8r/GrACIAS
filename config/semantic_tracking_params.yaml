@@ -1,11 +1,16 @@
 semantic_tracking_node:
   ros__parameters:
+
+    loop_time_sec: 1.
+
     objects_of_interest: ['person']
 
     person:
       det_thresh: .15
       del_thresh: .25
       score_decay: .05
+
+      state_timeout: .5
 
       attributes:
         variables: ['age','gender']
@@ -27,3 +32,31 @@ semantic_tracking_node:
         emotion:
           labels: ['unknown','happy','sad','angry','neutral']
           probs: [10., 1., 1., 1., 1.]
+
+
+clip_vis_rec_server:
+  ros__parameters:
+
+    object_classes: ['person']
+
+    person:
+      attributes:
+        variables: ['age','gender']
+        age:
+          labels: ['unknown','baby','toddler','child','young_adult','adult','elder']
+          descriptions: ['unknown age','baby','toddler','child','young adult','adult','elder']
+        gender:
+          labels: ['unknown','male','female','nonbinary']
+          descriptions: ['unknown gender','male','female','nonbinary']
+
+      states:
+        variables: ['role','movement','emotion']
+        role:
+          labels: ['unknown','civilian','military']
+          descriptions: ['unknown affiliation','civilian','military']
+        movement:
+          labels: ['unknown','sitting','standing','walking','running']
+          descriptions: ['unknown activity','sitting','standing','walking','running']
+        emotion:
+          labels: ['unknown','happy','sad','angry','neutral']
+          descriptions: ['unknown emotion','happy','sad','angry','neutral']

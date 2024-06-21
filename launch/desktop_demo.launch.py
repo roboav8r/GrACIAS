@@ -144,9 +144,9 @@ def generate_launch_description():
     # Object recognition
     clip_obj_rec_server = Node(package = "situated_interaction", 
                     executable = "clip_vis_rec_server.py",
-                    name = "clip_obj_rec_server"
+                    name = "clip_vis_rec_server",
                     # remappings=[('/clip_scene_image','/oak/rgb/image_raw')],
-                    # parameters=[clip_person_rec_config]
+                    parameters=[semantic_tracking_params]
     )
     ld.add_action(clip_obj_rec_server)
 
