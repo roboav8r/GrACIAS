@@ -1,0 +1,29 @@
+semantic_tracking_node:
+  ros__parameters:
+    objects_of_interest: ['person']
+
+    person:
+      det_thresh: .15
+      del_thresh: .25
+      score_decay: .05
+
+      states:
+        variables: ['age','gender']
+        age:
+          labels: ['unknown','baby','toddler','child','young_adult','adult','elder']
+          probs: [10., 1., 1., 1., 1., 1., 1.]
+        gender:
+          labels: ['unknown','male','female','nonbinary']
+          probs: [10., 1., 1., 1.]
+
+      attributes:
+        variables: ['role','movement','emotion']
+        role:
+          labels: ['unknown','civilian','military']
+          probs: [10., 1., 1.]
+        movement:
+          labels: ['unknown','sitting','standing','walking','running']
+          probs: [10., 1., 1., 1., 1.]
+        emotion:
+          labels: ['unknown','happy','sad','angry','neutral']
+          probs: [10., 1., 1., 1., 1.]

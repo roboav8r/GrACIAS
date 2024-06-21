@@ -23,12 +23,17 @@ def generate_launch_description():
     tracker_params = os.path.join(
         get_package_share_directory('marmot'),
         'config',
-        'oakd_tracker.yaml'
+        'oakd_img_tracker.yaml'
     )
     ar_params = os.path.join(
         get_package_share_directory('situated_interaction'),
         'config',
         'ar_commands.yaml'
+    )
+    semantic_tracking_params = os.path.join(
+        get_package_share_directory('situated_interaction'),
+        'config',
+        'semantic_tracking_params.yaml'
     )
     mic_params = os.path.join(
         get_package_share_directory('ros_audition'),
@@ -86,7 +91,7 @@ def generate_launch_description():
         package='marmot',
         executable='depthai_img_preproc',
         name='depthai_img_preproc_node',
-        remappings=[('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
+        remappings=[('/converted_detections','/converted_img_detections'),('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
         output='screen',
         parameters=[oakd_params])    
     ld.add_action(preproc_node)
@@ -131,7 +136,7 @@ def generate_launch_description():
         executable='tbd_node.py',
         name='tbd_tracker_node',
         output='screen',
-        remappings=[('/detections','/converted_detections')],
+        remappings=[('/detections','/converted_img_detections')],
         parameters=[tracker_params]
     )
     ld.add_action(trk_node)
@@ -153,14 +158,15 @@ def generate_launch_description():
     #     output='screen')
     # ld.add_action(person_preproc_node)
 
-    # # interaction manager node
-    # int_mgr_node = Node(
-    #     package='situated_interaction',
-    #     executable='int_mgr_node.py',
-    #     name='interaction_manager_node',
-    #     output='screen',
-    # )
-    # ld.add_action(int_mgr_node)
+    # interaction manager node
+    semantic_tracking_node = Node(
+        package='situated_interaction',
+        executable='semantic_tracking_node.py',
+        name='semantic_tracking_node',
+        output='screen',
+        parameters=[semantic_tracking_params]
+    )
+    ld.add_action(semantic_tracking_node)
 
     # Foxglove bridge for visualization
     viz_node = IncludeLaunchDescription(

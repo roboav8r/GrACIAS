@@ -36,7 +36,7 @@ install(TARGETS
 # Install Python
 ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
-  scripts/int_mgr_node.py
+  scripts/semantic_tracking_node.py
   scripts/clip_vis_rec_server.py
   # scripts/audio_acq_node.py
   scripts/audio_bf_node.py
