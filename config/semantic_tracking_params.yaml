@@ -10,28 +10,55 @@ semantic_tracking_node:
       del_thresh: .25
       score_decay: .05
 
-      state_timeout: .5
+      state_timeout: 10.
 
       attributes:
         variables: ['age','gender']
         age:
           labels: ['unknown','baby','toddler','child','young_adult','adult','elder']
           probs: [10., 1., 1., 1., 1., 1., 1.]
+          sensor_model_coeffs: [.8, .033, .033, .033, .033, .033, .033,
+                                .033, .8, .033, .033, .033, .033, .033,
+                                .033, .033, .8, .033, .033, .033, .033,
+                                .033, .033, .033, .8, .033, .033, .033,
+                                .033, .033, .033, .033, .8, .033, .033,
+                                .033, .033, .033, .033, .033, .8, .033,
+                                .033, .033, .033, .033, .033, .033, .8]
+
         gender:
           labels: ['unknown','male','female','nonbinary']
           probs: [10., 1., 1., 1.]
+          sensor_model_coeffs: [.65, .117, .117, .117,
+                                .117, .65, .117, .117,
+                                .117, .117, .65, .117,
+                                .117, .117, .117, .65]
 
       states:
         variables: ['role','movement','emotion']
         role:
           labels: ['unknown','civilian','military']
           probs: [10., 1., 1.]
+          sensor_model_coeffs: [.6, .2, .2,
+                                .2, .6, .2,
+                                .2, .2, .6]
+
         movement:
           labels: ['unknown','sitting','standing','walking','running']
           probs: [10., 1., 1., 1., 1.]
+          sensor_model_coeffs: [.7, .075, .075, .075, .075,
+                                .075, .7, .075, .075, .075,
+                                .075, .075, .7, .075, .075,
+                                .075, .075, .075, .7, .075,
+                                .075, .075, .075, .075, .7]
         emotion:
           labels: ['unknown','happy','sad','angry','neutral']
           probs: [10., 1., 1., 1., 1.]
+          sensor_model_coeffs: [.6, .1, .1, .1, .1,
+                                .1, .6, .1, .1, .1,
+                                .1, .1, .6, .1, .1,
+                                .1, .1, .1, .6, .1,
+                                .1, .1, .1, .1, .6]
+                                
 
 
 clip_vis_rec_server:
