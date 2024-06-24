@@ -1,4 +1,5 @@
 # situated_interaction
+This is my development scratchpad - don't judge
 
 # Setup
 
@@ -10,7 +11,25 @@ mamba activate sit_int
 conda remove --force ffmpeg
 
 
-# Improves
+# Future Work
+
+
+## Debugging
+- check update time/image
+
+## Improves/New features
+- Add multiple factors to attributes instead of continuous recursive bayesian update
+- change to single params file with /** for node
+- allow attributes or states to be updated by confidence OR by timeout
 - Check weight division calcs
 - Determine data type, or make a param
 - optimize torch -> np -> torch conversions in the scene recognition node
+- Add permanent attribute option for - e.g. "movable" "animal" etc
+- cap confidence at 99 to prevent numerical instability in mm_scene_rec and situated_interaction
+- rename/rebrand node: semantic tracking? situated interaction node? hierarchical control node?
+
+## Refactoring
+
+## Demo ideas
+- focus: attention at robot, away from robot as state
+- team affiliation, e.g. longhorn or aggie

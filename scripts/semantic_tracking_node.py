@@ -240,44 +240,21 @@ class SemanticTrackerNode(Node):
         self.clip_req.class_string = self.semantic_objects[id].class_string
         self.clip_req.estimate_attributes = est_atts
         self.clip_req.estimate_states = est_states
-        # self.get_logger().info("Semantic object info : %s" % self.semantic_objects[id])
         self.clip_req.image = self.semantic_objects[id].image
-        # self.get_logger().info("Sending request")
         resp = self.clip_client.call(self.clip_req)
-        self.get_logger().info("Got response %s" % resp)
 
         # TODO - make this an update and pass the resp in
         for att_dist in resp.attributes:
-
             att = att_dist.variable
-            self.get_logger().info("VARIABLE %s" % att)
-            self.get_logger().info("PRIOR %s" % self.semantic_objects[id].attributes[att]['probs'])
-
             obs = gtsam.DiscreteDistribution([self.semantic_objects[id].attributes[att]['obs_symbol'],len(self.semantic_objects[id].attributes[att]['labels'])], att_dist.probabilities)
-            # self.get_logger().info("OBS %s" % obs)
-            # obs_factor = gtsam.DecisionTreeFactor(obs)
-            # self.get_logger().info("OBS FACTOR %s" % obs_factor)
-            # sensor_model_factor = gtsam.DecisionTreeFactor(self.semantic_objects[id].attributes[att]['sensor_model'])
-            # self.get_logger().info("SENSOR MODEL FACTOR %s" % sensor_model_factor)
-            # likelihood = (obs_factor*sensor_model_factor).sum(1)
             likelihood = self.semantic_objects[id].attributes[att]['sensor_model'].likelihood(obs.argmax())
-            # self.get_logger().info("LIKELIHOOD %s" % likelihood)
             self.semantic_objects[id].attributes[att]['probs'] = gtsam.DiscreteDistribution(likelihood*self.semantic_objects[id].attributes[att]['probs'])
-
-            self.get_logger().info("POSTERIOR %s" % self.semantic_objects[id].attributes[att]['probs'])
 
         for state_dist in resp.states:
             state = state_dist.variable
-            self.get_logger().info("VARIABLE %s" % state)
-            self.get_logger().info("PRIOR %s" % self.semantic_objects[id].states[state]['probs'])
-
             obs = gtsam.DiscreteDistribution([self.semantic_objects[id].states[state]['obs_symbol'],len(self.semantic_objects[id].states[state]['labels'])], state_dist.probabilities)
-            # obs_factor = gtsam.DecisionTreeFactor(obs)
-            # sensor_model_factor = gtsam.DecisionTreeFactor(self.semantic_objects[id].states[state]['sensor_model'])
-            # likelihood = (obs_factor*sensor_model_factor).sum(1)
             likelihood = self.semantic_objects[id].states[state]['sensor_model'].likelihood(obs.argmax())
             self.semantic_objects[id].states[state]['probs'] = gtsam.DiscreteDistribution(likelihood*self.semantic_objects[id].states[state]['probs'])
-            # self.get_logger().info("POSTERIOR %s" % self.semantic_objects[id].states[state]['probs'])
             self.semantic_objects[id].states[state]['last_updated'] = self.semantic_objects[id].stamp
 
         self.semantic_objects[id].new_image_available = False
@@ -291,7 +268,6 @@ class SemanticTrackerNode(Node):
         return list(self.semantic_objects.keys())[np.argmin(similarity_vector)]
 
     def timer_callback(self):
-        # self.get_logger().info("\n\n\n********************************TIMER CALLBACK")
         start_time = self.get_clock().now()
 
         # For each object, check if state is stale. If so, send state update request.
@@ -307,26 +283,22 @@ class SemanticTrackerNode(Node):
 
             for att in obj.attributes:
                 if (obj.attributes[att]['labels'][obj.attributes[att]['probs'].argmax()]=='unknown'):
-                    self.get_logger().info("Object %s %s has unknown attribute %s " % (obj.class_string, id, att))
                     update_obj_atts = True
                 elif (obj.attributes[att]['probs'](obj.attributes[att]['probs'].argmax()) < obj.attributes[att]['confidence_threshold']):
-                    self.get_logger().info("Object %s %s has low confidence %s < %s" % (obj.class_string, id, obj.attributes[att]['probs'](obj.attributes[att]['probs'].argmax()),obj.attributes[att]['confidence_threshold']) )
                     update_obj_atts = True
                 
             for state in obj.states:
-                self.get_logger().info("Start time %s, Last update %s, delta %s sec" % (start_time, Time.from_msg(obj.states[state]['last_updated']), (start_time - Time.from_msg(obj.states[state]['last_updated'])).nanoseconds/1e9 ))
                 if (start_time - Time.from_msg(obj.states[state]['last_updated'])).nanoseconds/1e9 > obj.state_timeout:
-                    self.get_logger().info("Object %s %s has stale state %s (%s sec)" % (obj.class_string, id, state, (start_time - Time.from_msg(obj.states[state]['last_updated'])).nanoseconds/1e9 ))
                     update_obj_states = True
 
-            self.send_obj_clip_req(id, update_obj_atts, update_obj_states)
+            if update_obj_atts or update_obj_states:
+                self.send_obj_clip_req(id, update_obj_atts, update_obj_states)
 
         self.visualize()
 
         self.get_logger().info("Timer callback time (s): %s" % ((self.get_clock().now() - start_time).nanoseconds/10**9))
 
     def listener_callback_tracks(self, msg):
-        # self.get_logger().info("Tracks callback")
         self.tracks_msg = msg
 
         # Temporary list for this callback
@@ -343,25 +315,17 @@ class SemanticTrackerNode(Node):
 
             # Initialize object and add to dict if not currently tracked
             if trkd_obj.track_id not in self.semantic_objects.keys():
-                self.get_logger().info(f"Creating object {trkd_obj.class_string} with params {self.object_params[trkd_obj.class_string]}")
                 self.semantic_objects[trkd_obj.track_id] = SemanticObject(trkd_obj, self.object_params[trkd_obj.class_string])
 
             else:
-                # Update existing tracked object
-                # self.get_logger().info("Updating %s-%s" % (trkd_obj.class_string, trkd_obj.track_id))
-
-                # self.get_logger().info("Current image avail / checksum %s %s" % (self.semantic_objects[trkd_obj.track_id].new_image_available, sum(self.semantic_objects[trkd_obj.track_id].image.data)))
-
 
                 # TODO - make generic update function instead of pos updates
                 self.semantic_objects[trkd_obj.track_id].pos_x = trkd_obj.pose.pose.position.x
                 self.semantic_objects[trkd_obj.track_id].pos_y = trkd_obj.pose.pose.position.y
                 self.semantic_objects[trkd_obj.track_id].pos_z = trkd_obj.pose.pose.position.z
 
-                # self.get_logger().info("Incoming image avail / checksum %s %s" % (trkd_obj.image_available, sum(trkd_obj.image.data)))
                 self.semantic_objects[trkd_obj.track_id].new_image_available = trkd_obj.image_available
                 self.semantic_objects[trkd_obj.track_id].image = trkd_obj.image
-                # self.get_logger().info("Updated image avail / checksum %s %s" % (self.semantic_objects[trkd_obj.track_id].new_image_available, sum(self.semantic_objects[trkd_obj.track_id].image.data)))
 
                 self.semantic_objects[trkd_obj.track_id].stamp = msg.header.stamp 
 
