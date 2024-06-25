@@ -23,8 +23,6 @@ find_package(tf2_ros)
 find_package(tf2_geometry_msgs)
 
 # Install C++ execs
-add_executable(track_preproc src/track_preproc.cpp)
-ament_target_dependencies(track_preproc rclcpp tracking_msgs)
 add_executable(ar_preproc src/artag_preproc.cpp)
 ament_target_dependencies(ar_preproc tf2_ros tf2_geometry_msgs rclcpp ar_track_alvar_msgs visualization_msgs situated_hri_interfaces foxglove_msgs geometry_msgs)
 install(TARGETS 
