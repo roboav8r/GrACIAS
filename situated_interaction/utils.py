@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 def pmf_to_spec(pmf):
-
     spec = ''
     for row_idx in range(pmf.shape[0]):
         row = pmf[row_idx,:]
@@ -19,3 +18,12 @@ def pmf_to_spec(pmf):
             spec += ' ' + row_spec
         
     return spec
+
+
+def normalize_vector(vec, upper, lower):
+    for ii, num in enumerate(vec):
+        if num > upper:
+            vec[ii] = upper
+        elif num < lower:
+            vec[ii] = lower
+    return vec

@@ -19,7 +19,7 @@ from tracking_msgs.msg import Tracks3D
 from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, CategoricalDistribution
 from situated_hri_interfaces.srv import ObjectVisRec
 
-from situated_interaction.utils import pmf_to_spec
+from situated_interaction.utils import pmf_to_spec, normalize_vector
 
 class SemanticObject():
     def __init__(self, msg, params):
@@ -48,7 +48,7 @@ class SemanticObject():
         self.attributes = {}
         for att in params['attributes']:
             self.attributes[att] = {}
-            self.attributes[att]['confidence_threshold'] = 0.75
+            self.attributes[att]['confidence_threshold'] = .95 # TODO - make this a param
             self.attributes[att]['var_symbol'] = gtsam.symbol(alc[symbol_idx],self.track_id)
             self.attributes[att]['obs_symbol'] = gtsam.symbol(alc[symbol_idx],self.track_id + 200)
             self.attributes[att]['labels'] = params['attributes'][att]['labels']
@@ -177,6 +177,8 @@ class SemanticTrackerNode(Node):
         self.object_params = {}
         self.declare_parameter('objects_of_interest', rclpy.Parameter.Type.STRING_ARRAY)
         self.objects_of_interest = self.get_parameter('objects_of_interest').get_parameter_value().string_array_value
+        self.upper_conf_limit = .97
+        self.lower_conf_limit = .01
 
         for obj in self.objects_of_interest:
 
@@ -232,12 +234,18 @@ class SemanticTrackerNode(Node):
             likelihood = self.semantic_objects[id].attributes[att]['sensor_model'].likelihood(obs.argmax())
             self.semantic_objects[id].attributes[att]['probs'] = gtsam.DiscreteDistribution(likelihood*self.semantic_objects[id].attributes[att]['probs'])
 
+            normalized_pmf = normalize_vector(self.semantic_objects[id].attributes[att]['probs'].pmf(), self.upper_conf_limit, self.lower_conf_limit)
+            self.semantic_objects[id].attributes[att]['probs'] = gtsam.DiscreteDistribution((self.semantic_objects[id].attributes[att]['probs'].keys()[0],len(normalized_pmf)),normalized_pmf)
+
         for state_dist in resp.states:
             state = state_dist.variable
             obs = gtsam.DiscreteDistribution([self.semantic_objects[id].states[state]['obs_symbol'],len(self.semantic_objects[id].states[state]['labels'])], state_dist.probabilities)
             likelihood = self.semantic_objects[id].states[state]['sensor_model'].likelihood(obs.argmax())
             self.semantic_objects[id].states[state]['probs'] = gtsam.DiscreteDistribution(likelihood*self.semantic_objects[id].states[state]['probs'])
             self.semantic_objects[id].states[state]['last_updated'] = self.semantic_objects[id].stamp
+
+            normalized_pmf = normalize_vector(self.semantic_objects[id].states[state]['probs'].pmf(), self.upper_conf_limit, self.lower_conf_limit)
+            self.semantic_objects[id].states[state]['probs'] = gtsam.DiscreteDistribution((self.semantic_objects[id].states[state]['probs'].keys()[0],len(normalized_pmf)),normalized_pmf)
 
         self.semantic_objects[id].new_image_available = False
 
