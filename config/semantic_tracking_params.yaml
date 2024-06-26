@@ -27,6 +27,8 @@
                                 .033, .033, .033, .033, .8, .033, .033,
                                 .033, .033, .033, .033, .033, .8, .033,
                                 .033, .033, .033, .033, .033, .033, .8]
+          update_method: 'confidence'
+          update_threshold: .95
 
         gender:
           labels: ['unknown','male','female','nonbinary']
@@ -36,6 +38,8 @@
                                 .117, .65, .117, .117,
                                 .117, .117, .65, .117,
                                 .117, .117, .117, .65]
+          update_method: 'confidence'
+          update_threshold: .95
 
       states:
         variables: ['role','movement','emotion']
@@ -48,7 +52,9 @@
                                 .1, .1, .6, .1, .1,
                                 .1, .1, .1, .6, .1,
                                 .1, .1, .1, .1, .6]
-
+          update_method: 'time'
+          update_threshold: .75
+          
         movement:
           labels: ['unknown','sitting','standing','walking','running']
           descriptions: ['a person','a person sitting down', 'a person standing', 'a person walking','a person running']
@@ -58,6 +64,9 @@
                                 .075, .075, .7, .075, .075,
                                 .075, .075, .075, .7, .075,
                                 .075, .075, .075, .075, .7]
+          update_method: 'time'
+          update_threshold: .75
+
         emotion:
           labels: ['unknown','happy','sad','angry','neutral']
           descriptions: ['a person with unknown emotion','a happy person','a sad person','an angry person','a person with neutral emotion']
@@ -67,34 +76,5 @@
                                 .1, .1, .6, .1, .1,
                                 .1, .1, .1, .6, .1,
                                 .1, .1, .1, .1, .6]
-                                
-
-
-# clip_vis_rec_server:
-#   ros__parameters:
-
-#     clip_model: 'ViT-B/32'
-
-#     object_classes: ['person']
-
-#     person:
-#       attributes:
-#         variables: ['age','gender']
-#         age:
-#           labels: ['unknown','baby','toddler','child','young_adult','adult','elder']
-#           descriptions: ['a person of unknown age','a baby','a toddler','a child','a young adult','an adult','an elderly adult']
-#         gender:
-#           labels: ['unknown','male','female','nonbinary']
-#           descriptions: ['a person of unknown gender','a male person','a female person','a nonbinary person']
-
-#       states:
-#         variables: ['role','movement','emotion']
-#         role:
-#           labels: ['unknown','civilian','military','scientist','robot_supervisor']
-#           descriptions: ['a person', 'a civilian person','a person wearing a military uniform', 'a person wearing a lab coat','a person wearing a yellow reflective safety vest']
-#         movement:
-#           labels: ['unknown','sitting', 'standing','walking','running']
-#           descriptions: ['a person','a person sitting down', 'a person standing', 'a person walking','a person running']
-#         emotion:
-#           labels: ['unknown','happy','sad','angry','neutral']
-#           descriptions: ['a person with unknown emotion','a happy person','a sad person','an angry person','a person with neutral emotion']
+          update_method: 'time'
+          update_threshold: .75

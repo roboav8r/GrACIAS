@@ -20,6 +20,7 @@ from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, Categorical
 from situated_hri_interfaces.srv import ObjectVisRec
 
 from situated_interaction.utils import pmf_to_spec, normalize_vector
+from situated_interaction.datatypes import DiscreteVariable
 
 class SemanticObject():
     def __init__(self, msg, params):
@@ -44,8 +45,10 @@ class SemanticObject():
         self.vis_rec_complete = False
 
         # Initialize attributes, states, and obs models
+        # TODO - replace this with new datatype
         symbol_idx = 0
         self.attributes = {}
+        self.new_attributes = {}
         for att in params['attributes']:
             self.attributes[att] = {}
             self.attributes[att]['confidence_threshold'] = .95 # TODO - make this a param
@@ -55,10 +58,18 @@ class SemanticObject():
             self.attributes[att]['probs'] = gtsam.DiscreteDistribution((self.attributes[att]['var_symbol'],len(self.attributes[att]['labels'])), params['attributes'][att]['probs'])
             self.attributes[att]['sensor_model'] = gtsam.DiscreteConditional([self.attributes[att]['obs_symbol'],len(self.attributes[att]['labels'])],[[self.attributes[att]['var_symbol'],len(self.attributes[att]['labels'])]],pmf_to_spec(params['attributes'][att]['sensor_model_array']))
 
+            symbol_idx+=1
+
+            self.new_attributes[att] = DiscreteVariable(att, 'attribute', 'confidence', .95, 
+                                                        self.stamp, params['attributes'][att]['labels'], alc[symbol_idx], 
+                                                        self.track_id, 100, params['attributes'][att]['probs'], 
+                                                        pmf_to_spec(params['attributes'][att]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
 
             symbol_idx+=1
 
+
         self.states = {}
+        self.new_states = {}
         for state in params['states']:
             self.states[state] = {}
             self.states[state]['var_symbol'] = gtsam.symbol(alc[symbol_idx],self.track_id)
@@ -70,11 +81,14 @@ class SemanticObject():
             
             symbol_idx+=1   
 
+            self.new_states[state] = DiscreteVariable(state, 'state', 'time', params['state_timeout'], 
+                                            self.stamp, params['states'][state]['labels'], alc[symbol_idx], 
+                                            self.track_id, 100, params['states'][state]['probs'], 
+                                            pmf_to_spec(params['states'][state]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
+
+            symbol_idx+=1   
+
         self.state_timeout = params['state_timeout']
-
-    # def update_category(self, type, name, cat_dist):
-    #     # TODO - make this a bayes update, not just a replacement
-
 
 
     # def update(self, ar_msg, type):
@@ -177,12 +191,15 @@ class SemanticTrackerNode(Node):
         self.object_params = {}
         self.declare_parameter('objects_of_interest', rclpy.Parameter.Type.STRING_ARRAY)
         self.objects_of_interest = self.get_parameter('objects_of_interest').get_parameter_value().string_array_value
-        self.upper_conf_limit = .97
-        self.lower_conf_limit = .01
+        self.upper_prob_limit = .97
+        self.lower_prob_limit = .01
 
         for obj in self.objects_of_interest:
 
             self.object_params[obj] = {}
+
+            self.object_params[obj]['upper_prob_limit'] = self.upper_prob_limit
+            self.object_params[obj]['lower_prob_limit'] = self.upper_prob_limit
 
             self.declare_parameter(obj + '.state_timeout', rclpy.Parameter.Type.DOUBLE)
             self.object_params[obj]['state_timeout'] = self.get_parameter(obj + '.state_timeout').get_parameter_value().double_value
@@ -195,13 +212,17 @@ class SemanticTrackerNode(Node):
                 self.declare_parameter(obj + '.attributes.' + att_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
                 self.declare_parameter(obj + '.attributes.' + att_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
                 self.declare_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                self.declare_parameter(obj + '.attributes.' + att_var + '.update_method', rclpy.Parameter.Type.STRING)
+                self.declare_parameter(obj + '.attributes.' + att_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
 
                 self.object_params[obj]['attributes'][att_var] = {}
                 self.object_params[obj]['attributes'][att_var]['labels'] = self.get_parameter(obj + '.attributes.' + att_var + '.labels').get_parameter_value().string_array_value
                 self.object_params[obj]['attributes'][att_var]['probs'] = self.get_parameter(obj + '.attributes.' + att_var + '.probs').get_parameter_value().double_array_value
                 self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
                 self.object_params[obj]['attributes'][att_var]['sensor_model_array'] = np.array(self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['attributes'][att_var]['labels']))
-                
+                self.object_params[obj]['attributes'][att_var]['update_method'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_method').get_parameter_value().string_value
+                self.object_params[obj]['attributes'][att_var]['update_threshold'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_threshold').get_parameter_value().double_value
+
             self.object_params[obj]['states'] = {}
             self.declare_parameter(obj + '.states.variables', rclpy.Parameter.Type.STRING_ARRAY)
             state_vars = self.get_parameter(obj + '.states.variables').get_parameter_value().string_array_value
@@ -210,13 +231,16 @@ class SemanticTrackerNode(Node):
                 self.declare_parameter(obj + '.states.' + state_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
                 self.declare_parameter(obj + '.states.' + state_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
                 self.declare_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                self.declare_parameter(obj + '.states.' + state_var + '.update_method', rclpy.Parameter.Type.STRING)
+                self.declare_parameter(obj + '.states.' + state_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
 
                 self.object_params[obj]['states'][state_var] = {}
                 self.object_params[obj]['states'][state_var]['labels'] = self.get_parameter(obj + '.states.' + state_var + '.labels').get_parameter_value().string_array_value
                 self.object_params[obj]['states'][state_var]['probs'] = self.get_parameter(obj + '.states.' + state_var + '.probs').get_parameter_value().double_array_value
                 self.object_params[obj]['states'][state_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
                 self.object_params[obj]['states'][state_var]['sensor_model_array'] = np.array(self.object_params[obj]['states'][state_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['states'][state_var]['labels']))
-
+                self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
+                self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
 
     def send_obj_clip_req(self, id, est_atts, est_states):
         self.clip_req = ObjectVisRec.Request()
@@ -234,7 +258,7 @@ class SemanticTrackerNode(Node):
             likelihood = self.semantic_objects[id].attributes[att]['sensor_model'].likelihood(obs.argmax())
             self.semantic_objects[id].attributes[att]['probs'] = gtsam.DiscreteDistribution(likelihood*self.semantic_objects[id].attributes[att]['probs'])
 
-            normalized_pmf = normalize_vector(self.semantic_objects[id].attributes[att]['probs'].pmf(), self.upper_conf_limit, self.lower_conf_limit)
+            normalized_pmf = normalize_vector(self.semantic_objects[id].attributes[att]['probs'].pmf(), self.upper_prob_limit, self.lower_prob_limit)
             self.semantic_objects[id].attributes[att]['probs'] = gtsam.DiscreteDistribution((self.semantic_objects[id].attributes[att]['probs'].keys()[0],len(normalized_pmf)),normalized_pmf)
 
         for state_dist in resp.states:
@@ -244,7 +268,7 @@ class SemanticTrackerNode(Node):
             self.semantic_objects[id].states[state]['probs'] = gtsam.DiscreteDistribution(likelihood*self.semantic_objects[id].states[state]['probs'])
             self.semantic_objects[id].states[state]['last_updated'] = self.semantic_objects[id].stamp
 
-            normalized_pmf = normalize_vector(self.semantic_objects[id].states[state]['probs'].pmf(), self.upper_conf_limit, self.lower_conf_limit)
+            normalized_pmf = normalize_vector(self.semantic_objects[id].states[state]['probs'].pmf(), self.upper_prob_limit, self.lower_prob_limit)
             self.semantic_objects[id].states[state]['probs'] = gtsam.DiscreteDistribution((self.semantic_objects[id].states[state]['probs'].keys()[0],len(normalized_pmf)),normalized_pmf)
 
         self.semantic_objects[id].new_image_available = False
@@ -261,6 +285,7 @@ class SemanticTrackerNode(Node):
         start_time = self.get_clock().now()
 
         # For each object, check if state is stale. If so, send state update request.
+        # TODO use new datatype
         for id in self.semantic_objects.keys():
 
             obj = self.semantic_objects[id]
