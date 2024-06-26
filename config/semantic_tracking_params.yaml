@@ -1,21 +1,24 @@
-semantic_tracking_node:
+/**:
   ros__parameters:
 
     loop_time_sec: 1.
-
     objects_of_interest: ['person']
+    clip_model: 'ViT-B/32'
+    object_classes: ['person']
+
 
     person:
       det_thresh: .15
       del_thresh: .25
       score_decay: .05
 
-      state_timeout: 10.
+      state_timeout: 0.5
 
       attributes:
         variables: ['age','gender']
         age:
           labels: ['unknown','baby','toddler','child','young_adult','adult','elder']
+          descriptions: ['a person of unknown age','a baby','a toddler','a child','a young adult','an adult','an elderly adult']
           probs: [10., 1., 1., 1., 1., 1., 1.]
           sensor_model_coeffs: [.8, .033, .033, .033, .033, .033, .033,
                                 .033, .8, .033, .033, .033, .033, .033,
@@ -27,6 +30,7 @@ semantic_tracking_node:
 
         gender:
           labels: ['unknown','male','female','nonbinary']
+          descriptions: ['a person of unknown gender','a male person','a female person','a nonbinary person']
           probs: [10., 1., 1., 1.]
           sensor_model_coeffs: [.65, .117, .117, .117,
                                 .117, .65, .117, .117,
@@ -36,14 +40,18 @@ semantic_tracking_node:
       states:
         variables: ['role','movement','emotion']
         role:
-          labels: ['unknown','civilian','military']
-          probs: [10., 1., 1.]
-          sensor_model_coeffs: [.6, .2, .2,
-                                .2, .6, .2,
-                                .2, .2, .6]
+          labels: ['unknown','civilian','military','scientist','robot_supervisor']
+          descriptions: ['a person', 'a civilian person','a person wearing a military uniform', 'a person wearing a lab coat','a person wearing a yellow reflective safety vest']
+          probs: [10., 1., 1., 1., 1.]
+          sensor_model_coeffs: [.6, .1, .1, .1, .1,
+                                .1, .6, .1, .1, .1,
+                                .1, .1, .6, .1, .1,
+                                .1, .1, .1, .6, .1,
+                                .1, .1, .1, .1, .6]
 
         movement:
           labels: ['unknown','sitting','standing','walking','running']
+          descriptions: ['a person','a person sitting down', 'a person standing', 'a person walking','a person running']
           probs: [10., 1., 1., 1., 1.]
           sensor_model_coeffs: [.7, .075, .075, .075, .075,
                                 .075, .7, .075, .075, .075,
@@ -52,6 +60,7 @@ semantic_tracking_node:
                                 .075, .075, .075, .075, .7]
         emotion:
           labels: ['unknown','happy','sad','angry','neutral']
+          descriptions: ['a person with unknown emotion','a happy person','a sad person','an angry person','a person with neutral emotion']
           probs: [10., 1., 1., 1., 1.]
           sensor_model_coeffs: [.6, .1, .1, .1, .1,
                                 .1, .6, .1, .1, .1,
@@ -61,31 +70,31 @@ semantic_tracking_node:
                                 
 
 
-clip_vis_rec_server:
-  ros__parameters:
+# clip_vis_rec_server:
+#   ros__parameters:
 
-    clip_model: 'ViT-B/32'
+#     clip_model: 'ViT-B/32'
 
-    object_classes: ['person']
+#     object_classes: ['person']
 
-    person:
-      attributes:
-        variables: ['age','gender']
-        age:
-          labels: ['unknown','baby','toddler','child','young_adult','adult','elder']
-          descriptions: ['a person of unknown age','a baby','a toddler','a child','a young adult','an adult','an elderly adult']
-        gender:
-          labels: ['unknown','male','female','nonbinary']
-          descriptions: ['a person of unknown gender','a male person','a female person','a nonbinary person']
+#     person:
+#       attributes:
+#         variables: ['age','gender']
+#         age:
+#           labels: ['unknown','baby','toddler','child','young_adult','adult','elder']
+#           descriptions: ['a person of unknown age','a baby','a toddler','a child','a young adult','an adult','an elderly adult']
+#         gender:
+#           labels: ['unknown','male','female','nonbinary']
+#           descriptions: ['a person of unknown gender','a male person','a female person','a nonbinary person']
 
-      states:
-        variables: ['role','movement','emotion']
-        role:
-          labels: ['unknown','civilian','military']
-          descriptions: ['a person', 'a civilian person','a person in the military']
-        movement:
-          labels: ['unknown','sitting', 'standing','walking','running']
-          descriptions: ['a person','a person sitting down', 'a person standing', 'a person walking','a person running']
-        emotion:
-          labels: ['unknown','happy','sad','angry','neutral']
-          descriptions: ['a person with unknown emotion','a happy person','a sad person','an angry person','a person with neutral emotion']
+#       states:
+#         variables: ['role','movement','emotion']
+#         role:
+#           labels: ['unknown','civilian','military','scientist','robot_supervisor']
+#           descriptions: ['a person', 'a civilian person','a person wearing a military uniform', 'a person wearing a lab coat','a person wearing a yellow reflective safety vest']
+#         movement:
+#           labels: ['unknown','sitting', 'standing','walking','running']
+#           descriptions: ['a person','a person sitting down', 'a person standing', 'a person walking','a person running']
+#         emotion:
+#           labels: ['unknown','happy','sad','angry','neutral']
+#           descriptions: ['a person with unknown emotion','a happy person','a sad person','an angry person','a person with neutral emotion']
