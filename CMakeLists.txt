@@ -23,12 +23,9 @@ find_package(tf2_ros)
 find_package(tf2_geometry_msgs)
 
 # Install C++ execs
-add_executable(track_preproc src/track_preproc.cpp)
-ament_target_dependencies(track_preproc rclcpp tracking_msgs)
 add_executable(ar_preproc src/artag_preproc.cpp)
 ament_target_dependencies(ar_preproc tf2_ros tf2_geometry_msgs rclcpp ar_track_alvar_msgs visualization_msgs situated_hri_interfaces foxglove_msgs geometry_msgs)
 install(TARGETS 
-  track_preproc
   ar_preproc
   DESTINATION lib/${PROJECT_NAME}
 )
@@ -38,10 +35,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/semantic_tracking_node.py
   scripts/clip_vis_rec_server.py
-  # scripts/audio_acq_node.py
   scripts/audio_bf_node.py
-  # scripts/audio_proc_node.py
-  scripts/scene_rec_node.py
   scripts/scene_voice_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
