@@ -27,7 +27,7 @@ class DiscreteVariable():
         
     def needs_update(self, stamp):
         return ((self.update_method=='confidence' and self.probs(self.probs.argmax()) < self.update_threshold) 
-            or (self.update_method=='time' and (stamp - self.last_updated) > self.update_threshold))
+            or (self.update_method=='time' and (stamp - self.last_updated).nanoseconds/1e9 > self.update_threshold))
 
     def update(self, obs_probs, stamp):
         obs = gtsam.DiscreteDistribution([self.obs_symbol,len(self.obs_labels)], obs_probs)

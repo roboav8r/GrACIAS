@@ -109,6 +109,8 @@ class CLIPVisRecServer(Node):
                     resp.states.append(state_dist)
 
             # self.get_logger().info("Response: %s" % resp)
+            
+            resp.stamp = req.stamp
 
             return resp
 

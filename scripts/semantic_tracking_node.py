@@ -61,7 +61,7 @@ class SemanticObject():
             symbol_idx+=1
 
             self.new_attributes[att] = DiscreteVariable(att, 'attribute', 'confidence', .95, 
-                                                        self.stamp, params['attributes'][att]['labels'], alc[symbol_idx], 
+                                                        Time.from_msg(self.stamp), params['attributes'][att]['labels'], alc[symbol_idx], 
                                                         self.track_id, 100, params['attributes'][att]['probs'], 
                                                         pmf_to_spec(params['attributes'][att]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
 
@@ -82,7 +82,7 @@ class SemanticObject():
             symbol_idx+=1   
 
             self.new_states[state] = DiscreteVariable(state, 'state', 'time', params['state_timeout'], 
-                                            self.stamp, params['states'][state]['labels'], alc[symbol_idx], 
+                                            Time.from_msg(self.stamp), params['states'][state]['labels'], alc[symbol_idx], 
                                             self.track_id, 100, params['states'][state]['probs'], 
                                             pmf_to_spec(params['states'][state]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
 
@@ -249,10 +249,12 @@ class SemanticTrackerNode(Node):
         self.clip_req.estimate_attributes = est_atts
         self.clip_req.estimate_states = est_states
         self.clip_req.image = self.semantic_objects[id].image
+        self.clip_req.stamp = self.semantic_objects[id].stamp
         resp = self.clip_client.call(self.clip_req)
 
         # TODO - make this an update and pass the resp in
         for att_dist in resp.attributes:
+
             att = att_dist.variable
             obs = gtsam.DiscreteDistribution([self.semantic_objects[id].attributes[att]['obs_symbol'],len(self.semantic_objects[id].attributes[att]['labels'])], att_dist.probabilities)
             likelihood = self.semantic_objects[id].attributes[att]['sensor_model'].likelihood(obs.argmax())
@@ -261,15 +263,21 @@ class SemanticTrackerNode(Node):
             normalized_pmf = normalize_vector(self.semantic_objects[id].attributes[att]['probs'].pmf(), self.upper_prob_limit, self.lower_prob_limit)
             self.semantic_objects[id].attributes[att]['probs'] = gtsam.DiscreteDistribution((self.semantic_objects[id].attributes[att]['probs'].keys()[0],len(normalized_pmf)),normalized_pmf)
 
+            self.semantic_objects[id].new_attributes[att].update(att_dist.probabilities, Time.from_msg(resp.stamp))
+            self.get_logger().info("*****************ATT Last updated after update %s" % type(self.semantic_objects[id].new_attributes[att].last_updated))
+
         for state_dist in resp.states:
             state = state_dist.variable
             obs = gtsam.DiscreteDistribution([self.semantic_objects[id].states[state]['obs_symbol'],len(self.semantic_objects[id].states[state]['labels'])], state_dist.probabilities)
             likelihood = self.semantic_objects[id].states[state]['sensor_model'].likelihood(obs.argmax())
             self.semantic_objects[id].states[state]['probs'] = gtsam.DiscreteDistribution(likelihood*self.semantic_objects[id].states[state]['probs'])
             self.semantic_objects[id].states[state]['last_updated'] = self.semantic_objects[id].stamp
-
             normalized_pmf = normalize_vector(self.semantic_objects[id].states[state]['probs'].pmf(), self.upper_prob_limit, self.lower_prob_limit)
             self.semantic_objects[id].states[state]['probs'] = gtsam.DiscreteDistribution((self.semantic_objects[id].states[state]['probs'].keys()[0],len(normalized_pmf)),normalized_pmf)
+
+            self.semantic_objects[id].new_states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
+
+            self.get_logger().info("*****************STATE Last updated after update %s" % type(self.semantic_objects[id].new_states[state].last_updated))
 
         self.semantic_objects[id].new_image_available = False
 
@@ -301,9 +309,17 @@ class SemanticTrackerNode(Node):
                     update_obj_atts = True
                 elif (obj.attributes[att]['probs'](obj.attributes[att]['probs'].argmax()) < obj.attributes[att]['confidence_threshold']):
                     update_obj_atts = True
+
+            for att in obj.new_attributes:
+                if obj.new_attributes[att].needs_update(start_time):
+                    update_obj_atts = True
                 
             for state in obj.states:
                 if (start_time - Time.from_msg(obj.states[state]['last_updated'])).nanoseconds/1e9 > obj.state_timeout:
+                    update_obj_states = True
+
+            for state in obj.new_states:
+                if obj.new_states[state].needs_update(start_time):
                     update_obj_states = True
 
             if update_obj_atts or update_obj_states:
