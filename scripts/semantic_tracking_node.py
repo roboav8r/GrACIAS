@@ -45,47 +45,22 @@ class SemanticObject():
         self.vis_rec_complete = False
 
         # Initialize attributes, states, and obs models
-        # TODO - replace this with new datatype
         symbol_idx = 0
         self.attributes = {}
-        self.new_attributes = {}
         for att in params['attributes']:
-            self.attributes[att] = {}
-            self.attributes[att]['confidence_threshold'] = .95 # TODO - make this a param
-            self.attributes[att]['var_symbol'] = gtsam.symbol(alc[symbol_idx],self.track_id)
-            self.attributes[att]['obs_symbol'] = gtsam.symbol(alc[symbol_idx],self.track_id + 200)
-            self.attributes[att]['labels'] = params['attributes'][att]['labels']
-            self.attributes[att]['probs'] = gtsam.DiscreteDistribution((self.attributes[att]['var_symbol'],len(self.attributes[att]['labels'])), params['attributes'][att]['probs'])
-            self.attributes[att]['sensor_model'] = gtsam.DiscreteConditional([self.attributes[att]['obs_symbol'],len(self.attributes[att]['labels'])],[[self.attributes[att]['var_symbol'],len(self.attributes[att]['labels'])]],pmf_to_spec(params['attributes'][att]['sensor_model_array']))
-
-            symbol_idx+=1
-
-            self.new_attributes[att] = DiscreteVariable(att, 'attribute', 'confidence', .95, 
+            self.attributes[att] = DiscreteVariable(att, 'attribute', 'confidence', .95, 
                                                         Time.from_msg(self.stamp), params['attributes'][att]['labels'], alc[symbol_idx], 
                                                         self.track_id, 100, params['attributes'][att]['probs'], 
                                                         pmf_to_spec(params['attributes'][att]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
-
             symbol_idx+=1
 
-
         self.states = {}
-        self.new_states = {}
         for state in params['states']:
-            self.states[state] = {}
-            self.states[state]['var_symbol'] = gtsam.symbol(alc[symbol_idx],self.track_id)
-            self.states[state]['obs_symbol'] = gtsam.symbol(alc[symbol_idx],self.track_id + 200)
-            self.states[state]['labels'] = params['states'][state]['labels']
-            self.states[state]['probs'] = gtsam.DiscreteDistribution((self.states[state]['var_symbol'],len(self.states[state]['labels'])), params['states'][state]['probs'])
-            self.states[state]['sensor_model'] = gtsam.DiscreteConditional([self.states[state]['obs_symbol'],len(self.states[state]['labels'])],[[self.states[state]['var_symbol'],len(self.states[state]['labels'])]],pmf_to_spec(params['states'][state]['sensor_model_array']))
-            self.states[state]['last_updated'] = Time().to_msg()
-            
-            symbol_idx+=1   
 
-            self.new_states[state] = DiscreteVariable(state, 'state', 'time', params['state_timeout'], 
+            self.states[state] = DiscreteVariable(state, 'state', 'time', params['state_timeout'], 
                                             Time.from_msg(self.stamp), params['states'][state]['labels'], alc[symbol_idx], 
                                             self.track_id, 100, params['states'][state]['probs'], 
                                             pmf_to_spec(params['states'][state]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
-
             symbol_idx+=1   
 
         self.state_timeout = params['state_timeout']
@@ -199,7 +174,7 @@ class SemanticTrackerNode(Node):
             self.object_params[obj] = {}
 
             self.object_params[obj]['upper_prob_limit'] = self.upper_prob_limit
-            self.object_params[obj]['lower_prob_limit'] = self.upper_prob_limit
+            self.object_params[obj]['lower_prob_limit'] = self.lower_prob_limit
 
             self.declare_parameter(obj + '.state_timeout', rclpy.Parameter.Type.DOUBLE)
             self.object_params[obj]['state_timeout'] = self.get_parameter(obj + '.state_timeout').get_parameter_value().double_value
@@ -254,32 +229,14 @@ class SemanticTrackerNode(Node):
 
         # TODO - make this an update and pass the resp in
         for att_dist in resp.attributes:
-
             att = att_dist.variable
-            obs = gtsam.DiscreteDistribution([self.semantic_objects[id].attributes[att]['obs_symbol'],len(self.semantic_objects[id].attributes[att]['labels'])], att_dist.probabilities)
-            likelihood = self.semantic_objects[id].attributes[att]['sensor_model'].likelihood(obs.argmax())
-            self.semantic_objects[id].attributes[att]['probs'] = gtsam.DiscreteDistribution(likelihood*self.semantic_objects[id].attributes[att]['probs'])
-
-            normalized_pmf = normalize_vector(self.semantic_objects[id].attributes[att]['probs'].pmf(), self.upper_prob_limit, self.lower_prob_limit)
-            self.semantic_objects[id].attributes[att]['probs'] = gtsam.DiscreteDistribution((self.semantic_objects[id].attributes[att]['probs'].keys()[0],len(normalized_pmf)),normalized_pmf)
-
-            self.semantic_objects[id].new_attributes[att].update(att_dist.probabilities, Time.from_msg(resp.stamp))
-            self.get_logger().info("*****************ATT Last updated after update %s" % type(self.semantic_objects[id].new_attributes[att].last_updated))
+            self.semantic_objects[id].attributes[att].update(att_dist.probabilities, Time.from_msg(resp.stamp))
 
         for state_dist in resp.states:
             state = state_dist.variable
-            obs = gtsam.DiscreteDistribution([self.semantic_objects[id].states[state]['obs_symbol'],len(self.semantic_objects[id].states[state]['labels'])], state_dist.probabilities)
-            likelihood = self.semantic_objects[id].states[state]['sensor_model'].likelihood(obs.argmax())
-            self.semantic_objects[id].states[state]['probs'] = gtsam.DiscreteDistribution(likelihood*self.semantic_objects[id].states[state]['probs'])
-            self.semantic_objects[id].states[state]['last_updated'] = self.semantic_objects[id].stamp
-            normalized_pmf = normalize_vector(self.semantic_objects[id].states[state]['probs'].pmf(), self.upper_prob_limit, self.lower_prob_limit)
-            self.semantic_objects[id].states[state]['probs'] = gtsam.DiscreteDistribution((self.semantic_objects[id].states[state]['probs'].keys()[0],len(normalized_pmf)),normalized_pmf)
+            self.semantic_objects[id].states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
 
-            self.semantic_objects[id].new_states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
-
-            self.get_logger().info("*****************STATE Last updated after update %s" % type(self.semantic_objects[id].new_states[state].last_updated))
-
-        self.semantic_objects[id].new_image_available = False
+        self.semantic_objects[id].image_available = False
 
     def compute_match(self, pos):
         similarity_vector = np.zeros(len(self.semantic_objects.keys()))
@@ -293,7 +250,6 @@ class SemanticTrackerNode(Node):
         start_time = self.get_clock().now()
 
         # For each object, check if state is stale. If so, send state update request.
-        # TODO use new datatype
         for id in self.semantic_objects.keys():
 
             obj = self.semantic_objects[id]
@@ -304,22 +260,13 @@ class SemanticTrackerNode(Node):
             update_obj_states = False
             update_obj_atts = False
 
+            # TODO - modify for a per-variable basis
             for att in obj.attributes:
-                if (obj.attributes[att]['labels'][obj.attributes[att]['probs'].argmax()]=='unknown'):
-                    update_obj_atts = True
-                elif (obj.attributes[att]['probs'](obj.attributes[att]['probs'].argmax()) < obj.attributes[att]['confidence_threshold']):
-                    update_obj_atts = True
-
-            for att in obj.new_attributes:
-                if obj.new_attributes[att].needs_update(start_time):
+                if obj.attributes[att].needs_update(start_time):
                     update_obj_atts = True
                 
             for state in obj.states:
-                if (start_time - Time.from_msg(obj.states[state]['last_updated'])).nanoseconds/1e9 > obj.state_timeout:
-                    update_obj_states = True
-
-            for state in obj.new_states:
-                if obj.new_states[state].needs_update(start_time):
+                if obj.states[state].needs_update(start_time):
                     update_obj_states = True
 
             if update_obj_atts or update_obj_states:
@@ -347,10 +294,9 @@ class SemanticTrackerNode(Node):
             # Initialize object and add to dict if not currently tracked
             if trkd_obj.track_id not in self.semantic_objects.keys():
                 self.semantic_objects[trkd_obj.track_id] = SemanticObject(trkd_obj, self.object_params[trkd_obj.class_string])
-
             else:
 
-                # TODO - make generic update function instead of pos updates
+                # TODO - make generic semantic_object.update function instead of pos updates
                 self.semantic_objects[trkd_obj.track_id].pos_x = trkd_obj.pose.pose.position.x
                 self.semantic_objects[trkd_obj.track_id].pos_y = trkd_obj.pose.pose.position.y
                 self.semantic_objects[trkd_obj.track_id].pos_z = trkd_obj.pose.pose.position.z
@@ -427,11 +373,11 @@ class SemanticTrackerNode(Node):
             
             text.text += '\n'
             for att in obj.attributes:
-                text.text += "%s: %s %2.0f%%\n" % (att, obj.attributes[att]['labels'][obj.attributes[att]['probs'].argmax()], 100*obj.attributes[att]['probs'](obj.attributes[att]['probs'].argmax()))
+                text.text += "%s: %s %2.0f%%\n" % (att, obj.attributes[att].var_labels[obj.attributes[att].probs.argmax()], 100*obj.attributes[att].probs(obj.attributes[att].probs.argmax()))
 
             text.text += '\n'
             for state in obj.states:
-                text.text += "%s: %s %2.0f%%\n" % (state, obj.states[state]['labels'][obj.states[state]['probs'].argmax()], 100*obj.states[state]['probs'](obj.states[state]['probs'].argmax()))
+                text.text += "%s: %s %2.0f%%\n" % (state, obj.states[state].var_labels[obj.states[state].probs.argmax()], 100*obj.states[state].probs(obj.states[state].probs.argmax()))
 
             # for word in obj.comms.keys():
             #     text.text += "%s (%.2f) " % (word, obj.comms[word]*100)

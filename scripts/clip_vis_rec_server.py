@@ -74,7 +74,7 @@ class CLIPVisRecServer(Node):
 
         with torch.no_grad():
 
-            self.get_logger().info('Incoming request to recognize %s-%s\nstates: %s\natts: %s\nimage checksum: %s\n' % (req.class_string, req.object_id, req.estimate_states, req.estimate_attributes, sum(req.image.data)))
+            self.get_logger().debug('Incoming request to recognize %s-%s\nstates: %s\natts: %s\nimage checksum: %s\n' % (req.class_string, req.object_id, req.estimate_states, req.estimate_attributes, sum(req.image.data)))
 
             cv_image = self.bridge.imgmsg_to_cv2(req.image)
             clip_image = self.preprocess(PILImage.fromarray(cv_image)).unsqueeze(0).to(self.device)
