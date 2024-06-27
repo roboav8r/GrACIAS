@@ -217,17 +217,16 @@ class SemanticTrackerNode(Node):
                 self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
                 self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
 
-    def send_obj_clip_req(self, id, est_atts, est_states):
+    def send_obj_clip_req(self, id, atts_to_est, states_to_est):
         self.clip_req = ObjectVisRec.Request()
         self.clip_req.object_id = id
         self.clip_req.class_string = self.semantic_objects[id].class_string
-        self.clip_req.estimate_attributes = est_atts
-        self.clip_req.estimate_states = est_states
+        self.clip_req.attributes_to_estimate = atts_to_est
+        self.clip_req.states_to_estimate = states_to_est
         self.clip_req.image = self.semantic_objects[id].image
         self.clip_req.stamp = self.semantic_objects[id].stamp
         resp = self.clip_client.call(self.clip_req)
 
-        # TODO - make this an update and pass the resp in
         for att_dist in resp.attributes:
             att = att_dist.variable
             self.semantic_objects[id].attributes[att].update(att_dist.probabilities, Time.from_msg(resp.stamp))
@@ -257,20 +256,20 @@ class SemanticTrackerNode(Node):
             if obj.new_image_available==False:
                 continue
 
-            update_obj_states = False
-            update_obj_atts = False
+            states_to_est = []
+            atts_to_est = []
 
             # TODO - modify for a per-variable basis
             for att in obj.attributes:
                 if obj.attributes[att].needs_update(start_time):
-                    update_obj_atts = True
+                    atts_to_est.append(att)
                 
             for state in obj.states:
                 if obj.states[state].needs_update(start_time):
-                    update_obj_states = True
+                    states_to_est.append(state)
 
-            if update_obj_atts or update_obj_states:
-                self.send_obj_clip_req(id, update_obj_atts, update_obj_states)
+            if atts_to_est or tates_to_est:
+                self.send_obj_clip_req(id, atts_to_est, states_to_est)
 
         self.visualize()
 

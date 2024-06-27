@@ -71,44 +71,31 @@ class CLIPVisRecServer(Node):
 
     def clip_rec_callback(self, req, resp):
 
-
         with torch.no_grad():
 
-            self.get_logger().debug('Incoming request to recognize %s-%s\nstates: %s\natts: %s\nimage checksum: %s\n' % (req.class_string, req.object_id, req.estimate_states, req.estimate_attributes, sum(req.image.data)))
+            self.get_logger().debug('Incoming request to recognize %s-%s\nstates: %s\natts: %s\n' % (req.class_string, req.object_id, req.states_to_estimate, req.attributes_to_estimate))
 
             cv_image = self.bridge.imgmsg_to_cv2(req.image)
             clip_image = self.preprocess(PILImage.fromarray(cv_image)).unsqueeze(0).to(self.device)
             image_features = self.model.encode_image(clip_image)
 
             # Iterate through attributes and compute probabilities
-            if req.estimate_attributes:
-                for att in self.object_params[req.class_string]['attributes']:
-                    att_dist = CategoricalDistribution()
-                    att_dist.variable = att
-                    att_dist.categories = self.object_params[req.class_string]['attributes'][att]['labels']
-
-                    # self.object_params[req.class_string]['attributes'][att]['text_features'] = self.model.encode_text(self.object_params[req.class_string]['attributes'][att]['text_tokens'])
-
-                    logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['attributes'][att]['text_tokens'])
-                    att_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
-
-                    resp.attributes.append(att_dist)
+            for att in req.attributes_to_estimate:
+                att_dist = CategoricalDistribution()
+                att_dist.variable = att
+                att_dist.categories = self.object_params[req.class_string]['attributes'][att]['labels']
+                logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['attributes'][att]['text_tokens'])
+                att_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
+                resp.attributes.append(att_dist)
 
             # Iterate through states and compute probabilities
-            if req.estimate_states:
-                for state in self.object_params[req.class_string]['states']:
-                    state_dist = CategoricalDistribution()
-                    state_dist.variable = state
-                    state_dist.categories = self.object_params[req.class_string]['states'][state]['labels']
-
-                    # self.object_params[req.class_string]['states'][state]['text_features'] = self.model.encode_text(self.object_params[req.class_string]['states'][state]['text_tokens'])
-
-                    logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['states'][state]['text_tokens'])
-                    state_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
-
-                    resp.states.append(state_dist)
-
-            # self.get_logger().info("Response: %s" % resp)
+            for state in req.states_to_estimate:
+                state_dist = CategoricalDistribution()
+                state_dist.variable = state
+                state_dist.categories = self.object_params[req.class_string]['states'][state]['labels']
+                logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['states'][state]['text_tokens'])
+                state_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
+                resp.states.append(state_dist)
             
             resp.stamp = req.stamp
 
