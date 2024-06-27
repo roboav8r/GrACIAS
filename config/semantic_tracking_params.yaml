@@ -6,13 +6,15 @@
     clip_model: 'ViT-B/32'
     object_classes: ['person']
 
+    upper_prob_limit: .99
+    lower_prob_limit: .01
 
     person:
       det_thresh: .15
       del_thresh: .25
       score_decay: .05
 
-      state_timeout: 0.5
+      # state_timeout: 0.5
 
       attributes:
         variables: ['age','gender']

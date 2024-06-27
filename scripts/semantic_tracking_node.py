@@ -48,7 +48,7 @@ class SemanticObject():
         symbol_idx = 0
         self.attributes = {}
         for att in params['attributes']:
-            self.attributes[att] = DiscreteVariable(att, 'attribute', 'confidence', .95, 
+            self.attributes[att] = DiscreteVariable(att, 'attribute', params['attributes'][att]['update_method'], params['attributes'][att]['update_threshold'], 
                                                         Time.from_msg(self.stamp), params['attributes'][att]['labels'], alc[symbol_idx], 
                                                         self.track_id, 100, params['attributes'][att]['probs'], 
                                                         pmf_to_spec(params['attributes'][att]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
@@ -57,13 +57,13 @@ class SemanticObject():
         self.states = {}
         for state in params['states']:
 
-            self.states[state] = DiscreteVariable(state, 'state', 'time', params['state_timeout'], 
+            self.states[state] = DiscreteVariable(state, 'state', params['states'][state]['update_method'], params['states'][state]['update_threshold'], 
                                             Time.from_msg(self.stamp), params['states'][state]['labels'], alc[symbol_idx], 
                                             self.track_id, 100, params['states'][state]['probs'], 
                                             pmf_to_spec(params['states'][state]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
             symbol_idx+=1   
 
-        self.state_timeout = params['state_timeout']
+        # self.state_timeout = params['state_timeout']
 
 
     # def update(self, ar_msg, type):
@@ -165,9 +165,11 @@ class SemanticTrackerNode(Node):
         # Generate object att/state variable dictionary
         self.object_params = {}
         self.declare_parameter('objects_of_interest', rclpy.Parameter.Type.STRING_ARRAY)
+        self.declare_parameter('upper_prob_limit', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('lower_prob_limit', rclpy.Parameter.Type.DOUBLE)
         self.objects_of_interest = self.get_parameter('objects_of_interest').get_parameter_value().string_array_value
-        self.upper_prob_limit = .97
-        self.lower_prob_limit = .01
+        self.upper_prob_limit = self.get_parameter('upper_prob_limit').get_parameter_value().double_value
+        self.lower_prob_limit = self.get_parameter('lower_prob_limit').get_parameter_value().double_value
 
         for obj in self.objects_of_interest:
 
@@ -176,8 +178,8 @@ class SemanticTrackerNode(Node):
             self.object_params[obj]['upper_prob_limit'] = self.upper_prob_limit
             self.object_params[obj]['lower_prob_limit'] = self.lower_prob_limit
 
-            self.declare_parameter(obj + '.state_timeout', rclpy.Parameter.Type.DOUBLE)
-            self.object_params[obj]['state_timeout'] = self.get_parameter(obj + '.state_timeout').get_parameter_value().double_value
+            # self.declare_parameter(obj + '.state_timeout', rclpy.Parameter.Type.DOUBLE)
+            # self.object_params[obj]['state_timeout'] = self.get_parameter(obj + '.state_timeout').get_parameter_value().double_value
 
             self.object_params[obj]['attributes'] = {}
             self.declare_parameter(obj + '.attributes.variables', rclpy.Parameter.Type.STRING_ARRAY)
