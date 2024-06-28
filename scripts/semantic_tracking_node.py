@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 # import time
-from string import ascii_lowercase as alc
-
 import numpy as np
 
 import rclpy
@@ -20,50 +18,8 @@ from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, Categorical
 from situated_hri_interfaces.srv import ObjectVisRec
 
 from situated_interaction.utils import pmf_to_spec, normalize_vector
-from situated_interaction.datatypes import DiscreteVariable
+from situated_interaction.datatypes import DiscreteVariable, SemanticObject
 
-class SemanticObject():
-    def __init__(self, msg, params):
-
-        self.track_id = msg.track_id
-        self.class_string = msg.class_string
-        self.stamp = msg.time_updated
-        self.identity = "Unknown"
-        self.auth = False
-        self.comms = {}
-        self.pos_x = msg.pose.pose.position.x
-        self.pos_y = msg.pose.pose.position.y
-        self.pos_z = msg.pose.pose.position.z
-        
-        if msg.image_available == True:
-            self.new_image_available = True
-            self.image = msg.image
-        else:
-            self.new_image_available = False
-            self.image = None
-        
-        self.vis_rec_complete = False
-
-        # Initialize attributes, states, and obs models
-        symbol_idx = 0
-        self.attributes = {}
-        for att in params['attributes']:
-            self.attributes[att] = DiscreteVariable(att, 'attribute', params['attributes'][att]['update_method'], params['attributes'][att]['update_threshold'], 
-                                                        Time.from_msg(self.stamp), params['attributes'][att]['labels'], alc[symbol_idx], 
-                                                        self.track_id, 100, params['attributes'][att]['probs'], 
-                                                        pmf_to_spec(params['attributes'][att]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
-            symbol_idx+=1
-
-        self.states = {}
-        for state in params['states']:
-
-            self.states[state] = DiscreteVariable(state, 'state', params['states'][state]['update_method'], params['states'][state]['update_threshold'], 
-                                            Time.from_msg(self.stamp), params['states'][state]['labels'], alc[symbol_idx], 
-                                            self.track_id, 100, params['states'][state]['probs'], 
-                                            pmf_to_spec(params['states'][state]['sensor_model_array']), params['upper_prob_limit'], params['lower_prob_limit'])
-            symbol_idx+=1   
-
-        # self.state_timeout = params['state_timeout']
 
 
     # def update(self, ar_msg, type):
@@ -270,7 +226,7 @@ class SemanticTrackerNode(Node):
                 if obj.states[state].needs_update(start_time):
                     states_to_est.append(state)
 
-            if atts_to_est or tates_to_est:
+            if atts_to_est or states_to_est:
                 self.send_obj_clip_req(id, atts_to_est, states_to_est)
 
         self.visualize()
