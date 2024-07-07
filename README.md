@@ -15,16 +15,14 @@ conda remove --force ffmpeg
 
 
 ## Debugging
-- check update time/image
 
 ## Improves/New features
-- Add multiple factors to attributes instead of continuous recursive bayesian update
-- allow attributes or states to be updated by confidence OR by timeout
+- datatypes.SemanticObject: add continuous variables. Add id, auth, comms.
+- For object/track message - instead of .image_available and .image, make generic feature vector dict with names, type
 - Check weight division calcs
 - Determine data type for mm scene rec, or make a param
 - optimize torch -> np -> torch conversions in the scene recognition node
 - Add permanent attribute option for - e.g. "movable" "animal" etc
-- cap confidence at 99 to prevent numerical instability in mm_scene_rec and situated_interaction
 - rename/rebrand node: semantic tracking? situated interaction node? hierarchical control node?
 
 ## Refactoring
