@@ -35,8 +35,6 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/semantic_tracking_node.py
   scripts/clip_vis_rec_server.py
-  scripts/audio_bf_node.py
-  scripts/scene_voice_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
