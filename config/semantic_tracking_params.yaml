@@ -9,10 +9,12 @@
     upper_prob_limit: .99
     lower_prob_limit: .01
 
+    ang_match_threshold: .524 # ! 30 degrees
+
     person:
-      det_thresh: .15
-      del_thresh: .25
-      score_decay: .05
+      # det_thresh: .15
+      # del_thresh: .25
+      # score_decay: .05
 
       # state_timeout: 0.5
 
@@ -80,3 +82,18 @@
                                 .1, .1, .1, .1, .6]
           update_method: 'time'
           update_threshold: .75
+
+      comms:
+        labels: ['none','other','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        transcripts: ['','*','advance','attention','follow me','halt','move forward','move in reverse','rally']
+        probs: [10., 1., 1., 1., 1., 1., 1., 1., 1.]
+        # p(command_detected|command_issued)
+        sensor_model_coeffs: [.92, .01, .01, .01, .01, .01, .01, .01, .01,
+                              .01, .92, .01, .01, .01, .01, .01, .01, .01,
+                              .01, .01, .92, .01, .01, .01, .01, .01, .01,
+                              .01, .01, .01, .92, .01, .01, .01, .01, .01,
+                              .01, .01, .01, .01, .92, .01, .01, .01, .01,
+                              .01, .01, .01, .01, .01, .92, .01, .01, .01,
+                              .01, .01, .01, .01, .01, .01, .92, .01, .01,
+                              .01, .01, .01, .01, .01, .01, .01, .92, .01,
+                              .01, .01, .01, .01, .01, .01, .01, .01, .92]

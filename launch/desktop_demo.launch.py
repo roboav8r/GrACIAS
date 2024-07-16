@@ -65,7 +65,7 @@ def generate_launch_description():
     ld.add_action(map_oakd_tf_node)
     map_oakd_tf_node = Node(package = "tf2_ros", 
                     executable = "static_transform_publisher",
-                    arguments = ["-.1", "0", ".85", "0", "0", "0", "map", "kinect_frame"]
+                    arguments = ["0", "0.1", ".85", "0", "0", "0", "map", "kinect_frame"]
     )
     ld.add_action(map_oakd_tf_node)
 
