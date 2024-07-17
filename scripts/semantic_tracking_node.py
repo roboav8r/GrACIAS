@@ -202,7 +202,6 @@ class SemanticTrackerNode(Node):
 
             # Compute azimuth in az frame
             obj_az = np.arctan2(pos_mike.point.y,pos_mike.point.x) # in range [-pi,pi]
-            self.get_logger().info("Az = " % obj_az)
 
             similarity_vector[ii] = np.linalg.norm([az - obj_az])
 
@@ -234,7 +233,6 @@ class SemanticTrackerNode(Node):
             states_to_est = []
             atts_to_est = []
 
-            # TODO - modify for a per-variable basis
             for att in obj.attributes:
                 if obj.attributes[att].needs_update(start_time):
                     atts_to_est.append(att)
@@ -248,7 +246,7 @@ class SemanticTrackerNode(Node):
 
         self.visualize()
 
-        self.get_logger().debug("Timer callback time (s): %s" % ((self.get_clock().now() - start_time).nanoseconds/10**9))
+        self.get_logger().info("Timer callback time (s): %s" % ((self.get_clock().now() - start_time).nanoseconds/10**9))
 
     def tracks_callback(self, msg):
         self.tracks_msg = msg
@@ -367,8 +365,8 @@ class SemanticTrackerNode(Node):
             for state in obj.states:
                 text.text += "%s: %s %2.0f%%\n" % (state, obj.states[state].var_labels[obj.states[state].probs.argmax()], 100*obj.states[state].probs(obj.states[state].probs.argmax()))
 
-            # for word in obj.comms.keys():
-            #     text.text += "%s (%.2f) " % (word, obj.comms[word]*100)
+            text.text += '\n'
+            text.text += "command: %s %2.0f%%\n" % (obj.comm_labels[obj.comm_probs.argmax()], 100*obj.comm_probs(obj.comm_probs.argmax()))
             entity_msg.texts.append(text)
 
             self.scene_out_msg.entities.append(entity_msg)
