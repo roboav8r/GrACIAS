@@ -120,38 +120,40 @@ class SemanticTrackerNode(Node):
             att_vars = self.get_parameter(obj + '.attributes.variables').get_parameter_value().string_array_value
 
             for att_var in att_vars:
-                self.declare_parameter(obj + '.attributes.' + att_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.update_method', rclpy.Parameter.Type.STRING)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
+                if att_var != '':
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.update_method', rclpy.Parameter.Type.STRING)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
 
-                self.object_params[obj]['attributes'][att_var] = {}
-                self.object_params[obj]['attributes'][att_var]['labels'] = self.get_parameter(obj + '.attributes.' + att_var + '.labels').get_parameter_value().string_array_value
-                self.object_params[obj]['attributes'][att_var]['probs'] = self.get_parameter(obj + '.attributes.' + att_var + '.probs').get_parameter_value().double_array_value
-                self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
-                self.object_params[obj]['attributes'][att_var]['sensor_model_array'] = np.array(self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['attributes'][att_var]['labels']))
-                self.object_params[obj]['attributes'][att_var]['update_method'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_method').get_parameter_value().string_value
-                self.object_params[obj]['attributes'][att_var]['update_threshold'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_threshold').get_parameter_value().double_value
+                    self.object_params[obj]['attributes'][att_var] = {}
+                    self.object_params[obj]['attributes'][att_var]['labels'] = self.get_parameter(obj + '.attributes.' + att_var + '.labels').get_parameter_value().string_array_value
+                    self.object_params[obj]['attributes'][att_var]['probs'] = self.get_parameter(obj + '.attributes.' + att_var + '.probs').get_parameter_value().double_array_value
+                    self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
+                    self.object_params[obj]['attributes'][att_var]['sensor_model_array'] = np.array(self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['attributes'][att_var]['labels']))
+                    self.object_params[obj]['attributes'][att_var]['update_method'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_method').get_parameter_value().string_value
+                    self.object_params[obj]['attributes'][att_var]['update_threshold'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_threshold').get_parameter_value().double_value
 
             self.object_params[obj]['states'] = {}
             self.declare_parameter(obj + '.states.variables', rclpy.Parameter.Type.STRING_ARRAY)
             state_vars = self.get_parameter(obj + '.states.variables').get_parameter_value().string_array_value
 
             for state_var in state_vars:
-                self.declare_parameter(obj + '.states.' + state_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
-                self.declare_parameter(obj + '.states.' + state_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.states.' + state_var + '.update_method', rclpy.Parameter.Type.STRING)
-                self.declare_parameter(obj + '.states.' + state_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
+                if state_var != '':
+                    self.declare_parameter(obj + '.states.' + state_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
+                    self.declare_parameter(obj + '.states.' + state_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.states.' + state_var + '.update_method', rclpy.Parameter.Type.STRING)
+                    self.declare_parameter(obj + '.states.' + state_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
 
-                self.object_params[obj]['states'][state_var] = {}
-                self.object_params[obj]['states'][state_var]['labels'] = self.get_parameter(obj + '.states.' + state_var + '.labels').get_parameter_value().string_array_value
-                self.object_params[obj]['states'][state_var]['probs'] = self.get_parameter(obj + '.states.' + state_var + '.probs').get_parameter_value().double_array_value
-                self.object_params[obj]['states'][state_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
-                self.object_params[obj]['states'][state_var]['sensor_model_array'] = np.array(self.object_params[obj]['states'][state_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['states'][state_var]['labels']))
-                self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
-                self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
+                    self.object_params[obj]['states'][state_var] = {}
+                    self.object_params[obj]['states'][state_var]['labels'] = self.get_parameter(obj + '.states.' + state_var + '.labels').get_parameter_value().string_array_value
+                    self.object_params[obj]['states'][state_var]['probs'] = self.get_parameter(obj + '.states.' + state_var + '.probs').get_parameter_value().double_array_value
+                    self.object_params[obj]['states'][state_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
+                    self.object_params[obj]['states'][state_var]['sensor_model_array'] = np.array(self.object_params[obj]['states'][state_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['states'][state_var]['labels']))
+                    self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
+                    self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
 
             self.object_params[obj]['comms'] = {}
             self.declare_parameter(obj + '.comms.labels', rclpy.Parameter.Type.STRING_ARRAY)
@@ -227,6 +229,8 @@ class SemanticTrackerNode(Node):
 
             obj = self.semantic_objects[id]
 
+            self.get_logger().info("Checking object %s with atts %s, states: %s" % (id, str(obj.attributes),str(obj.states)))
+
             if obj.new_image_available==False:
                 continue
 
@@ -242,6 +246,8 @@ class SemanticTrackerNode(Node):
                     states_to_est.append(state)
 
             if atts_to_est or states_to_est:
+                self.get_logger().info("atts to est: %s" % atts_to_est)
+                self.get_logger().info("states to est: %s" % states_to_est)
                 self.send_obj_clip_req(id, atts_to_est, states_to_est)
 
         self.visualize()

@@ -44,14 +44,15 @@ class CLIPVisRecServer(Node):
             att_vars = self.get_parameter(obj + '.attributes.variables').get_parameter_value().string_array_value
 
             for att_var in att_vars:
-                self.declare_parameter(obj + '.attributes.' + att_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.descriptions', rclpy.Parameter.Type.STRING_ARRAY)
+                if att_var != '':
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.descriptions', rclpy.Parameter.Type.STRING_ARRAY)
 
-                self.object_params[obj]['attributes'][att_var] = {}
-                self.object_params[obj]['attributes'][att_var]['labels'] = self.get_parameter(obj + '.attributes.' + att_var + '.labels').get_parameter_value().string_array_value
-                self.object_params[obj]['attributes'][att_var]['descriptions'] = self.get_parameter(obj + '.attributes.' + att_var + '.descriptions').get_parameter_value().string_array_value
-                self.object_params[obj]['attributes'][att_var]['text_tokens'] = clip.tokenize(self.object_params[obj]['attributes'][att_var]['descriptions']).to(self.device)
-                self.object_params[obj]['attributes'][att_var]['text_features'] = self.model.encode_text(self.object_params[obj]['attributes'][att_var]['text_tokens'])
+                    self.object_params[obj]['attributes'][att_var] = {}
+                    self.object_params[obj]['attributes'][att_var]['labels'] = self.get_parameter(obj + '.attributes.' + att_var + '.labels').get_parameter_value().string_array_value
+                    self.object_params[obj]['attributes'][att_var]['descriptions'] = self.get_parameter(obj + '.attributes.' + att_var + '.descriptions').get_parameter_value().string_array_value
+                    self.object_params[obj]['attributes'][att_var]['text_tokens'] = clip.tokenize(self.object_params[obj]['attributes'][att_var]['descriptions']).to(self.device)
+                    self.object_params[obj]['attributes'][att_var]['text_features'] = self.model.encode_text(self.object_params[obj]['attributes'][att_var]['text_tokens'])
 
             self.object_params[obj]['states'] = {}
             self.declare_parameter(obj + '.states.variables', rclpy.Parameter.Type.STRING_ARRAY)
@@ -73,7 +74,7 @@ class CLIPVisRecServer(Node):
 
         with torch.no_grad():
 
-            self.get_logger().debug('Incoming request to recognize %s-%s\nstates: %s\natts: %s\n' % (req.class_string, req.object_id, req.states_to_estimate, req.attributes_to_estimate))
+            self.get_logger().info('Incoming request to recognize %s-%s\nstates: %s\natts: %s\n' % (req.class_string, req.object_id, req.states_to_estimate, req.attributes_to_estimate))
 
             cv_image = self.bridge.imgmsg_to_cv2(req.image)
             clip_image = self.preprocess(PILImage.fromarray(cv_image)).unsqueeze(0).to(self.device)

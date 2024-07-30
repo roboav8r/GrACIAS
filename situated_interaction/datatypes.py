@@ -93,8 +93,8 @@ class SemanticObject():
 
     def update_comms(self, transcript, confidence, parent_node):
         
-        parent_node.get_logger().info("Comms labels %s" % (self.comm_labels))
-        parent_node.get_logger().info("update comms with transcript %s confidence %s" % (transcript, confidence))
+        # parent_node.get_logger().info("Comms labels %s" % (self.comm_labels))
+        # parent_node.get_logger().info("update comms with transcript %s confidence %s" % (transcript, confidence))
         
         try:
             command_idx = self.comm_transcripts.index(transcript)
@@ -103,16 +103,16 @@ class SemanticObject():
                 command_idx = 0 # Handle null commands
             else:
                 command_idx = 1 # Handle "other" commands that are not in list
-        parent_node.get_logger().info("Command index %s" % (command_idx))
+        # parent_node.get_logger().info("Command index %s" % (command_idx))
 
         likelihood = self.comm_obs_model.likelihood(command_idx)
         # parent_node.get_logger().info("Likelihood %s" % (likelihood))
         self.comm_probs = gtsam.DiscreteDistribution(likelihood*self.comm_probs)
-        parent_node.get_logger().info("New comm probs %s" % (self.comm_probs))
+        # parent_node.get_logger().info("New comm probs %s" % (self.comm_probs))
 
         normalized_pmf = normalize_vector(self.comm_probs.pmf(), self.upper_prob_limit, self.lower_prob_limit)
         self.comm_probs = gtsam.DiscreteDistribution((self.comm_var_symbol,len(self.comm_labels)),normalized_pmf)
-        parent_node.get_logger().info("Normalized comm probs %s" % (self.comm_probs))
+        # parent_node.get_logger().info("Normalized comm probs %s" % (self.comm_probs))
 
         # TODO
         # TODO - handle null command/empty command
