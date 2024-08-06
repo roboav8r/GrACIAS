@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
 
-    loop_time_sec: 1.
+    loop_time_sec: 0.5
     objects_of_interest: ['person']
     clip_model: 'ViT-B/32'
     object_classes: ['person']
@@ -101,11 +101,28 @@
 
       comms:
         labels: ['none','other','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
-        
+        gesture_descriptions: ['a picture of a person',
+                       '',
+                       'a picture of a person with right arm extended forward',
+                       'a picture of a person waving their right arm above their head',
+                       'a picture of a person with holding their right arm in front of them, palm facing away from the camera',
+                       'a picture of a person with holding their right hand up, palm facing the camera',
+                       'a picture of a person with holding both arms in front of them, both palms facing away from the camera',
+                       'a picture of a person with holding both arms in front of them, both palms facing toward the camera',
+                       'a picture of a person with right arm extended above their head at an angle']
         transcripts: ['','*','advance','attention','follow me','halt','move forward','move in reverse','rally']
         probs: [10., 1., 1., 1., 1., 1., 1., 1., 1.]
         # p(command_detected|command_issued)
-        sensor_model_coeffs: [.84, .02, .02, .02, .02, .02, .02, .02, .02,
+        gesture_sensor_model_coeffs: [.84, .02, .02, .02, .02, .02, .02, .02, .02,
+                              .03, .9, .01, .01, .01, .01, .01, .01, .01,
+                              .03, .01, .9, .01, .01, .01, .01, .01, .01,
+                              .03, .1, .01, .81, .01, .01, .01, .01, .01,
+                              .03, .01, .01, .01, .9, .01, .01, .01, .01,
+                              .03, .01, .01, .01, .01, .9, .01, .01, .01,
+                              .03, .01, .01, .01, .01, .01, .9, .01, .01,
+                              .03, .01, .01, .01, .01, .01, .01, .9, .01,
+                              .03, .01, .01, .01, .01, .01, .01, .01, .9]        
+        verbal_sensor_model_coeffs: [.84, .02, .02, .02, .02, .02, .02, .02, .02,
                               .03, .9, .01, .01, .01, .01, .01, .01, .01,
                               .03, .01, .9, .01, .01, .01, .01, .01, .01,
                               .03, .1, .01, .81, .01, .01, .01, .01, .01,
