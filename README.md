@@ -13,6 +13,7 @@ conda remove --force ffmpeg
 # Usage
 
 ## Analysis / Experiment 1
+Run the ROS nodes
 ```
 mamba activate sit_int
 source /opt/ros/humble/setup.bash
@@ -21,7 +22,15 @@ colcon build --packages-select ar_track_alvar_msgs audio_common_msgs situated_hr
 source install/setup.bash
 colcon build --packages-select marmot mm_scene_rec ros_audition situated_interaction
 source install/setup.bash
-ros2 launch situated_interaction analysis.launch.py
+ros2 launch situated_interaction analysis_1-1.launch.py
+```
+Run the analysis script
+```
+cd ~/sit_int_ws
+mamba activate sit_int
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+jupyter-notebook
 ```
 
 # Future Work
