@@ -148,6 +148,13 @@ def generate_launch_description():
     )
     ld.add_action(fused_bayes_rec_node)
 
+    results_rec_node = Node(package = "situated_interaction", 
+                    executable = "record_scene_results_node.py",
+                    name = "record_scene_results_node",
+                    output = 'screen'
+    )
+    ld.add_action(results_rec_node)
+
     # # Tracker node
     # trk_node = Node(
     #     package='marmot',
