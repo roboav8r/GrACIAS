@@ -20,11 +20,12 @@ def generate_launch_description():
         'config',
         'oakd_params_exp1.yaml'
     )
-    # tracker_params = os.path.join(
-    #     get_package_share_directory('marmot'),
-    #     'config',
-    #     'oakd_img_tracker.yaml'
-    # )
+    oakd_tracker_params = os.path.join(
+        get_package_share_directory('situated_interaction'),
+        'config',
+        'oakd_img_tracker_exp1.yaml'
+    )
+
     # ar_params = os.path.join(
     #     get_package_share_directory('situated_interaction'),
     #     'config',
@@ -88,7 +89,6 @@ def generate_launch_description():
         executable='depthai_img_preproc',
         name='depthai_img_preproc_node',
         remappings=[('/converted_detections','/converted_img_detections'),('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
-        output='screen',
         parameters=[oakd_params])    
     ld.add_action(oakd_preproc_node)
 
@@ -149,16 +149,16 @@ def generate_launch_description():
     )
     ld.add_action(results_rec_node)
 
-    # # Tracker node
-    # trk_node = Node(
-    #     package='marmot',
-    #     executable='tbd_node.py',
-    #     name='tbd_tracker_node',
-    #     output='screen',
-    #     remappings=[('/detections','/converted_img_detections')],
-    #     parameters=[tracker_params]
-    # )
-    # ld.add_action(trk_node)
+    # Tracker node
+    oakd_trk_node = Node(
+        package='marmot',
+        executable='tbd_node.py',
+        name='oakd_tracker_node',
+        output='screen',
+        remappings=[('/detections','/converted_img_detections')],
+        parameters=[oakd_tracker_params]
+    )
+    ld.add_action(oakd_trk_node)
 
     # Object recognition
     # clip_obj_rec_server = Node(package = "situated_interaction", 
