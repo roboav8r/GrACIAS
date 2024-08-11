@@ -15,11 +15,11 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     # # Config files
-    # oakd_params = os.path.join(
-    #     get_package_share_directory('situated_interaction'),
-    #     'config',
-    #     'oakd_params.yaml'
-    # )
+    oakd_params = os.path.join(
+        get_package_share_directory('situated_interaction'),
+        'config',
+        'oakd_params_exp1.yaml'
+    )
     # tracker_params = os.path.join(
     #     get_package_share_directory('marmot'),
     #     'config',
@@ -76,27 +76,21 @@ def generate_launch_description():
     # )
 
     # Static TF nodes
-    # map_oakd_tf_node = Node(package = "tf2_ros", 
-    #                 executable = "static_transform_publisher",
-    #                 arguments = ["0", "0", "1.0", "0", "0", "0", "map", "oak-d-base-frame"]
-    # )
-    # ld.add_action(map_oakd_tf_node)
-    # map_oakd_tf_node = Node(package = "tf2_ros", 
-    #                 executable = "static_transform_publisher",
-    #                 arguments = ["0", "0.1", ".85", "0", "0", "0", "map", "kinect_frame"]
-    # )
-    # ld.add_action(map_oakd_tf_node)
-
+    tf_node = Node(package = "tf2_ros", 
+                    executable = "static_transform_publisher",
+                    arguments = [".15", "0", ".55", "0", "-0.261799", "0", "philbart/base_link", "oak-d-base-frame"]
+    )
+    ld.add_action(tf_node)
 
     # Detector preprocessing nodes
-    # preproc_node = Node(
-    #     package='marmot',
-    #     executable='depthai_img_preproc',
-    #     name='depthai_img_preproc_node',
-    #     remappings=[('/converted_detections','/converted_img_detections'),('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
-    #     output='screen',
-    #     parameters=[oakd_params])    
-    # ld.add_action(preproc_node)
+    oakd_preproc_node = Node(
+        package='marmot',
+        executable='depthai_img_preproc',
+        name='depthai_img_preproc_node',
+        remappings=[('/converted_detections','/converted_img_detections'),('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
+        output='screen',
+        parameters=[oakd_params])    
+    ld.add_action(oakd_preproc_node)
 
     # ar_node = Node(
     #     package='situated_interaction',
