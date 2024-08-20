@@ -1480,475 +1480,475 @@
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'bicycle'
-                ignore: False
+                ignore: True
             car:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'car'
-                ignore: False
+                ignore: True
             motorbike:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'motorbike'
-                ignore: False
+                ignore: True
             aeroplane:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'aeroplane'
-                ignore: False
+                ignore: True
             bus:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'bus'
-                ignore: False
+                ignore: True
             train:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'train'
-                ignore: False
+                ignore: True
             truck:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'truck'
-                ignore: False
+                ignore: True
             boat:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'boat'
-                ignore: False
+                ignore: True
             traffic light:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'traffic light'
-                ignore: False
+                ignore: True
             fire hydrant:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'fire hydrant'
-                ignore: False
+                ignore: True
             stop sign:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'stop sign'
-                ignore: False
+                ignore: True
             parking meter:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'parking meter'
-                ignore: False
+                ignore: True
             bench:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'bench'
-                ignore: False
+                ignore: True
             bird:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'bird'
-                ignore: False
+                ignore: True
             cat:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'cat'
-                ignore: False
+                ignore: True
             dog:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'dog'
-                ignore: False
+                ignore: True
             horse:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'horse'
-                ignore: False
+                ignore: True
             sheep:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'sheep'
-                ignore: False
+                ignore: True
             cow:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'cow'
-                ignore: False
+                ignore: True
             elephant:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'elephant'
-                ignore: False
+                ignore: True
             bear:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'bear'
-                ignore: False
+                ignore: True
             zebra:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'zebra'
-                ignore: False
+                ignore: True
             giraffe:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'giraffe'
-                ignore: False
+                ignore: True
             backpack:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'backpack'
-                ignore: False
+                ignore: True
             umbrella:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'umbrella'
-                ignore: False
+                ignore: True
             handbag:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'handbag'
-                ignore: False
+                ignore: True
             tie:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'tie'
-                ignore: False
+                ignore: True
             suitcase:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'suitcase'
-                ignore: False
+                ignore: True
             frisbee:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'frisbee'
-                ignore: False
+                ignore: True
             skis:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'skis'
-                ignore: False
+                ignore: True
             snowboard:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'snowboard'
-                ignore: False
+                ignore: True
             sports ball:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'sports ball'
-                ignore: False
+                ignore: True
             kite:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'kite'
-                ignore: False
+                ignore: True
             baseball bat:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'baseball bat'
-                ignore: False
+                ignore: True
             baseball glove:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'baseball glove'
-                ignore: False
+                ignore: True
             skateboard:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'skateboard'
-                ignore: False
+                ignore: True
             surfboard:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'surfboard'
-                ignore: False
+                ignore: True
             tennis racket:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'tennis racket'
-                ignore: False
+                ignore: True
             bottle:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'bottle'
-                ignore: False
+                ignore: True
             wine glass:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'wine glass'
-                ignore: False
+                ignore: True
             cup:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'cup'
-                ignore: False
+                ignore: True
             fork:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'fork'
-                ignore: False
+                ignore: True
             knife:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'knife'
-                ignore: False
+                ignore: True
             spoon:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'spoon'
-                ignore: False
+                ignore: True
             bowl:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'bowl'
-                ignore: False
+                ignore: True
             banana:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'banana'
-                ignore: False
+                ignore: True
             apple:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'apple'
-                ignore: False
+                ignore: True
             sandwich:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'sandwich'
-                ignore: False
+                ignore: True
             orange:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'orange'
-                ignore: False
+                ignore: True
             broccoli:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'broccoli'
-                ignore: False
+                ignore: True
             carrot:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'carrot'
-                ignore: False
+                ignore: True
             hot dog:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'hot dog'
-                ignore: False
+                ignore: True
             pizza:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'pizza'
-                ignore: False
+                ignore: True
             donut:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'donut'
-                ignore: False
+                ignore: True
             cake:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'cake'
-                ignore: False
+                ignore: True
             chair:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'chair'
-                ignore: False
+                ignore: True
             sofa:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'sofa'
-                ignore: False
+                ignore: True
             pottedplant:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'pottedplant'
-                ignore: False
+                ignore: True
             bed:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'bed'
-                ignore: False
+                ignore: True
             diningtable:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'diningtable'
-                ignore: False
+                ignore: True
             toilet:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'toilet'
-                ignore: False
+                ignore: True
             tvmonitor:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'tvmonitor'
-                ignore: False
+                ignore: True
             laptop:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'laptop'
-                ignore: False
+                ignore: True
             mouse:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'mouse'
-                ignore: False
+                ignore: True
             remote:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'remote'
-                ignore: False
+                ignore: True
             keyboard:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'keyboard'
-                ignore: False
+                ignore: True
             cell phone:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'cell phone'
-                ignore: False
+                ignore: True
             microwave:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'microwave'
-                ignore: False
+                ignore: True
             oven:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'oven'
-                ignore: False
+                ignore: True
             toaster:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'toaster'
-                ignore: False
+                ignore: True
             sink:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'sink'
-                ignore: False
+                ignore: True
             refrigerator:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'refrigerator'
-                ignore: False
+                ignore: True
             book:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'book'
-                ignore: False
+                ignore: True
             clock:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'clock'
-                ignore: False
+                ignore: True
             vase:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'vase'
-                ignore: False
+                ignore: True
             scissors:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'scissors'
-                ignore: False
+                ignore: True
             teddy bear:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'teddy bear'
-                ignore: False
+                ignore: True
             hair drier:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'hair drier'
-                ignore: False
+                ignore: True
             toothbrush:
                 pos_obs_var: [1., 1., 1.]
                 yaw_obs_var: [1.]
                 size_obs_var: [1., 1., 1.]
                 object_class: 'toothbrush'
-                ignore: False
+                ignore: True
 
 
         # # Spatial detector model - TODO generate this from process models, detector model name

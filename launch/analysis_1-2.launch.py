@@ -142,12 +142,19 @@ def generate_launch_description():
     )
     ld.add_action(fused_bayes_rec_node)
 
-    results_rec_node = Node(package = "situated_interaction", 
+    scene_rec_node = Node(package = "situated_interaction", 
                     executable = "record_scene_results_node.py",
                     name = "record_scene_results_node",
                     output = 'screen'
     )
-    ld.add_action(results_rec_node)
+    ld.add_action(scene_rec_node)
+
+    tracks_rec_node = Node(package = "situated_interaction", 
+                    executable = "record_tracker_results_node.py",
+                    name = "record_tracker_results_node",
+                    output = 'screen'
+    )
+    ld.add_action(tracks_rec_node)
 
     # Tracker node
     oakd_trk_node = Node(
