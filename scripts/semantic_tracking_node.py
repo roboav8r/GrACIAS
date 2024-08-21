@@ -2,76 +2,51 @@
 
 # import time
 import numpy as np
+import gtsam
 
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.node import Node
 from rclpy.time import Time, Duration
-
-import gtsam
+import tf2_ros
 
 from foxglove_msgs.msg import SceneUpdate, SceneEntity, TextPrimitive
-from tracking_msgs.msg import Tracks3D
+from geometry_msgs.msg import PointStamped
+from tf2_geometry_msgs import do_transform_point
 
+from tracking_msgs.msg import Tracks3D
+from ros_audition.msg import SpeechAzSources
 from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, CategoricalDistribution
 from situated_hri_interfaces.srv import ObjectVisRec
 
 from situated_interaction.utils import pmf_to_spec, normalize_vector
 from situated_interaction.datatypes import DiscreteVariable, SemanticObject
 
-
-
-    # def update(self, ar_msg, type):
-    #     if type=='authentication':
-    #         if ar_msg.authenticated:
-    #             self.auth = True
-
-    #     if type=='communication':
-    #         # Increase weight for existing comms in incoming comms
-    #         temp_comms = self.comms # dictionary of comm dictionaries
-    #         new_comms = ar_msg # list of [situated_hri_interfaces/Comm]
-    #         self.comms = {}
-
-    #         # Handle incoming comms
-    #         for new_comm in new_comms:
-
-    #             # Incoming message word matches an existing word
-    #             if new_comm.comm in temp_comms.keys():
-
-    #                 # Fuse the two and update confidence value to self.comms dict, use parallel addition
-    #                 self.comms[new_comm.comm] = 1 - (1 - new_comm.conf)*(1 - temp_comms[new_comm.comm])/((1 - new_comm.conf) + (1 - temp_comms[new_comm.comm]))
-
-    #                 # Remove word from temp_comms
-    #                 del temp_comms[new_comm.comm]
-
-    #             elif new_comm.conf > self.det_thresh: # Create new word
-    #                 self.comms[new_comm.comm] = new_comm.conf
-
-    #         # Now, find unmatched words in last comm step and reduce confidence
-    #         for word in temp_comms.keys():
-
-    #             new_score = temp_comms[word] - self.score_decay
-    #             if new_score > self.del_thresh: # Only publish if above delete threshold
-    #                 self.comms[word] = new_score
-
-    #     if type=='identity':
-    #         self.identity = ar_msg.identity
-
-
 class SemanticTrackerNode(Node):
+
     def __init__(self):
         super().__init__('semantic_tracker_node')
 
-        sub_timer_cb_group = MutuallyExclusiveCallbackGroup()
+        sub_cb_group = MutuallyExclusiveCallbackGroup()
+        timer_cb_group = MutuallyExclusiveCallbackGroup()
+        client_cb_group = MutuallyExclusiveCallbackGroup()
         
         # Subscribe to object tracks
         self.subscription_tracks = self.create_subscription(
             Tracks3D,
             'tracks',
-            self.listener_callback_tracks,
-            10, callback_group=sub_timer_cb_group)
+            self.tracks_callback,
+            10, callback_group=sub_cb_group)
         self.subscription_tracks  # prevent unused variable warning
+
+        # Subscribe to localized speech
+        self.subscription_speech = self.create_subscription(
+            SpeechAzSources,
+            'speech_az_sources',
+            self.speech_callback,
+            10, callback_group=sub_cb_group)
+        self.subscription_speech  # prevent unused variable warning
 
         # Define pubs
         self.semantic_scene_pub = self.create_publisher(
@@ -82,15 +57,19 @@ class SemanticTrackerNode(Node):
         # Create timer
         self.declare_parameter('loop_time_sec', rclpy.Parameter.Type.DOUBLE)
         self.loop_time_sec = self.get_parameter('loop_time_sec').get_parameter_value().double_value
-        self.timer = self.create_timer(self.loop_time_sec, self.timer_callback, callback_group=sub_timer_cb_group)
+        self.timer = self.create_timer(self.loop_time_sec, self.timer_callback, callback_group=timer_cb_group)
         self.service_timeout = .25
 
         # Create service client
-        client_cb_group = ReentrantCallbackGroup()
         self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec',callback_group=client_cb_group)
         while not self.clip_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.clip_req = ObjectVisRec.Request()
+
+        # Create transform buffer/listener
+        self.tf_buffer = tf2_ros.buffer.Buffer(Duration(seconds=0.5))
+        self.tf_listener = tf2_ros.transform_listener.TransformListener(self.tf_buffer, self)
+        self.tf_buffer.can_transform('kinect_frame','map',Duration(seconds=10)) # Block until mic -> tracker transform available TODO use parameters instead of this
 
         # self.subscription_auth = self.create_subscription(
         #     Auth,
@@ -123,9 +102,11 @@ class SemanticTrackerNode(Node):
         self.declare_parameter('objects_of_interest', rclpy.Parameter.Type.STRING_ARRAY)
         self.declare_parameter('upper_prob_limit', rclpy.Parameter.Type.DOUBLE)
         self.declare_parameter('lower_prob_limit', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('ang_match_threshold', rclpy.Parameter.Type.DOUBLE)
         self.objects_of_interest = self.get_parameter('objects_of_interest').get_parameter_value().string_array_value
         self.upper_prob_limit = self.get_parameter('upper_prob_limit').get_parameter_value().double_value
         self.lower_prob_limit = self.get_parameter('lower_prob_limit').get_parameter_value().double_value
+        self.ang_match_threshold = self.get_parameter('ang_match_threshold').get_parameter_value().double_value
 
         for obj in self.objects_of_interest:
 
@@ -134,53 +115,70 @@ class SemanticTrackerNode(Node):
             self.object_params[obj]['upper_prob_limit'] = self.upper_prob_limit
             self.object_params[obj]['lower_prob_limit'] = self.lower_prob_limit
 
-            # self.declare_parameter(obj + '.state_timeout', rclpy.Parameter.Type.DOUBLE)
-            # self.object_params[obj]['state_timeout'] = self.get_parameter(obj + '.state_timeout').get_parameter_value().double_value
-
             self.object_params[obj]['attributes'] = {}
             self.declare_parameter(obj + '.attributes.variables', rclpy.Parameter.Type.STRING_ARRAY)
             att_vars = self.get_parameter(obj + '.attributes.variables').get_parameter_value().string_array_value
 
             for att_var in att_vars:
-                self.declare_parameter(obj + '.attributes.' + att_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.update_method', rclpy.Parameter.Type.STRING)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
+                if att_var != '':
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.update_method', rclpy.Parameter.Type.STRING)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
 
-                self.object_params[obj]['attributes'][att_var] = {}
-                self.object_params[obj]['attributes'][att_var]['labels'] = self.get_parameter(obj + '.attributes.' + att_var + '.labels').get_parameter_value().string_array_value
-                self.object_params[obj]['attributes'][att_var]['probs'] = self.get_parameter(obj + '.attributes.' + att_var + '.probs').get_parameter_value().double_array_value
-                self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
-                self.object_params[obj]['attributes'][att_var]['sensor_model_array'] = np.array(self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['attributes'][att_var]['labels']))
-                self.object_params[obj]['attributes'][att_var]['update_method'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_method').get_parameter_value().string_value
-                self.object_params[obj]['attributes'][att_var]['update_threshold'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_threshold').get_parameter_value().double_value
+                    self.object_params[obj]['attributes'][att_var] = {}
+                    self.object_params[obj]['attributes'][att_var]['labels'] = self.get_parameter(obj + '.attributes.' + att_var + '.labels').get_parameter_value().string_array_value
+                    self.object_params[obj]['attributes'][att_var]['probs'] = self.get_parameter(obj + '.attributes.' + att_var + '.probs').get_parameter_value().double_array_value
+                    self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
+                    self.object_params[obj]['attributes'][att_var]['sensor_model_array'] = np.array(self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['attributes'][att_var]['labels']))
+                    self.object_params[obj]['attributes'][att_var]['update_method'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_method').get_parameter_value().string_value
+                    self.object_params[obj]['attributes'][att_var]['update_threshold'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_threshold').get_parameter_value().double_value
 
             self.object_params[obj]['states'] = {}
             self.declare_parameter(obj + '.states.variables', rclpy.Parameter.Type.STRING_ARRAY)
             state_vars = self.get_parameter(obj + '.states.variables').get_parameter_value().string_array_value
 
             for state_var in state_vars:
-                self.declare_parameter(obj + '.states.' + state_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
-                self.declare_parameter(obj + '.states.' + state_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.states.' + state_var + '.update_method', rclpy.Parameter.Type.STRING)
-                self.declare_parameter(obj + '.states.' + state_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
+                if state_var != '':
+                    self.declare_parameter(obj + '.states.' + state_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
+                    self.declare_parameter(obj + '.states.' + state_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.states.' + state_var + '.update_method', rclpy.Parameter.Type.STRING)
+                    self.declare_parameter(obj + '.states.' + state_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
 
-                self.object_params[obj]['states'][state_var] = {}
-                self.object_params[obj]['states'][state_var]['labels'] = self.get_parameter(obj + '.states.' + state_var + '.labels').get_parameter_value().string_array_value
-                self.object_params[obj]['states'][state_var]['probs'] = self.get_parameter(obj + '.states.' + state_var + '.probs').get_parameter_value().double_array_value
-                self.object_params[obj]['states'][state_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
-                self.object_params[obj]['states'][state_var]['sensor_model_array'] = np.array(self.object_params[obj]['states'][state_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['states'][state_var]['labels']))
-                self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
-                self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
+                    self.object_params[obj]['states'][state_var] = {}
+                    self.object_params[obj]['states'][state_var]['labels'] = self.get_parameter(obj + '.states.' + state_var + '.labels').get_parameter_value().string_array_value
+                    self.object_params[obj]['states'][state_var]['probs'] = self.get_parameter(obj + '.states.' + state_var + '.probs').get_parameter_value().double_array_value
+                    self.object_params[obj]['states'][state_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
+                    self.object_params[obj]['states'][state_var]['sensor_model_array'] = np.array(self.object_params[obj]['states'][state_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['states'][state_var]['labels']))
+                    self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
+                    self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
 
-    def send_obj_clip_req(self, id, atts_to_est, states_to_est):
+            self.object_params[obj]['comms'] = {}
+            self.declare_parameter(obj + '.comms.labels', rclpy.Parameter.Type.STRING_ARRAY)
+            self.declare_parameter(obj + '.comms.gesture_descriptions', rclpy.Parameter.Type.STRING_ARRAY)
+            self.declare_parameter(obj + '.comms.transcripts', rclpy.Parameter.Type.STRING_ARRAY)
+            self.declare_parameter(obj + '.comms.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+            self.declare_parameter(obj + '.comms.gesture_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+            self.declare_parameter(obj + '.comms.verbal_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+            self.object_params[obj]['comms']['labels'] = self.get_parameter(obj + '.comms.labels').get_parameter_value().string_array_value
+            self.object_params[obj]['comms']['gesture_descriptions'] = self.get_parameter(obj + '.comms.gesture_descriptions').get_parameter_value().string_array_value
+            self.object_params[obj]['comms']['transcripts'] = self.get_parameter(obj + '.comms.transcripts').get_parameter_value().string_array_value
+            self.object_params[obj]['comms']['probs'] = self.get_parameter(obj + '.comms.probs').get_parameter_value().double_array_value
+            self.object_params[obj]['comms']['gesture_sensor_model_coeffs'] = self.get_parameter(obj + '.comms.gesture_sensor_model_coeffs').get_parameter_value().double_array_value
+            self.object_params[obj]['comms']['gesture_sensor_model_array'] = np.array(self.object_params[obj]['comms']['gesture_sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['comms']['labels']))
+            self.object_params[obj]['comms']['verbal_sensor_model_coeffs'] = self.get_parameter(obj + '.comms.verbal_sensor_model_coeffs').get_parameter_value().double_array_value
+            self.object_params[obj]['comms']['verbal_sensor_model_array'] = np.array(self.object_params[obj]['comms']['verbal_sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['comms']['labels']))
+
+
+    def send_obj_clip_req(self, id, atts_to_est, states_to_est, est_comms):
         self.clip_req = ObjectVisRec.Request()
         self.clip_req.object_id = id
         self.clip_req.class_string = self.semantic_objects[id].class_string
         self.clip_req.attributes_to_estimate = atts_to_est
         self.clip_req.states_to_estimate = states_to_est
+        self.clip_req.estimate_comms = est_comms
         self.clip_req.image = self.semantic_objects[id].image
         self.clip_req.stamp = self.semantic_objects[id].stamp
         resp = self.clip_client.call(self.clip_req)
@@ -193,9 +191,44 @@ class SemanticTrackerNode(Node):
             state = state_dist.variable
             self.semantic_objects[id].states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
 
+        if est_comms:
+            self.semantic_objects[id].update_gesture_comms(resp.comms, self)
+
+        # self.get_logger().info('got gesture response labels %s' % gesture_comms.categories)
+        # self.get_logger().info('got gesture response probs %s' % gesture_comms.probabilities)
+
+        # self.semantic_objects[id].states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
+
         self.semantic_objects[id].image_available = False
 
-    def compute_match(self, pos):
+    def compute_az_match(self, az, az_frame):
+        similarity_vector = np.zeros(len(self.semantic_objects.keys()))
+
+        # Ensure az in range [-pi, pi] # TODO make this a helper function, or make sure output of az speech rec in -pi,pi
+        while np.abs(az) > np.pi:
+            az -= np.sign(az)*2*np.pi
+
+        for ii,key in enumerate(self.semantic_objects.keys()):
+            # Convert object position into az frame
+            map_mike_tf = self.tf_buffer.lookup_transform(az_frame,'map',Duration(seconds=.1))
+            pos_map = PointStamped()
+            pos_map.point.x = self.semantic_objects[key].pos_x
+            pos_map.point.y = self.semantic_objects[key].pos_y
+            pos_map.point.z = self.semantic_objects[key].pos_z
+            pos_mike = do_transform_point(pos_map,map_mike_tf)
+
+            # Compute azimuth in az frame
+            obj_az = np.arctan2(pos_mike.point.y,pos_mike.point.x) # in range [-pi,pi]
+
+            similarity_vector[ii] = np.linalg.norm([az - obj_az])
+
+        # Return match if below angular match threshold
+        if (similarity_vector.size > 0) and (similarity_vector[np.argmin(similarity_vector)] < self.ang_match_threshold):
+            return list(self.semantic_objects.keys())[np.argmin(similarity_vector)] if similarity_vector[np.argmin(similarity_vector)] < self.ang_match_threshold else None
+        else:
+            return None
+
+    def compute_pos_match(self, pos):
         similarity_vector = np.zeros(len(self.semantic_objects.keys()))
 
         for ii,key in enumerate(self.semantic_objects.keys()): 
@@ -211,13 +244,14 @@ class SemanticTrackerNode(Node):
 
             obj = self.semantic_objects[id]
 
+            self.get_logger().info("Checking object %s with atts %s, states: %s" % (id, str(obj.attributes),str(obj.states)))
+
             if obj.new_image_available==False:
                 continue
 
             states_to_est = []
             atts_to_est = []
 
-            # TODO - modify for a per-variable basis
             for att in obj.attributes:
                 if obj.attributes[att].needs_update(start_time):
                     atts_to_est.append(att)
@@ -226,14 +260,19 @@ class SemanticTrackerNode(Node):
                 if obj.states[state].needs_update(start_time):
                     states_to_est.append(state)
 
-            if atts_to_est or states_to_est:
-                self.send_obj_clip_req(id, atts_to_est, states_to_est)
+            if self.object_params[obj.class_string]['comms']['gesture_descriptions'] != ['']:
+                est_comms = True
+
+            if atts_to_est or states_to_est or est_comms:
+                self.get_logger().info("atts to est: %s" % atts_to_est)
+                self.get_logger().info("states to est: %s" % states_to_est)
+                self.send_obj_clip_req(id, atts_to_est, states_to_est, est_comms)
 
         self.visualize()
 
         self.get_logger().info("Timer callback time (s): %s" % ((self.get_clock().now() - start_time).nanoseconds/10**9))
 
-    def listener_callback_tracks(self, msg):
+    def tracks_callback(self, msg):
         self.tracks_msg = msg
 
         # Temporary list for this callback
@@ -250,7 +289,7 @@ class SemanticTrackerNode(Node):
 
             # Initialize object and add to dict if not currently tracked
             if trkd_obj.track_id not in self.semantic_objects.keys():
-                self.semantic_objects[trkd_obj.track_id] = SemanticObject(trkd_obj, self.object_params[trkd_obj.class_string])
+                self.semantic_objects[trkd_obj.track_id] = SemanticObject(trkd_obj, self.object_params[trkd_obj.class_string], self.tracks_msg.header.frame_id) # TODO - pass frame_id some other way
             else:
 
                 # TODO - make generic semantic_object.update function instead of pos updates
@@ -270,6 +309,20 @@ class SemanticTrackerNode(Node):
 
         self.visualize()
 
+
+    def speech_callback(self, msg):
+
+        if msg.sources:
+            for speech_src in msg.sources:
+
+                match_idx = self.compute_az_match(speech_src.azimuth, msg.header.frame_id)
+
+                if match_idx is not None:
+                    self.semantic_objects[match_idx].update_verbal_comms(speech_src.transcript, speech_src.confidence, self)
+
+        else: # If no speech, update all objects with null
+            for obj_id in self.semantic_objects.keys():
+                self.semantic_objects[obj_id].update_verbal_comms('', 1., self)
 
     # def listener_callback_auth(self, msg):
     #     # self.get_logger().info('Received auth message: "%s"' % msg)
@@ -336,8 +389,8 @@ class SemanticTrackerNode(Node):
             for state in obj.states:
                 text.text += "%s: %s %2.0f%%\n" % (state, obj.states[state].var_labels[obj.states[state].probs.argmax()], 100*obj.states[state].probs(obj.states[state].probs.argmax()))
 
-            # for word in obj.comms.keys():
-            #     text.text += "%s (%.2f) " % (word, obj.comms[word]*100)
+            text.text += '\n'
+            text.text += "command: %s %2.0f%%\n" % (obj.comm_labels[obj.comm_probs.argmax()], 100*obj.comm_probs(obj.comm_probs.argmax()))
             entity_msg.texts.append(text)
 
             self.scene_out_msg.entities.append(entity_msg)

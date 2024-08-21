@@ -35,10 +35,10 @@ def generate_launch_description():
         'config',
         'semantic_tracking_params.yaml'
     )
-    mic_params = os.path.join(
+    audio_params = os.path.join(
         get_package_share_directory('ros_audition'),
         'config',
-        'c270_config.yaml'
+        'kinect_config.yaml'
     )
     clip_params = os.path.join(
         get_package_share_directory('mm_scene_rec'),
@@ -57,12 +57,18 @@ def generate_launch_description():
         'bayes_estimator_params.yaml'
     )
 
-    # Static TF node
-    tf_node = Node(package = "tf2_ros", 
+    # Static TF nodes
+    map_oakd_tf_node = Node(package = "tf2_ros", 
                     executable = "static_transform_publisher",
                     arguments = ["0", "0", "1.0", "0", "0", "0", "map", "oak-d-base-frame"]
     )
-    ld.add_action(tf_node)
+    ld.add_action(map_oakd_tf_node)
+    map_oakd_tf_node = Node(package = "tf2_ros", 
+                    executable = "static_transform_publisher",
+                    arguments = ["0", "0.1", ".85", "0", "0", "0", "map", "kinect_frame"]
+    )
+    ld.add_action(map_oakd_tf_node)
+
 
     # Sensor nodes
     cam_node = IncludeLaunchDescription(
@@ -82,7 +88,7 @@ def generate_launch_description():
         executable='audio_acq_node.py',
         name='audio_acq_node',
         output='screen',
-        parameters=[mic_params]
+        parameters=[audio_params]
     )
     ld.add_action(audio_acq_node)
 
@@ -150,13 +156,25 @@ def generate_launch_description():
     )
     ld.add_action(clip_obj_rec_server)
 
-    # # situated_interaction track -> tracked person preprocessor node
-    # person_preproc_node = Node(
-    #     package='situated_interaction',
-    #     executable='track_preproc',
-    #     name='track_preproc_node',
-    #     output='screen')
-    # ld.add_action(person_preproc_node)
+    # 
+    # Sound source localization and beamformer nodes
+    pra_node = Node(
+        package='ros_audition',
+        executable='pra_node.py',
+        name='pra_node',
+        output='screen',
+        parameters=[audio_params]
+    )
+    ld.add_action(pra_node)
+
+    speech_node = Node(
+        package='ros_audition',
+        executable='doa_speech_rec_node.py',
+        name='directional_speech_rec_node',
+        output='screen',
+        parameters=[audio_params]
+    )
+    ld.add_action(speech_node)
 
     # interaction manager node
     semantic_tracking_node = Node(
