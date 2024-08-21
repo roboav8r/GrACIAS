@@ -120,56 +120,65 @@ class SemanticTrackerNode(Node):
             att_vars = self.get_parameter(obj + '.attributes.variables').get_parameter_value().string_array_value
 
             for att_var in att_vars:
-                self.declare_parameter(obj + '.attributes.' + att_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.update_method', rclpy.Parameter.Type.STRING)
-                self.declare_parameter(obj + '.attributes.' + att_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
+                if att_var != '':
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.update_method', rclpy.Parameter.Type.STRING)
+                    self.declare_parameter(obj + '.attributes.' + att_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
 
-                self.object_params[obj]['attributes'][att_var] = {}
-                self.object_params[obj]['attributes'][att_var]['labels'] = self.get_parameter(obj + '.attributes.' + att_var + '.labels').get_parameter_value().string_array_value
-                self.object_params[obj]['attributes'][att_var]['probs'] = self.get_parameter(obj + '.attributes.' + att_var + '.probs').get_parameter_value().double_array_value
-                self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
-                self.object_params[obj]['attributes'][att_var]['sensor_model_array'] = np.array(self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['attributes'][att_var]['labels']))
-                self.object_params[obj]['attributes'][att_var]['update_method'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_method').get_parameter_value().string_value
-                self.object_params[obj]['attributes'][att_var]['update_threshold'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_threshold').get_parameter_value().double_value
+                    self.object_params[obj]['attributes'][att_var] = {}
+                    self.object_params[obj]['attributes'][att_var]['labels'] = self.get_parameter(obj + '.attributes.' + att_var + '.labels').get_parameter_value().string_array_value
+                    self.object_params[obj]['attributes'][att_var]['probs'] = self.get_parameter(obj + '.attributes.' + att_var + '.probs').get_parameter_value().double_array_value
+                    self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.attributes.' + att_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
+                    self.object_params[obj]['attributes'][att_var]['sensor_model_array'] = np.array(self.object_params[obj]['attributes'][att_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['attributes'][att_var]['labels']))
+                    self.object_params[obj]['attributes'][att_var]['update_method'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_method').get_parameter_value().string_value
+                    self.object_params[obj]['attributes'][att_var]['update_threshold'] = self.get_parameter(obj + '.attributes.' + att_var + '.update_threshold').get_parameter_value().double_value
 
             self.object_params[obj]['states'] = {}
             self.declare_parameter(obj + '.states.variables', rclpy.Parameter.Type.STRING_ARRAY)
             state_vars = self.get_parameter(obj + '.states.variables').get_parameter_value().string_array_value
 
             for state_var in state_vars:
-                self.declare_parameter(obj + '.states.' + state_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
-                self.declare_parameter(obj + '.states.' + state_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-                self.declare_parameter(obj + '.states.' + state_var + '.update_method', rclpy.Parameter.Type.STRING)
-                self.declare_parameter(obj + '.states.' + state_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
+                if state_var != '':
+                    self.declare_parameter(obj + '.states.' + state_var + '.labels', rclpy.Parameter.Type.STRING_ARRAY)
+                    self.declare_parameter(obj + '.states.' + state_var + '.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+                    self.declare_parameter(obj + '.states.' + state_var + '.update_method', rclpy.Parameter.Type.STRING)
+                    self.declare_parameter(obj + '.states.' + state_var + '.update_threshold', rclpy.Parameter.Type.DOUBLE)
 
-                self.object_params[obj]['states'][state_var] = {}
-                self.object_params[obj]['states'][state_var]['labels'] = self.get_parameter(obj + '.states.' + state_var + '.labels').get_parameter_value().string_array_value
-                self.object_params[obj]['states'][state_var]['probs'] = self.get_parameter(obj + '.states.' + state_var + '.probs').get_parameter_value().double_array_value
-                self.object_params[obj]['states'][state_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
-                self.object_params[obj]['states'][state_var]['sensor_model_array'] = np.array(self.object_params[obj]['states'][state_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['states'][state_var]['labels']))
-                self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
-                self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
+                    self.object_params[obj]['states'][state_var] = {}
+                    self.object_params[obj]['states'][state_var]['labels'] = self.get_parameter(obj + '.states.' + state_var + '.labels').get_parameter_value().string_array_value
+                    self.object_params[obj]['states'][state_var]['probs'] = self.get_parameter(obj + '.states.' + state_var + '.probs').get_parameter_value().double_array_value
+                    self.object_params[obj]['states'][state_var]['sensor_model_coeffs'] = self.get_parameter(obj + '.states.' + state_var + '.sensor_model_coeffs').get_parameter_value().double_array_value
+                    self.object_params[obj]['states'][state_var]['sensor_model_array'] = np.array(self.object_params[obj]['states'][state_var]['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['states'][state_var]['labels']))
+                    self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
+                    self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
 
             self.object_params[obj]['comms'] = {}
             self.declare_parameter(obj + '.comms.labels', rclpy.Parameter.Type.STRING_ARRAY)
+            self.declare_parameter(obj + '.comms.gesture_descriptions', rclpy.Parameter.Type.STRING_ARRAY)
             self.declare_parameter(obj + '.comms.transcripts', rclpy.Parameter.Type.STRING_ARRAY)
             self.declare_parameter(obj + '.comms.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-            self.declare_parameter(obj + '.comms.sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+            self.declare_parameter(obj + '.comms.gesture_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
+            self.declare_parameter(obj + '.comms.verbal_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
             self.object_params[obj]['comms']['labels'] = self.get_parameter(obj + '.comms.labels').get_parameter_value().string_array_value
+            self.object_params[obj]['comms']['gesture_descriptions'] = self.get_parameter(obj + '.comms.gesture_descriptions').get_parameter_value().string_array_value
             self.object_params[obj]['comms']['transcripts'] = self.get_parameter(obj + '.comms.transcripts').get_parameter_value().string_array_value
             self.object_params[obj]['comms']['probs'] = self.get_parameter(obj + '.comms.probs').get_parameter_value().double_array_value
-            self.object_params[obj]['comms']['sensor_model_coeffs'] = self.get_parameter(obj + '.comms.sensor_model_coeffs').get_parameter_value().double_array_value
-            self.object_params[obj]['comms']['sensor_model_array'] = np.array(self.object_params[obj]['comms']['sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['comms']['labels']))
+            self.object_params[obj]['comms']['gesture_sensor_model_coeffs'] = self.get_parameter(obj + '.comms.gesture_sensor_model_coeffs').get_parameter_value().double_array_value
+            self.object_params[obj]['comms']['gesture_sensor_model_array'] = np.array(self.object_params[obj]['comms']['gesture_sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['comms']['labels']))
+            self.object_params[obj]['comms']['verbal_sensor_model_coeffs'] = self.get_parameter(obj + '.comms.verbal_sensor_model_coeffs').get_parameter_value().double_array_value
+            self.object_params[obj]['comms']['verbal_sensor_model_array'] = np.array(self.object_params[obj]['comms']['verbal_sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['comms']['labels']))
 
-    def send_obj_clip_req(self, id, atts_to_est, states_to_est):
+
+    def send_obj_clip_req(self, id, atts_to_est, states_to_est, est_comms):
         self.clip_req = ObjectVisRec.Request()
         self.clip_req.object_id = id
         self.clip_req.class_string = self.semantic_objects[id].class_string
         self.clip_req.attributes_to_estimate = atts_to_est
         self.clip_req.states_to_estimate = states_to_est
+        self.clip_req.estimate_comms = est_comms
         self.clip_req.image = self.semantic_objects[id].image
         self.clip_req.stamp = self.semantic_objects[id].stamp
         resp = self.clip_client.call(self.clip_req)
@@ -181,6 +190,14 @@ class SemanticTrackerNode(Node):
         for state_dist in resp.states:
             state = state_dist.variable
             self.semantic_objects[id].states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
+
+        if est_comms:
+            self.semantic_objects[id].update_gesture_comms(resp.comms, self)
+
+        # self.get_logger().info('got gesture response labels %s' % gesture_comms.categories)
+        # self.get_logger().info('got gesture response probs %s' % gesture_comms.probabilities)
+
+        # self.semantic_objects[id].states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
 
         self.semantic_objects[id].image_available = False
 
@@ -227,6 +244,8 @@ class SemanticTrackerNode(Node):
 
             obj = self.semantic_objects[id]
 
+            self.get_logger().info("Checking object %s with atts %s, states: %s" % (id, str(obj.attributes),str(obj.states)))
+
             if obj.new_image_available==False:
                 continue
 
@@ -241,8 +260,13 @@ class SemanticTrackerNode(Node):
                 if obj.states[state].needs_update(start_time):
                     states_to_est.append(state)
 
-            if atts_to_est or states_to_est:
-                self.send_obj_clip_req(id, atts_to_est, states_to_est)
+            if self.object_params[obj.class_string]['comms']['gesture_descriptions'] != ['']:
+                est_comms = True
+
+            if atts_to_est or states_to_est or est_comms:
+                self.get_logger().info("atts to est: %s" % atts_to_est)
+                self.get_logger().info("states to est: %s" % states_to_est)
+                self.send_obj_clip_req(id, atts_to_est, states_to_est, est_comms)
 
         self.visualize()
 
@@ -294,11 +318,11 @@ class SemanticTrackerNode(Node):
                 match_idx = self.compute_az_match(speech_src.azimuth, msg.header.frame_id)
 
                 if match_idx is not None:
-                    self.semantic_objects[match_idx].update_comms(speech_src.transcript, speech_src.confidence, self)
+                    self.semantic_objects[match_idx].update_verbal_comms(speech_src.transcript, speech_src.confidence, self)
 
         else: # If no speech, update all objects with null
             for obj_id in self.semantic_objects.keys():
-                self.semantic_objects[obj_id].update_comms('', 1., self)
+                self.semantic_objects[obj_id].update_verbal_comms('', 1., self)
 
     # def listener_callback_auth(self, msg):
     #     # self.get_logger().info('Received auth message: "%s"' % msg)
