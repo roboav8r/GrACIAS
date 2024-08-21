@@ -10,9 +10,30 @@ mamba env create -f sit_int_env.yml
 mamba activate sit_int
 conda remove --force ffmpeg
 
+# Usage
+
+## Analysis / Experiment 1
+Run the ROS nodes
+```
+mamba activate sit_int
+source /opt/ros/humble/setup.bash
+cd ~/sit_int_ws
+colcon build --packages-select ar_track_alvar_msgs audio_common_msgs situated_hri_interfaces tracking_msgs # build messages and interfaces
+source install/setup.bash
+colcon build --packages-select marmot mm_scene_rec ros_audition situated_interaction
+source install/setup.bash
+ros2 launch situated_interaction analysis_1-1.launch.py
+```
+Run the analysis script
+```
+cd ~/sit_int_ws
+mamba activate sit_int
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+jupyter-notebook
+```
 
 # Future Work
-
 
 ## Debugging
 
