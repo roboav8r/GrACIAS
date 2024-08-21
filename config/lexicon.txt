@@ -1,0 +1,79 @@
+advance	a d v a n c e |
+attention	a t t e n t i o n |
+backward	b a c k w a r d |
+backwards	b a c k w a r d s |
+bad	b a d |
+carry	c a r r y |
+clockwise	c l o c k w i s e |
+continue	c o n t i n u e |
+counter	c o u n t e r |
+degree	d e g r e e |
+degrees	d e g r e e s |
+eight	e i g h t |
+eighteen	e i g h t e e n |
+eighty	e i g h t y |
+eleven	e l e v e n |
+emergency	e m e r g e n c y |
+estop	e s t o p |
+feet	f e e t |
+fifteen	f i f t e e n |
+fifty	f i f t y |
+five	f i v e |
+follow	f o l l o w |
+foot	f o o t |
+forty	f o r t y |
+forward	f o r w a r d |
+four	f o u r |
+fourteen	f o u r t e e n |
+go	g o |
+good	g o o d |
+halt	h a l t |
+here	h e r e |
+hey	h e y |
+home	h o m e |
+hundred	h u n d r e d |
+job	j o b |
+left	l e f t |
+move	m o v e |
+me	m e |
+meter	m e t e r |
+meters	m e t e r s |
+neutral	n e u t r a l |
+nine	n i n e |
+nineteen	n i n e t e e n |
+ninety	n i n e t y |
+on	o n |
+one	o n e |
+oclock	o c l o c k |
+o'clock	o ' c l o c k |
+philbart    p h i l b a r t |
+point	p o i n t |
+rally	r a l l y |
+reverse	r e v e r s e |
+right	r i g h t |
+robo	r o b o |
+robot	r o b o t |
+robot's	r o b o t ' s |
+robotcab	r o b o t c a b |
+robotic	r o b o t i c |
+robotics	r o b o t i c s |
+robotron	r o b o t r o n |
+robots	r o b o t s |
+seven	s e v e n |
+seventeen	s e v e n t e e n |
+seventy	s e v e n t y |
+six	s i x |
+sixty	s i x t y |
+sixteen	s i x t e e n |
+stop	s t o p |
+ten	t e n |
+there	t h e r e |
+thirteen	t h i r t e e n |
+thirty	t h i r t y |
+three	t h r e e |
+turn	t u r n |
+twelve	t w e l v e |
+twenty	t w e n t y |
+two	t w o |
+work	w o r k |
+zero	z e r o |

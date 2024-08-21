@@ -1,0 +1,33 @@
+name: sit_int
+channels:
+  - local
+  - conda-forge
+  - pytorch3d
+  - pytorch
+  - nvidia
+dependencies:
+- python==3.10
+- ffmpeg=4.4.2-0ubuntu0.22.04.1
+- pyyaml
+- pip
+- lark
+- pytorch=2.1.0=py3.10_cuda12.1_cudnn8.9.2_0
+- torchvision
+- torchaudio=2.1.0
+- pytorch-cuda=12.1
+- pytorch3d
+- librosa
+- typing
+- pip:
+    - pyquaternion==0.9.9
+    - nuscenes-devkit==1.1.11
+    - empy==3.3.4
+    - catkin_pkg
+    - gtsam==4.2.0
+    - numba
+    - pandas
+    - notebook
+    - pyroomacoustics
+    - sed_eval
+    - dcase_util
+    - IPython

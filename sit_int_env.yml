@@ -1,0 +1,45 @@
+name: sit_int
+channels:
+  - conda-forge
+  - pytorch3d
+  - pytorch
+  - nvidia
+dependencies:
+- python ==3.10
+- pyyaml
+- pip
+- lark
+- ninja
+- pytorch=2.1.0=py3.10_cuda11.8_cudnn8.7.0_0
+- torchaudio=2.1.0 # Need at least 2.1 to use CUDA CTC-Decoder (requires torch 2.1.0 also)
+- torchvision
+- pytorch-cuda=11.8
+- pytorch3d::pytorch3d
+- librosa
+- typing
+- mkl
+- pip:
+    - pyquaternion==0.9.9
+    - nuscenes-devkit==1.1.11
+    - empy==3.3.4
+    - catkin_pkg
+    - gtsam==4.2.0
+    - numba
+    - pandas
+    - notebook
+    - pyroomacoustics
+    - sed_eval
+    - dcase_util
+    - IPython
+    - flashlight-text
+    - kenlm
+    - sentencepiece
+    - ftfy
+    - regex
+    - tqdm
+    - git+https://github.com/openai/CLIP.git
+    - setuptools==69.0.0
+    - scikit-learn==1.0.2
+    - pytorch-lightning==1.9.4
+    - wandb==0.15.4
+    - timm==0.4.12

@@ -1,0 +1,20 @@
+audio_acq_node:
+  ros__parameters:
+    n_channels: 6
+    src: 'plughw:2,0'
+    sample_rate: 16000
+    hop_size: 1600
+    frame_size: 16000
+    microphone_frame_id: 'respeaker_frame'
+    array_info_path: 'config/respeaker_array.yaml'
+
+audio_proc_node:
+  ros__parameters:
+    n_channels: 6
+    src: 'plughw:2,0'
+    sample_rate: 16000
+    hop_size: 1600
+    frame_size: 16000
+    microphone_frame_id: 'respeaker_frame'
+    array_info_path: 'config/respeaker_array.yaml'
+    beam_info_path: 'config/beams.yaml'

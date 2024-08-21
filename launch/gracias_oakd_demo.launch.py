@@ -26,7 +26,7 @@ def generate_launch_description():
         'oakd_tracker.yaml'
     )
     ar_config = os.path.join(
-        get_package_share_directory('GrACIAS'),
+        get_package_share_directory('situated_interaction'),
         'config',
         'ar_commands.yaml'
     )
@@ -54,15 +54,15 @@ def generate_launch_description():
     # Detector preprocessing node
     preproc_node = Node(
         package='marmot',
-        executable='depthai_preproc',
+        executable='depthai_img_preproc',
         name='depthai_preproc_node',
-        remappings=[('/depthai_detections','/oak/nn/spatial_detections')],
+        remappings=[('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
         output='screen',
         parameters=[cam_config])    
     ld.add_action(preproc_node)
 
     ar_node = Node(
-        package='GrACIAS',
+        package='situated_interaction',
         executable='ar_preproc',
         name='ar_preproc_node',
         output='screen',
@@ -80,9 +80,9 @@ def generate_launch_description():
     )
     ld.add_action(trk_node)
 
-    # GrACIAS track -> tracked person preprocessor node
+    # situated_interaction track -> tracked person preprocessor node
     person_preproc_node = Node(
-        package='GrACIAS',
+        package='situated_interaction',
         executable='track_preproc',
         name='track_preproc_node',
         output='screen')
@@ -90,7 +90,7 @@ def generate_launch_description():
 
     # interaction manager node
     int_mgr_node = Node(
-        package='GrACIAS',
+        package='situated_interaction',
         executable='int_mgr_node.py',
         name='interaction_manager_node',
         output='screen',

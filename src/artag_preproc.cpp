@@ -5,10 +5,10 @@
 #include "visualization_msgs/msg/marker.hpp"
 #include "foxglove_msgs/msg/scene_update.hpp"
 #include "foxglove_msgs/msg/scene_entity.hpp"
-#include "gracias_interfaces/msg/auth.hpp"
-#include "gracias_interfaces/msg/comm.hpp"
-#include "gracias_interfaces/msg/comms.hpp"
-#include "gracias_interfaces/msg/identity.hpp"
+#include "situated_hri_interfaces/msg/auth.hpp"
+#include "situated_hri_interfaces/msg/comm.hpp"
+#include "situated_hri_interfaces/msg/comms.hpp"
+#include "situated_hri_interfaces/msg/identity.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "tf2_ros/transform_listener.h"
@@ -47,9 +47,9 @@ public:
         }
 
         scene_pub_ = this->create_publisher<foxglove_msgs::msg::SceneUpdate>("ar_scene", 10);
-        auth_pub_ = this->create_publisher<gracias_interfaces::msg::Auth>("authentication", 10);
-        comms_pub_ = this->create_publisher<gracias_interfaces::msg::Comms>("communications", 10);
-        id_pub_ = this->create_publisher<gracias_interfaces::msg::Identity>("identification", 10);
+        auth_pub_ = this->create_publisher<situated_hri_interfaces::msg::Auth>("authentication", 10);
+        comms_pub_ = this->create_publisher<situated_hri_interfaces::msg::Comms>("communications", 10);
+        id_pub_ = this->create_publisher<situated_hri_interfaces::msg::Identity>("identification", 10);
 
         this->tf_buffer_ =std::make_unique<tf2_ros::Buffer>(this->get_clock());
         this->tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -59,7 +59,7 @@ private:
     // Callback for ar_pose_marker topic
     void arPoseMarkerCallback(const ar_track_alvar_msgs::msg::AlvarMarkers::SharedPtr msg)
     {
-        gracias_interfaces::msg::Comms comms_msg;
+        situated_hri_interfaces::msg::Comms comms_msg;
         comms_msg.header = msg->header;
         comms_msg.header.frame_id = this->tracker_frame_;
 
@@ -77,7 +77,7 @@ private:
                 this->ar_pose_trk_frame_ = this->tf_buffer_->transform(this->ar_pose_det_frame_,this->tracker_frame_);
 
                 if (type=="Auth"){
-                    gracias_interfaces::msg::Auth msg;
+                    situated_hri_interfaces::msg::Auth msg;
                     msg.pose.header = it->header;
                     msg.pose.header.frame_id = this->tracker_frame_;
                     msg.pose.pose = ar_pose_trk_frame_.pose;
@@ -85,14 +85,14 @@ private:
                     auth_pub_->publish(msg);
                     
                 } else if (type=="Comm") {
-                    gracias_interfaces::msg::Comm comm_msg;
+                    situated_hri_interfaces::msg::Comm comm_msg;
                     comm_msg.pose = ar_pose_trk_frame_.pose;
                     comm_msg.comm = word;
                     comm_msg.conf = .55;
                     comms_msg.comms.emplace_back(comm_msg);
 
                 } else if (type=="Identity") {
-                    gracias_interfaces::msg::Identity msg;
+                    situated_hri_interfaces::msg::Identity msg;
                     msg.pose.header = it->header;
                     msg.pose.header.frame_id = this->tracker_frame_;
                     msg.pose.pose = ar_pose_trk_frame_.pose;
@@ -116,9 +116,9 @@ private:
     rclcpp::Subscription<visualization_msgs::msg::Marker>::SharedPtr subscription_visualization_marker_;
     
     rclcpp::Publisher<foxglove_msgs::msg::SceneUpdate>::SharedPtr scene_pub_;
-    rclcpp::Publisher<gracias_interfaces::msg::Auth>::SharedPtr auth_pub_;
-    rclcpp::Publisher<gracias_interfaces::msg::Comms>::SharedPtr comms_pub_;
-    rclcpp::Publisher<gracias_interfaces::msg::Identity>::SharedPtr id_pub_;
+    rclcpp::Publisher<situated_hri_interfaces::msg::Auth>::SharedPtr auth_pub_;
+    rclcpp::Publisher<situated_hri_interfaces::msg::Comms>::SharedPtr comms_pub_;
+    rclcpp::Publisher<situated_hri_interfaces::msg::Identity>::SharedPtr id_pub_;
 
     std::vector<int64_t> word_ids_;
     std::vector<std::string> types_;

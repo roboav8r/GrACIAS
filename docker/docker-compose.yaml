@@ -1,16 +1,20 @@
-version: "3"
 
 services:
 
-  ar_bridge_srv:
+  # Bridge ROS1->ROS2 messages
+  philbart_bridge_srv:
 
-    image: ar_bridge_img
-    container_name: ar_bridge_cont
+    image: philbart_bridge_img
+    container_name: philbart_bridge_cont
     
     build:
       # set the build context to the directory containing build files
       context: .
-      dockerfile: ar_bridge.Dockerfile
+      dockerfile: bridge.Dockerfile
+
+    environment:
+      - ROS_MASTER_URI=http://192.168.131.1:11311
+      - ROS_IP=192.168.131.113
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
@@ -23,18 +27,18 @@ services:
     pid: host
     stdin_open: true
     tty: true
-    entrypoint: /ar_bridge_entrypoint.sh
+    entrypoint: /philbart_bridge_entrypoint.sh
 
+  # Launch ar_track_alvar and audio_capture in ros1 environment
+  ros1_srv:
 
-  ar_track_srv:
-
-    image: ar_track_img
-    container_name: ar_track_cont
+    image: ros1_img
+    container_name: ros1_cont
     
     build:
       # set the build context to the directory containing build files
       context: .
-      dockerfile: ar_track.Dockerfile
+      dockerfile: ros1.Dockerfile
 
     environment:
       - MARKER_SIZE=15.2
@@ -53,4 +57,21 @@ services:
     pid: host
     stdin_open: true
     tty: true
-    entrypoint: /ar_track_entrypoint.sh
+    entrypoint: /ros1_entrypoint.sh
+
+  # perception_srv:
+  #   image: perception_img
+  #   container_name: perception_cont
+    
+  #   build:
+  #     # set the build context to the directory containing build files
+  #     context: .
+  #     dockerfile: perception.Dockerfile
+
+  #   # environment:
+  #   #   - MARKER_SIZE=15.2
+  #   #   - AR_CAM_TOPIC=/oak/rgb/image_raw
+  #   #   - AR_INFO_TOPIC=/oak/stereo/camera_info
+  #   #   - OUTPUT_FRAME=oak_rgb_camera_optical_frame
+
+  #   entrypoint: /perception_entrypoint.sh
