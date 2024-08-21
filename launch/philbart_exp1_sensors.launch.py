@@ -57,6 +57,15 @@ def generate_launch_description():
     )
     ld.add_action(acq_node)
 
+    # Dummy subscriber node
+    dummy_node = Node(
+        package='situated_interaction',
+        executable='dummy_sub.py',
+        name='dummy_sub',
+        parameters=[audio_config]
+    )
+    ld.add_action(dummy_node)
+
     # Foxglove bridge for visualization
     viz_node = IncludeLaunchDescription(
         XMLLaunchDescriptionSource(
