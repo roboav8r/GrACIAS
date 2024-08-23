@@ -17,9 +17,12 @@ oak:
 clip_scene_rec:
   ros__parameters:
     num_est_interval_samples: 15
-    scene_labels: ['home', 'back_yard', 'neighborhood', 'park', 'lab','classroom','campus','store','city_street']
-    scene_descriptions: ['inside a home', 'a back yard', 'a neighborhood', 'a park','a laboratory','a classroom','a campus','a store','a city street']
-    clip_model: 'ViT-B/32'
+    scene_labels: ['campus','courtyard','lab','lobby']
+    scene_descriptions: ['a picture of a public outdoor area with high social activity',
+                         'a picture of a private outdoor area with low social activity',
+                         'a picture of a private indoor area with low social activity',
+                         'a picture of a public indoor area with high social activity']
+    clip_model: 'ViT-L/14'
 
 ### UNIMODAL PROCESSING - AUDITION
 audio_acq_node:
@@ -78,17 +81,17 @@ audio_scene_rec:
     sensor_names: ['clip','dcase23']
 
     clip:
-      obs_labels: ['college-campus','courtyard','laboratory','lobby']
-      sensor_model_coeffs: [25008., 5984., 1., 7663.,
-                            41098., 1758., 1., 54.,
-                            1., 1., 25794., 16400.,
-                            1., 1., 1., 41440.]
+      obs_labels: ['campus','courtyard','lab','lobby']
+      sensor_model_coeffs: [35272., 3382., 1., 1.,
+                            154., 42755., 1., 1.,
+                            1., 54., 41930., 211.,
+                            1., 15., 4906., 36521.]
       topic: 'clip_scene_category'
 
     dcase23:
       obs_labels: ['airport', 'bus', 'metro', 'metro_station','park','public_square','shopping_mall','street_pedestrian','street_traffic','tram']
-      sensor_model_coeffs: [15., 16., 42., 10., 196., 5., 2., 2., 56., 1944.,
-                            3., 288., 11., 11., 796., 2., 1., 2., 11., 1350.,
-                            11., 171., 2110., 41., 81., 1., 1., 1., 64., 26.,
+      sensor_model_coeffs: [8., 17., 49., 22., 191., 7., 1., 1., 44., 1948.,
+                            4., 305., 5., 8., 765., 1., 1., 2., 22., 1362.,
+                            22., 156., 2125., 33., 79., 2., 1., 2., 66., 21.,
                             457., 57., 205., 481., 977., 2., 70., 17., 20., 166.]
       topic: 'audio_scene_category'
