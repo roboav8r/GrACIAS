@@ -21,6 +21,11 @@ def generate_launch_description():
         'config',
         'philbart_config.yaml'
     )
+    tracker_config = os.path.join(
+        get_package_share_directory('situated_interaction'),
+        'config',
+        'philbart_tracker.yaml'
+    )
 
 
     ### TF DATA
@@ -78,8 +83,9 @@ def generate_launch_description():
         )
     ld.add_action(lidar_to_scan)
 
-    ### UNIMODAL PROCESSING
-    # Scene recognition - vision
+
+    ### VISION PROCESSING
+    # Scene recognition
     clip_rec_node = Node(package = "mm_scene_rec", 
                     executable = "clip_scene_rec.py",
                     name = "clip_scene_rec",
@@ -87,8 +93,29 @@ def generate_launch_description():
                     parameters=[config]
     )
     ld.add_action(clip_rec_node)
+
+    # Object recognition
+    clip_obj_rec_server = Node(package = "situated_interaction", 
+                    executable = "clip_vis_rec_server.py",
+                    name = "clip_vis_rec_server",
+                    # remappings=[('/clip_scene_image','/oak/rgb/image_raw')],
+                    parameters=[config]
+    )
+    ld.add_action(clip_obj_rec_server)
+
+    # Detection preprocessing for tracker
+    preproc_node = Node(
+        package='marmot',
+        executable='depthai_preproc',
+        name='depthai_preproc_node',
+        remappings=[('/depthai_detections','/oak/nn/spatial_detections')],
+        output='screen',
+        parameters=[config])    
+    ld.add_action(preproc_node)
     
-    # Scene recognition - audition
+
+    ### AUDITION PROCESSING
+    # Scene recognition
     audio_rec_node = Node(
         package='mm_scene_rec',
         executable='audio_scene_rec.py',
@@ -107,6 +134,27 @@ def generate_launch_description():
                     parameters=[config]
     )
     ld.add_action(scene_rec_node)
+
+    # Multiobject tracking
+    trk_node = Node(
+        package='marmot',
+        executable='tbd_node.py',
+        name='tbd_tracker_node',
+        output='screen',
+        remappings=[('/detections','/converted_detections')],
+        parameters=[tracker_config]
+    )
+    ld.add_action(trk_node)
+
+    # Semantic fusion
+    semantic_tracking_node = Node(
+        package='situated_interaction',
+        executable='semantic_tracking_node.py',
+        name='semantic_tracking_node',
+        output='screen',
+        parameters=[config]
+    )
+    ld.add_action(semantic_tracking_node)
 
 
     ### OUTPUT / VISUALIZATION
