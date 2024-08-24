@@ -28,7 +28,7 @@ clip_scene_rec:
 audio_acq_node:
   ros__parameters:
     n_channels: 16
-    src: 'plughw:1,0'
+    src: 'plughw:2,0'
     sample_rate: 44100
     hop_size: 44100
     frame_size: 44100 # publish 1 second every second
