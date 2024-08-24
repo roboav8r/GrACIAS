@@ -29,11 +29,11 @@ services:
     tty: true
     entrypoint: /philbart_bridge_entrypoint.sh
 
-  # Launch ar_track_alvar and audio_capture in ros1 environment
-  ros1_srv:
+  # Launch ar_track_alvar in ros1 environment
+  ar_srv:
 
     image: ros1_img
-    container_name: ros1_cont
+    container_name: ros1_ar_cont
     
     build:
       # set the build context to the directory containing build files
@@ -46,6 +46,9 @@ services:
       - AR_INFO_TOPIC=/oak/stereo/camera_info
       - OUTPUT_FRAME=oak_rgb_camera_optical_frame
 
+      - ROS_MASTER_URI=http://192.168.131.1:11311
+      - ROS_IP=192.168.131.113
+
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
       - apparmor:unconfined
@@ -57,21 +60,33 @@ services:
     pid: host
     stdin_open: true
     tty: true
-    entrypoint: /ros1_entrypoint.sh
+    entrypoint: /ros1_ar_entrypoint.sh
 
-  # perception_srv:
-  #   image: perception_img
-  #   container_name: perception_cont
+  # Launch ar_track_alvar in ros1 environment
+  pcl_to_scan_srv:
+
+    image: ros1_img
+    container_name: ros1_pcl_to_scan_cont
     
-  #   build:
-  #     # set the build context to the directory containing build files
-  #     context: .
-  #     dockerfile: perception.Dockerfile
+    build:
+      # set the build context to the directory containing build files
+      context: .
+      dockerfile: ros1.Dockerfile
 
-  #   # environment:
-  #   #   - MARKER_SIZE=15.2
-  #   #   - AR_CAM_TOPIC=/oak/rgb/image_raw
-  #   #   - AR_INFO_TOPIC=/oak/stereo/camera_info
-  #   #   - OUTPUT_FRAME=oak_rgb_camera_optical_frame
+    environment:
+      - ROS_MASTER_URI=http://192.168.131.1:11311
+      - ROS_IP=192.168.131.113
+      - PCL_TOPIC=/philbart/lidar_points
 
-  #   entrypoint: /perception_entrypoint.sh
+    security_opt:
+    # this is set bc of errors with RViz being denied dbus comm w/ host
+      - apparmor:unconfined
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ${HOME}/.Xauthority:/root/.Xauthority:rw
+    # give the container access to the host's network
+    network_mode: host
+    pid: host
+    stdin_open: true
+    tty: true
+    entrypoint: /ros1_pcl_to_scan_entrypoint.sh
