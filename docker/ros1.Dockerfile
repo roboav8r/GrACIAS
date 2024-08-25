@@ -10,7 +10,8 @@ ENV ROS1_DISTRO noetic
 ENV ROS2_DISTRO galactic 
 
 # install ros1 debian packages 
-RUN apt-get update && apt-get install -y --no-install-recommends \ 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+wget pip \
 ros-noetic-ros-comm \
 ros-noetic-tf2-msgs \
 ros-noetic-cmake-modules \ 
@@ -30,10 +31,19 @@ ros-noetic-rospy-tutorials=0.10.2-1* \
 RUN mkdir -p /ros1_ws/src 
 WORKDIR /ros1_ws/src 
 RUN git clone -b noetic-devel https://github.com/ros-perception/ar_track_alvar.git
-RUN git clone https://github.com/VisualComputingInstitute/DR-SPAAM-Detector.git
+RUN git clone https://github.com/roboav8r/DR-SPAAM-Detector.git
+WORKDIR /ros1_ws/src/DR-SPAAM-Detector/dr_spaam
+RUN python3 setup.py install
 WORKDIR /ros1_ws 
+RUN wget https://github.com/VisualComputingInstitute/DR-SPAAM-Detector/releases/download/v1.1/dr_spaam_e40.pth
 RUN source /opt/ros/${ROS1_DISTRO}/setup.bash && \ 
 catkin_make
 
+# dr-spaam detector requirements
+RUN pip install networkx==2.8.8 
+RUN pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+RUN pip install scipy
+
 COPY ./ros1_ar_entrypoint.sh /
 COPY ./ros1_pcl_to_scan_entrypoint.sh /
+COPY ./ros1_leg_detector_entrypoint.sh /
