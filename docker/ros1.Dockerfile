@@ -47,3 +47,4 @@ RUN pip install scipy
 COPY ./ros1_ar_entrypoint.sh /
 COPY ./ros1_pcl_to_scan_entrypoint.sh /
 COPY ./ros1_leg_detector_entrypoint.sh /
+COPY ./ros1_master_entrypoint.sh /

@@ -1,6 +1,17 @@
 
 services:
 
+  ros_master_srv:
+    build:
+      context: .
+      dockerfile: ros1.Dockerfile
+    container_name: ros_master_cont
+    network_mode: host
+    entrypoint: /ros1_master_entrypoint.sh
+    # environment:
+    #   - ROS_MASTER_URI=http://192.168.0.26:11311
+    #   - ROS_IP=192.168.0.26
+
   # Bridge ROS1->ROS2 messages
   philbart_bridge_srv:
 
@@ -12,9 +23,11 @@ services:
       context: .
       dockerfile: bridge.Dockerfile
 
-    environment:
-      - ROS_MASTER_URI=http://192.168.131.1:11311
-      - ROS_IP=192.168.131.113
+    # environment:
+    #   # - ROS_MASTER_URI=http://192.168.131.1:11311
+    #   # - ROS_IP=192.168.131.113
+    #   - ROS_MASTER_URI=http://192.168.0.26:11311
+    #   - ROS_IP=192.168.0.26
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
@@ -46,8 +59,10 @@ services:
       - AR_INFO_TOPIC=/oak/stereo/camera_info
       - OUTPUT_FRAME=oak_rgb_camera_optical_frame
 
-      - ROS_MASTER_URI=http://192.168.131.1:11311
-      - ROS_IP=192.168.131.113
+      # - ROS_MASTER_URI=http://192.168.131.1:11311
+      # - ROS_IP=192.168.131.113
+      # - ROS_MASTER_URI=http://192.168.0.26:11311
+      # - ROS_IP=192.168.0.26
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
@@ -74,8 +89,10 @@ services:
       dockerfile: ros1.Dockerfile
 
     environment:
-      - ROS_MASTER_URI=http://192.168.131.1:11311
-      - ROS_IP=192.168.131.113
+      # - ROS_MASTER_URI=http://192.168.131.1:11311
+      # - ROS_IP=192.168.131.113
+      # - ROS_MASTER_URI=http://192.168.0.26:11311
+      # - ROS_IP=192.168.0.26
       - PCL_TOPIC=/philbart/lidar_points
       - SCAN_TOPIC=/philbart/scan
 
@@ -104,8 +121,10 @@ services:
       dockerfile: ros1.Dockerfile
 
     environment:
-      - ROS_MASTER_URI=http://192.168.131.1:11311
-      - ROS_IP=192.168.131.113
+      # - ROS_MASTER_URI=http://192.168.131.1:11311
+      # - ROS_IP=192.168.131.113
+      # - ROS_MASTER_URI=http://192.168.0.26:11311
+      # - ROS_IP=192.168.0.26
       - SCAN_TOPIC=/philbart/scan
 
     security_opt:
