@@ -61,7 +61,7 @@ class SemanticTrackerNode(Node):
         self.service_timeout = .25
 
         # Create service client
-        self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec',callback_group=client_cb_group)
+        self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec', callback_group=client_cb_group)
         while not self.clip_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.clip_req = ObjectVisRec.Request()
