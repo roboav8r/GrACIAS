@@ -14,9 +14,10 @@ import tf2_ros
 from foxglove_msgs.msg import SceneUpdate, SceneEntity, TextPrimitive
 from geometry_msgs.msg import PointStamped
 from tf2_geometry_msgs import do_transform_point
-
+from ar_track_alvar_msgs.msg import AlvarMarker, AlvarMarkers
 from tracking_msgs.msg import Tracks3D
 from ros_audition.msg import SpeechAzSources
+
 from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, CategoricalDistribution
 from situated_hri_interfaces.srv import ObjectVisRec
 
@@ -47,6 +48,14 @@ class SemanticTrackerNode(Node):
             self.speech_callback,
             10, callback_group=sub_cb_group)
         self.subscription_speech  # prevent unused variable warning
+
+        # Subscribe to AR markers
+        self.subscription_ar = self.create_subscription(
+            AlvarMarkers,
+            'ar_pose_marker',
+            self.ar_callback,
+            10, callback_group=sub_cb_group)
+        self.subscription_ar  # prevent unused variable warning
 
         # Define pubs
         self.semantic_scene_pub = self.create_publisher(
@@ -323,6 +332,11 @@ class SemanticTrackerNode(Node):
         else: # If no speech, update all objects with null
             for obj_id in self.semantic_objects.keys():
                 self.semantic_objects[obj_id].update_verbal_comms('', 1., self)
+
+    def ar_callback(self, msg):
+        self.get_logger().info('got ar msg')
+
+        # for marker in msg.markers ...
 
     # def listener_callback_auth(self, msg):
     #     # self.get_logger().info('Received auth message: "%s"' % msg)
