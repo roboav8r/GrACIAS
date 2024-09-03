@@ -268,7 +268,7 @@ class SemanticTrackerNode(Node):
         for ii,key in enumerate(self.semantic_objects.keys()): 
             similarity_vector[ii] = np.linalg.norm([pos.x - self.semantic_objects[key].pos_x, pos.y - self.semantic_objects[key].pos_y, pos.z - self.semantic_objects[key].pos_z])
 
-        return list(self.semantic_objects.keys())[np.argmin(similarity_vector)]
+        return list(self.semantic_objects.keys())[np.argmin(similarity_vector)] if self.semantic_objects.keys() else -1
 
     def timer_callback(self):
         start_time = self.get_clock().now()
@@ -379,7 +379,9 @@ class SemanticTrackerNode(Node):
                 pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,artag_tracker_tf)
                 self.get_logger().info('Pos in tracker frame: %s\n' % (pos_in_tracker_frame))
 
-                # TODO assign
+                # Compute 
+                match_key = self.compute_pos_match(pos_in_tracker_frame.point)
+                self.get_logger().info('Matched to person %s\n' % (match_key))
 
             # TODO fuse all matches, decay non-matched people
 
