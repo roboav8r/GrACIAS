@@ -164,14 +164,32 @@ class SemanticTrackerNode(Node):
                     self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
                     self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
 
+            # Communication parameters
             self.object_params[obj]['comms'] = {}
             self.declare_parameter(obj + '.comms.labels', rclpy.Parameter.Type.STRING_ARRAY)
+            self.object_params[obj]['comms']['labels'] = self.get_parameter(obj + '.comms.labels').get_parameter_value().string_array_value
+
+            # Get AR tag parameters
+            self.declare_parameter(obj + '.comms.ar_tag_ids', rclpy.Parameter.Type.INTEGER_ARRAY)
+            self.declare_parameter(obj + '.comms.ar_tag_types', rclpy.Parameter.Type.STRING_ARRAY)
+            self.declare_parameter(obj + '.comms.ar_tag_words', rclpy.Parameter.Type.STRING_ARRAY)
+            self.object_params[obj]['comms']['ar_tag_ids'] = self.get_parameter(obj + '.comms.ar_tag_ids').get_parameter_value().integer_array_value
+            self.object_params[obj]['comms']['ar_tag_types'] = self.get_parameter(obj + '.comms.ar_tag_types').get_parameter_value().string_array_value
+            self.object_params[obj]['comms']['ar_tag_words'] = self.get_parameter(obj + '.comms.ar_tag_words').get_parameter_value().string_array_value
+            self.object_params[obj]['comms']['ar_tag_dict'] = {}
+            assert len(self.object_params[obj]['comms']['ar_tag_ids']) == len(self.object_params[obj]['comms']['ar_tag_types'])
+            assert len(self.object_params[obj]['comms']['ar_tag_words']) == len(self.object_params[obj]['comms']['ar_tag_types'])
+            for index, tag_id in enumerate(self.object_params[obj]['comms']['ar_tag_ids']):
+                self.object_params[obj]['comms']['ar_tag_dict'][tag_id] = {}
+                self.object_params[obj]['comms']['ar_tag_dict'][tag_id]['type'] = self.object_params[obj]['comms']['ar_tag_types'][index]
+                self.object_params[obj]['comms']['ar_tag_dict'][tag_id]['word'] = self.object_params[obj]['comms']['ar_tag_words'][index]
+
+            # Get gesture parameters
             self.declare_parameter(obj + '.comms.gesture_descriptions', rclpy.Parameter.Type.STRING_ARRAY)
             self.declare_parameter(obj + '.comms.transcripts', rclpy.Parameter.Type.STRING_ARRAY)
             self.declare_parameter(obj + '.comms.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
             self.declare_parameter(obj + '.comms.gesture_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
             self.declare_parameter(obj + '.comms.verbal_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-            self.object_params[obj]['comms']['labels'] = self.get_parameter(obj + '.comms.labels').get_parameter_value().string_array_value
             self.object_params[obj]['comms']['gesture_descriptions'] = self.get_parameter(obj + '.comms.gesture_descriptions').get_parameter_value().string_array_value
             self.object_params[obj]['comms']['transcripts'] = self.get_parameter(obj + '.comms.transcripts').get_parameter_value().string_array_value
             self.object_params[obj]['comms']['probs'] = self.get_parameter(obj + '.comms.probs').get_parameter_value().double_array_value
@@ -334,7 +352,21 @@ class SemanticTrackerNode(Node):
                 self.semantic_objects[obj_id].update_verbal_comms('', 1., self)
 
     def ar_callback(self, msg):
-        self.get_logger().info('got ar msg')
+        for marker in msg.markers:
+
+            self.get_logger().info('got ar msg %s' % marker.id)
+
+            # Get semantic meaning, word type
+            type = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['type']
+            word = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['word']
+            self.get_logger().info('%s: %s\n' % (type, word))
+
+            # TODO convert to tracker frame
+
+            # TODO match
+
+            # TODO fuse
+
 
         # for marker in msg.markers ...
 
