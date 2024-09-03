@@ -87,8 +87,7 @@ class SemanticTrackerNode(Node):
         self.tf_listener = tf2_ros.transform_listener.TransformListener(self.tf_buffer, self)
         self.tf_buffer.can_transform(self.mic_frame,self.tracker_frame,Duration(seconds=10)) # Block until mic -> tracker transform available
         self.tf_buffer.can_transform(self.artag_frame,self.tracker_frame,Duration(seconds=10)) # Block until artag -> tracker transform available
-        self.artag_tracker_tf = self.tf_buffer.lookup_transform(self.tracker_frame,self.artag_frame,Duration(seconds=.1))
-
+        
         # self.subscription_auth = self.create_subscription(
         #     Auth,
         #     'authentication',
@@ -364,22 +363,25 @@ class SemanticTrackerNode(Node):
 
             self.get_logger().info('got ar msg %s' % marker.id)
 
-            # Get semantic meaning, word type
-            type = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['type']
-            word = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['word']
-            self.get_logger().info('%s: %s\n' % (type, word))
+            if marker.id in self.object_params['person']['comms']['ar_tag_dict'].keys():
 
-            # Convert to tracker frame
-            pos_in_ar_frame = PointStamped()
-            pos_in_ar_frame.point.x = marker.pose.pose.position.x
-            pos_in_ar_frame.point.y = marker.pose.pose.position.y
-            pos_in_ar_frame.point.z = marker.pose.pose.position.z
-            pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,self.artag_tracker_tf)
-            self.get_logger().info('Pos in tracker frame: %s\n' % (pos_in_tracker_frame))
+                # Get semantic meaning, word type
+                type = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['type']
+                word = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['word']
+                self.get_logger().info('%s: %s\n' % (type, word))
 
-            # TODO assign
+                # Convert to tracker frame
+                artag_tracker_tf = self.tf_buffer.lookup_transform(self.tracker_frame,self.artag_frame,time=rclpy.time.Time(),timeout=rclpy.duration.Duration(seconds=.1))
+                pos_in_ar_frame = PointStamped()
+                pos_in_ar_frame.point.x = marker.pose.pose.position.x
+                pos_in_ar_frame.point.y = marker.pose.pose.position.y
+                pos_in_ar_frame.point.z = marker.pose.pose.position.z
+                pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,artag_tracker_tf)
+                self.get_logger().info('Pos in tracker frame: %s\n' % (pos_in_tracker_frame))
 
-        # TODO fuse all matches, decay non-matched people
+                # TODO assign
+
+            # TODO fuse all matches, decay non-matched people
 
 
     # def listener_callback_auth(self, msg):
