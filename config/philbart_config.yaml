@@ -111,6 +111,10 @@ audio_scene_rec:
 semantic_tracking_node:
   ros__parameters:
 
+    tracker_frame: 'philbart/base_link'
+    mic_frame: 'philbart/base_link'
+    artag_frame: 'oak_rgb_camera_optical_frame'
+
     loop_time_sec: 0.5
     objects_of_interest: ['person']
     object_classes: ['person']
@@ -142,7 +146,7 @@ semantic_tracking_node:
       
       comms:
         labels: ['none','other','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
-        
+
         ar_tag_ids: [1,2,3,4,5,6,7,8,9,10,11,12]
         ar_tag_types: ['command','command','command','command','command','command','command','command','role','role','role','command']
         ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','','move-in-reverse','pedestrian','teammate','supervisor','advance']
