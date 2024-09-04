@@ -278,7 +278,7 @@ class SemanticTrackerNode(Node):
 
             obj = self.semantic_objects[id]
 
-            self.get_logger().info("Checking object %s with atts %s, states: %s" % (id, str(obj.attributes),str(obj.states)))
+            # self.get_logger().info("Checking object %s with atts %s, states: %s" % (id, str(obj.attributes),str(obj.states)))
 
             if obj.new_image_available==False:
                 continue
@@ -304,7 +304,7 @@ class SemanticTrackerNode(Node):
 
         self.visualize()
 
-        self.get_logger().info("Timer callback time (s): %s" % ((self.get_clock().now() - start_time).nanoseconds/10**9))
+        # self.get_logger().info("Timer callback time (s): %s" % ((self.get_clock().now() - start_time).nanoseconds/10**9))
 
     def tracks_callback(self, msg):
         self.tracks_msg = msg
