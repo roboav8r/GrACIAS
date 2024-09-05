@@ -21,7 +21,7 @@ from foxglove_msgs.msg import SceneUpdate
 from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, CategoricalDistribution
 from situated_hri_interfaces.srv import ObjectVisRec
 
-from situated_interaction.assignment import compute_az_match, compute_pos_match
+from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_delta_az, solve_assignment_matrix
 from situated_interaction.datatypes import DiscreteVariable, SemanticObject
 from situated_interaction.output import foxglove_visualization
 from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params
@@ -190,17 +190,39 @@ class SemanticTrackerNode(Node):
 
     def speech_callback(self, msg):
 
+        # If there are recognized speech sources
         if msg.sources:
-            for speech_src in msg.sources:
 
-                match_idx = self.compute_az_match(speech_src.azimuth, msg.header.frame_id)
+            # Compute the assignment matrix
+            assignment_matrix = np.zeros((len(msg.sources),len(self.semantic_objects.keys())))
 
-                if match_idx is not None:
-                    self.semantic_objects[match_idx].update_verbal_comms(speech_src.transcript, speech_src.confidence, self)
+            for ii, speech_src in enumerate(msg.sources):
+                for jj, object_key in enumerate(self.semantic_objects.keys()):
+                    object = self.semantic_objects[object_key]
 
-        else: # If no speech, update all objects with null
-            for obj_id in self.semantic_objects.keys():
-                self.semantic_objects[obj_id].update_verbal_comms('', 1., self)
+                    semantic_object_az = compute_az_from_pos(self.tf_buffer,msg.header.frame_id,self.tracker_frame,object):
+                    delta_az = compute_delta_az(speech_src.azimuth, semantic_object_az)
+                    assignment_matrix[ii,jj] += delta_az
+
+            # Solve assignment matrix
+            assignments = solve_assignment_matrix('greedy', assignment_matrix, self.ang_match_threshold)
+
+            # Handle matches
+            for assignment in assignments:
+
+                object_idx = assignment[1]
+                object_key = self.semantic_objects.keys()[object_idx]
+                speech_idx = assignment[0]
+
+                self.semantic_objects[object_key].update_verbal_comms(msg.sources[speech_idx].transcript, msg.sources[speech_idx].confidence, self)
+
+            # Handle objects with no speech
+            for jj, object_key in enumerate(self.semantic_objects.keys()):
+
+                if jj not in assignments[:,1]: # If track is unmatched, handle it as a missed detection
+
+                    self.semantic_objects[object_key].update_verbal_comms(msg.sources[speech_idx].transcript, msg.sources[speech_idx].confidence, self)
+
 
     def ar_callback(self, msg):
         for marker in msg.markers:
