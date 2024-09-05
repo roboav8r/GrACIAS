@@ -131,39 +131,3 @@ class SemanticObject():
 
         normalized_pmf = normalize_vector(self.comm_probs.pmf(), self.upper_prob_limit, self.lower_prob_limit)
         self.comm_probs = gtsam.DiscreteDistribution((self.comm_var_symbol,len(self.comm_labels)),normalized_pmf)
-
-    # def update(self, ar_msg, type):
-    #     if type=='authentication':
-    #         if ar_msg.authenticated:
-    #             self.auth = True
-
-    #     if type=='communication':
-    #         # Increase weight for existing comms in incoming comms
-    #         temp_comms = self.comms # dictionary of comm dictionaries
-    #         new_comms = ar_msg # list of [situated_hri_interfaces/Comm]
-    #         self.comms = {}
-
-    #         # Handle incoming comms
-    #         for new_comm in new_comms:
-
-    #             # Incoming message word matches an existing word
-    #             if new_comm.comm in temp_comms.keys():
-
-    #                 # Fuse the two and update confidence value to self.comms dict, use parallel addition
-    #                 self.comms[new_comm.comm] = 1 - (1 - new_comm.conf)*(1 - temp_comms[new_comm.comm])/((1 - new_comm.conf) + (1 - temp_comms[new_comm.comm]))
-
-    #                 # Remove word from temp_comms
-    #                 del temp_comms[new_comm.comm]
-
-    #             elif new_comm.conf > self.det_thresh: # Create new word
-    #                 self.comms[new_comm.comm] = new_comm.conf
-
-    #         # Now, find unmatched words in last comm step and reduce confidence
-    #         for word in temp_comms.keys():
-
-    #             new_score = temp_comms[word] - self.score_decay
-    #             if new_score > self.del_thresh: # Only publish if above delete threshold
-    #                 self.comms[word] = new_score
-
-    #     if type=='identity':
-    #         self.identity = ar_msg.identity
