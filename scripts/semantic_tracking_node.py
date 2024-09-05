@@ -165,28 +165,20 @@ class SemanticTrackerNode(Node):
         self.semantic_object_ids = []
 
         # add new tracked objects from incoming message
-        for trkd_obj in msg.tracks:
+        for tracked_object in msg.tracks:
 
-            if trkd_obj.class_string not in self.objects_of_interest:
+            if tracked_object.class_string not in self.objects_of_interest:
                 continue
 
             # Add 
-            self.semantic_object_ids.append(trkd_obj.track_id)
+            self.semantic_object_ids.append(tracked_object.track_id)
 
             # Initialize object and add to dict if not currently tracked
-            if trkd_obj.track_id not in self.semantic_objects.keys():
-                self.semantic_objects[trkd_obj.track_id] = SemanticObject(trkd_obj, self.object_params[trkd_obj.class_string], self.tracks_msg.header.frame_id) # TODO - pass frame_id some other way
+            if tracked_object.track_id not in self.semantic_objects.keys():
+                self.semantic_objects[tracked_object.track_id] = SemanticObject(tracked_object, self.object_params[tracked_object.class_string], self.tracks_msg.header.frame_id) # TODO - pass frame_id some other way
             else:
-
-                # TODO - make generic semantic_object.update function instead of pos updates
-                self.semantic_objects[trkd_obj.track_id].pos_x = trkd_obj.pose.pose.position.x
-                self.semantic_objects[trkd_obj.track_id].pos_y = trkd_obj.pose.pose.position.y
-                self.semantic_objects[trkd_obj.track_id].pos_z = trkd_obj.pose.pose.position.z
-
-                self.semantic_objects[trkd_obj.track_id].new_image_available = trkd_obj.image_available
-                self.semantic_objects[trkd_obj.track_id].image = trkd_obj.image
-
-                self.semantic_objects[trkd_obj.track_id].stamp = msg.header.stamp 
+                # Update existing track
+                self.semantic_objects[tracked_object.track_id].update_spatial_state(tracked_object)
 
         # Remove untracked objects
         objects_temp = self.semantic_objects

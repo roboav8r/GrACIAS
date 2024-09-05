@@ -94,6 +94,17 @@ class SemanticObject():
         self.upper_prob_limit = params['upper_prob_limit']
         self.lower_prob_limit = params['lower_prob_limit']
 
+    def update_spatial_state(self, tracked_object_msg):
+                
+        self.pos_x = tracked_object_msg.pose.pose.position.x
+        self.pos_y = tracked_object_msg.pose.pose.position.y
+        self.pos_z = tracked_object_msg.pose.pose.position.z
+
+        self.new_image_available = tracked_object_msg.image_available
+        self.image = tracked_object_msg.image
+
+        self.stamp = tracked_object_msg.time_updated
+
     def update_verbal_comms(self, transcript, confidence, parent_node):
         
         # parent_node.get_logger().info("Comms labels %s" % (self.comm_labels))
