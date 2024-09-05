@@ -76,10 +76,18 @@ class SemanticTrackerNode(Node):
         self.clip_req = ObjectVisRec.Request()
 
         # Create transform buffer/listener
+        self.declare_parameter('tracker_frame', rclpy.Parameter.Type.STRING)
+        self.declare_parameter('mic_frame', rclpy.Parameter.Type.STRING)
+        self.declare_parameter('artag_frame', rclpy.Parameter.Type.STRING)
+        self.tracker_frame = self.get_parameter('tracker_frame').get_parameter_value().string_value
+        self.mic_frame = self.get_parameter('mic_frame').get_parameter_value().string_value
+        self.artag_frame = self.get_parameter('artag_frame').get_parameter_value().string_value
+
         self.tf_buffer = tf2_ros.buffer.Buffer(Duration(seconds=0.5))
         self.tf_listener = tf2_ros.transform_listener.TransformListener(self.tf_buffer, self)
-        self.tf_buffer.can_transform('kinect_frame','map',Duration(seconds=10)) # Block until mic -> tracker transform available TODO use parameters instead of this
-
+        self.tf_buffer.can_transform(self.mic_frame,self.tracker_frame,Duration(seconds=10)) # Block until mic -> tracker transform available
+        self.tf_buffer.can_transform(self.artag_frame,self.tracker_frame,Duration(seconds=10)) # Block until artag -> tracker transform available
+        
         # self.subscription_auth = self.create_subscription(
         #     Auth,
         #     'authentication',
@@ -164,14 +172,32 @@ class SemanticTrackerNode(Node):
                     self.object_params[obj]['states'][state_var]['update_method'] = self.get_parameter(obj + '.states.' + state_var + '.update_method').get_parameter_value().string_value
                     self.object_params[obj]['states'][state_var]['update_threshold'] = self.get_parameter(obj + '.states.' + state_var + '.update_threshold').get_parameter_value().double_value
 
+            # Communication parameters
             self.object_params[obj]['comms'] = {}
             self.declare_parameter(obj + '.comms.labels', rclpy.Parameter.Type.STRING_ARRAY)
+            self.object_params[obj]['comms']['labels'] = self.get_parameter(obj + '.comms.labels').get_parameter_value().string_array_value
+
+            # Get AR tag parameters
+            self.declare_parameter(obj + '.comms.ar_tag_ids', rclpy.Parameter.Type.INTEGER_ARRAY)
+            self.declare_parameter(obj + '.comms.ar_tag_types', rclpy.Parameter.Type.STRING_ARRAY)
+            self.declare_parameter(obj + '.comms.ar_tag_words', rclpy.Parameter.Type.STRING_ARRAY)
+            self.object_params[obj]['comms']['ar_tag_ids'] = self.get_parameter(obj + '.comms.ar_tag_ids').get_parameter_value().integer_array_value
+            self.object_params[obj]['comms']['ar_tag_types'] = self.get_parameter(obj + '.comms.ar_tag_types').get_parameter_value().string_array_value
+            self.object_params[obj]['comms']['ar_tag_words'] = self.get_parameter(obj + '.comms.ar_tag_words').get_parameter_value().string_array_value
+            self.object_params[obj]['comms']['ar_tag_dict'] = {}
+            assert len(self.object_params[obj]['comms']['ar_tag_ids']) == len(self.object_params[obj]['comms']['ar_tag_types'])
+            assert len(self.object_params[obj]['comms']['ar_tag_words']) == len(self.object_params[obj]['comms']['ar_tag_types'])
+            for index, tag_id in enumerate(self.object_params[obj]['comms']['ar_tag_ids']):
+                self.object_params[obj]['comms']['ar_tag_dict'][tag_id] = {}
+                self.object_params[obj]['comms']['ar_tag_dict'][tag_id]['type'] = self.object_params[obj]['comms']['ar_tag_types'][index]
+                self.object_params[obj]['comms']['ar_tag_dict'][tag_id]['word'] = self.object_params[obj]['comms']['ar_tag_words'][index]
+
+            # Get gesture parameters
             self.declare_parameter(obj + '.comms.gesture_descriptions', rclpy.Parameter.Type.STRING_ARRAY)
             self.declare_parameter(obj + '.comms.transcripts', rclpy.Parameter.Type.STRING_ARRAY)
             self.declare_parameter(obj + '.comms.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
             self.declare_parameter(obj + '.comms.gesture_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
             self.declare_parameter(obj + '.comms.verbal_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-            self.object_params[obj]['comms']['labels'] = self.get_parameter(obj + '.comms.labels').get_parameter_value().string_array_value
             self.object_params[obj]['comms']['gesture_descriptions'] = self.get_parameter(obj + '.comms.gesture_descriptions').get_parameter_value().string_array_value
             self.object_params[obj]['comms']['transcripts'] = self.get_parameter(obj + '.comms.transcripts').get_parameter_value().string_array_value
             self.object_params[obj]['comms']['probs'] = self.get_parameter(obj + '.comms.probs').get_parameter_value().double_array_value
@@ -179,7 +205,6 @@ class SemanticTrackerNode(Node):
             self.object_params[obj]['comms']['gesture_sensor_model_array'] = np.array(self.object_params[obj]['comms']['gesture_sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['comms']['labels']))
             self.object_params[obj]['comms']['verbal_sensor_model_coeffs'] = self.get_parameter(obj + '.comms.verbal_sensor_model_coeffs').get_parameter_value().double_array_value
             self.object_params[obj]['comms']['verbal_sensor_model_array'] = np.array(self.object_params[obj]['comms']['verbal_sensor_model_coeffs']).reshape(-1,len(self.object_params[obj]['comms']['labels']))
-
 
     def send_obj_clip_req(self, id, atts_to_est, states_to_est, est_comms):
         self.clip_req = ObjectVisRec.Request()
@@ -219,15 +244,15 @@ class SemanticTrackerNode(Node):
 
         for ii,key in enumerate(self.semantic_objects.keys()):
             # Convert object position into az frame
-            map_mike_tf = self.tf_buffer.lookup_transform(az_frame,'map',Duration(seconds=.1))
-            pos_map = PointStamped()
-            pos_map.point.x = self.semantic_objects[key].pos_x
-            pos_map.point.y = self.semantic_objects[key].pos_y
-            pos_map.point.z = self.semantic_objects[key].pos_z
-            pos_mike = do_transform_point(pos_map,map_mike_tf)
+            tracker_az_tf = self.tf_buffer.lookup_transform(az_frame,self.tracker_frame,Duration(seconds=.1))
+            pos_in_tracker_frame = PointStamped()
+            pos_in_tracker_frame.point.x = self.semantic_objects[key].pos_x
+            pos_in_tracker_frame.point.y = self.semantic_objects[key].pos_y
+            pos_in_tracker_frame.point.z = self.semantic_objects[key].pos_z
+            pos_in_az_frame = do_transform_point(pos_in_tracker_frame,tracker_az_tf)
 
             # Compute azimuth in az frame
-            obj_az = np.arctan2(pos_mike.point.y,pos_mike.point.x) # in range [-pi,pi]
+            obj_az = np.arctan2(pos_in_az_frame.point.y,pos_in_az_frame.point.x) # in range [-pi,pi]
 
             similarity_vector[ii] = np.linalg.norm([az - obj_az])
 
@@ -243,7 +268,7 @@ class SemanticTrackerNode(Node):
         for ii,key in enumerate(self.semantic_objects.keys()): 
             similarity_vector[ii] = np.linalg.norm([pos.x - self.semantic_objects[key].pos_x, pos.y - self.semantic_objects[key].pos_y, pos.z - self.semantic_objects[key].pos_z])
 
-        return list(self.semantic_objects.keys())[np.argmin(similarity_vector)]
+        return list(self.semantic_objects.keys())[np.argmin(similarity_vector)] if self.semantic_objects.keys() else -1
 
     def timer_callback(self):
         start_time = self.get_clock().now()
@@ -253,7 +278,7 @@ class SemanticTrackerNode(Node):
 
             obj = self.semantic_objects[id]
 
-            self.get_logger().info("Checking object %s with atts %s, states: %s" % (id, str(obj.attributes),str(obj.states)))
+            # self.get_logger().info("Checking object %s with atts %s, states: %s" % (id, str(obj.attributes),str(obj.states)))
 
             if obj.new_image_available==False:
                 continue
@@ -279,7 +304,7 @@ class SemanticTrackerNode(Node):
 
         self.visualize()
 
-        self.get_logger().info("Timer callback time (s): %s" % ((self.get_clock().now() - start_time).nanoseconds/10**9))
+        # self.get_logger().info("Timer callback time (s): %s" % ((self.get_clock().now() - start_time).nanoseconds/10**9))
 
     def tracks_callback(self, msg):
         self.tracks_msg = msg
@@ -334,9 +359,32 @@ class SemanticTrackerNode(Node):
                 self.semantic_objects[obj_id].update_verbal_comms('', 1., self)
 
     def ar_callback(self, msg):
-        self.get_logger().info('got ar msg')
+        for marker in msg.markers:
 
-        # for marker in msg.markers ...
+            self.get_logger().info('got ar msg %s' % marker.id)
+
+            if marker.id in self.object_params['person']['comms']['ar_tag_dict'].keys():
+
+                # Get semantic meaning, word type
+                type = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['type']
+                word = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['word']
+                self.get_logger().info('%s: %s\n' % (type, word))
+
+                # Convert to tracker frame
+                artag_tracker_tf = self.tf_buffer.lookup_transform(self.tracker_frame,self.artag_frame,time=rclpy.time.Time(),timeout=rclpy.duration.Duration(seconds=.1))
+                pos_in_ar_frame = PointStamped()
+                pos_in_ar_frame.point.x = marker.pose.pose.position.x
+                pos_in_ar_frame.point.y = marker.pose.pose.position.y
+                pos_in_ar_frame.point.z = marker.pose.pose.position.z
+                pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,artag_tracker_tf)
+                self.get_logger().info('Pos in tracker frame: %s\n' % (pos_in_tracker_frame))
+
+                # Compute 
+                match_key = self.compute_pos_match(pos_in_tracker_frame.point)
+                self.get_logger().info('Matched to person %s\n' % (match_key))
+
+            # TODO fuse all matches, decay non-matched people
+
 
     # def listener_callback_auth(self, msg):
     #     # self.get_logger().info('Received auth message: "%s"' % msg)

@@ -36,19 +36,60 @@ clip_vis_rec_server:
 
 
 ### UNIMODAL PROCESSING - AUDITION
-audio_acq_node:
+/**:
   ros__parameters:
-    n_channels: 16
-    src: 'plughw:1,0'
+
+    # General audio params / time domain
+    n_total_channels: 16
+    channel_indices_used: [0, 1, 2, 3, 4, 5, 6, 7]
     sample_rate: 44100
     hop_size: 44100
     frame_size: 44100 # publish 1 second every second
+    speed_sound: 343.
     microphone_frame_id: 'philbart/base_link'
+    
+    # Frequency domain processing
+    n_fft: 512
+    n_sources: 2
+    f_min: 300
+    f_max: 8000
+
+audio_acq_node:
+  ros__parameters:
+
+    # Signal acquisition
+    src: 'plughw:1,0'
+    codec: 'pcm_s16le'
+
+pra_node:
+  ros__parameters:
+
+    # Sound source localization
+    doa_dimension: 2
+    array_x_pos: [0.43, 0.43, -0.34, -0.34, 0., 0., 0., 0.]
+    array_y_pos: [-0.28, 0.28, 0.30, -0.30, -0.29, 0.29, -0.11, 0.11]
+    array_z_pos: [0.395, 0.395, 0.395, 0.395, 0.610, 0.610, 0.660, 0.660]
+    ssl_algo: 'MUSIC'
+
+directional_speech_rec_node:
+  ros__parameters:
+
+    # Speech activity detection & recognition
+    n_silent_frames: 2
+    trigger_level: 3.0
+    trigger_time: 0.25
+    search_time: 0.25
+    allowed_gap: 0.25
+    pre_trigger_time: 0.25
+    min_voice_samples: 31200
+    src_match_thresh_rad: .175 # .5 = ~28.6 degrees # .175 rad = ~10 degrees
+    lexicon_package: 'ros_audition'
+    lexicon_file: 'config/rocog_lexicon.txt'
 
 audio_scene_rec:
   ros__parameters:
     n_channels: 16
-    sample_rate: 441000
+    sample_rate: 44100
     downsample_rate: 32000
     frame_size: 44100
     scene_size: 44100
@@ -111,6 +152,10 @@ audio_scene_rec:
 semantic_tracking_node:
   ros__parameters:
 
+    tracker_frame: 'philbart/base_link'
+    mic_frame: 'philbart/base_link'
+    artag_frame: 'oak_rgb_camera_optical_frame'
+
     loop_time_sec: 0.5
     objects_of_interest: ['person']
     object_classes: ['person']
@@ -142,6 +187,11 @@ semantic_tracking_node:
       
       comms:
         labels: ['none','other','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+
+        ar_tag_ids: [1,2,3,4,5,6,7,8,9,10,11,12]
+        ar_tag_types: ['command','command','command','command','command','command','command','command','role','role','role','command']
+        ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','','move-in-reverse','pedestrian','teammate','supervisor','advance']
+
         gesture_descriptions: ['a picture of a person',
                        '',
                        'a picture of a person with right arm extended forward',
