@@ -36,7 +36,7 @@ mamba activate sit_int
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 cd ~/sit_int_ws/src/situated_interaction/scripts/training
-jupyter-notebook
+python3 exp0a_compute_scene_rec_models.py
 ```
 
 
