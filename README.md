@@ -39,6 +39,27 @@ cd ~/sit_int_ws/src/situated_interaction/scripts/training
 python3 exp0a_compute_scene_rec_models.py
 ```
 
+### Task 0b: Compute visual role recognition model
+Run the playback/model computation script
+```
+cd ~/sit_int_ws
+mamba activate sit_int
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+cd ~/sit_int_ws/src/situated_interaction/scripts/training
+python3 exp0b_compute_role_rec_models.py
+```
+
+### Task 0c: Compute visual role recognition model
+Run the playback/model computation script
+```
+cd ~/sit_int_ws
+mamba activate sit_int
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+cd ~/sit_int_ws/src/situated_interaction/scripts/training
+python3 exp0c_evaluate_speech_rec.py
+```
 
 ## Analysis / Experiment 1
 Run the ROS nodes
