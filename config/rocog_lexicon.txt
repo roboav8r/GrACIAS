@@ -1,0 +1,10 @@
+advance	a d v a n c e |
+attention	a t t e n t i o n |
+follow	f o l l o w |
+forward	f o r w a r d |
+in	i n |
+me	m e |
+halt	h a l t |
+move	m o v e |
+rally	r a l l y |
+reverse	r e v e r s e |
