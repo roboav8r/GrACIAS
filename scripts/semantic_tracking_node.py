@@ -200,7 +200,7 @@ class SemanticTrackerNode(Node):
                 for jj, object_key in enumerate(self.semantic_objects.keys()):
                     object = self.semantic_objects[object_key]
 
-                    semantic_object_az = compute_az_from_pos(self.tf_buffer,msg.header.frame_id,self.tracker_frame,object):
+                    semantic_object_az = compute_az_from_pos(self.tf_buffer,msg.header.frame_id,self.tracker_frame,object)
                     delta_az = compute_delta_az(speech_src.azimuth, semantic_object_az)
                     assignment_matrix[ii,jj] += delta_az
 
