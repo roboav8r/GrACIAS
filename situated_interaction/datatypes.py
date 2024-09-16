@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import gtsam
+import numpy as np
 from string import ascii_lowercase as alc
 
 from rclpy.time import Time
@@ -85,16 +86,29 @@ class SemanticObject():
         self.comm_labels = params['comms']['labels']
         self.comm_transcripts = params['comms']['transcripts']
         self.comm_var_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx)
-        self.comm_obs_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx + 100)
+        self.comm_gesture_obs_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx + 100)
+        self.comm_verbal_obs_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx + 101)
         self.comm_probs = gtsam.DiscreteDistribution((self.comm_var_symbol,len(self.comm_labels)), params['comms']['probs'])
-        self.comm_obs_model = gtsam.DiscreteConditional([self.comm_obs_symbol,len(self.comm_labels)],[[self.comm_var_symbol,len(self.comm_labels)]],pmf_to_spec(params['comms']['sensor_model_array']))
+        self.comm_gesture_obs_model = gtsam.DiscreteConditional([self.comm_gesture_obs_symbol,len(self.comm_labels)],[[self.comm_var_symbol,len(self.comm_labels)]],pmf_to_spec(params['comms']['gesture_sensor_model_array']))
+        self.comm_verbal_obs_model = gtsam.DiscreteConditional([self.comm_verbal_obs_symbol,len(self.comm_labels)],[[self.comm_var_symbol,len(self.comm_labels)]],pmf_to_spec(params['comms']['verbal_sensor_model_array']))
         self.upper_prob_limit = params['upper_prob_limit']
         self.lower_prob_limit = params['lower_prob_limit']
 
-    def update_comms(self, transcript, confidence, parent_node):
+    def update_spatial_state(self, tracked_object_msg):
+                
+        self.pos_x = tracked_object_msg.pose.pose.position.x
+        self.pos_y = tracked_object_msg.pose.pose.position.y
+        self.pos_z = tracked_object_msg.pose.pose.position.z
+
+        self.new_image_available = tracked_object_msg.image_available
+        self.image = tracked_object_msg.image
+
+        self.stamp = tracked_object_msg.time_updated
+
+    def update_verbal_comms(self, transcript, confidence, parent_node):
         
-        parent_node.get_logger().info("Comms labels %s" % (self.comm_labels))
-        parent_node.get_logger().info("update comms with transcript %s confidence %s" % (transcript, confidence))
+        # parent_node.get_logger().info("Comms labels %s" % (self.comm_labels))
+        # parent_node.get_logger().info("update comms with transcript %s confidence %s" % (transcript, confidence))
         
         try:
             command_idx = self.comm_transcripts.index(transcript)
@@ -103,56 +117,28 @@ class SemanticObject():
                 command_idx = 0 # Handle null commands
             else:
                 command_idx = 1 # Handle "other" commands that are not in list
-        parent_node.get_logger().info("Command index %s" % (command_idx))
+        # parent_node.get_logger().info("Command index %s" % (command_idx))
 
-        likelihood = self.comm_obs_model.likelihood(command_idx)
+        likelihood = self.comm_verbal_obs_model.likelihood(command_idx)
         # parent_node.get_logger().info("Likelihood %s" % (likelihood))
         self.comm_probs = gtsam.DiscreteDistribution(likelihood*self.comm_probs)
-        parent_node.get_logger().info("New comm probs %s" % (self.comm_probs))
+        # parent_node.get_logger().info("New comm probs %s" % (self.comm_probs))
 
         normalized_pmf = normalize_vector(self.comm_probs.pmf(), self.upper_prob_limit, self.lower_prob_limit)
         self.comm_probs = gtsam.DiscreteDistribution((self.comm_var_symbol,len(self.comm_labels)),normalized_pmf)
-        parent_node.get_logger().info("Normalized comm probs %s" % (self.comm_probs))
+        # parent_node.get_logger().info("Normalized comm probs %s" % (self.comm_probs))
 
         # TODO
         # TODO - handle null command/empty command
         # TODO - handle "other" command not in list
 
 
+    def update_gesture_comms(self, gest_dist, parent_node):
+        
+        command_idx = np.argmax(gest_dist.probabilities)
 
+        likelihood = self.comm_gesture_obs_model.likelihood(command_idx)
+        self.comm_probs = gtsam.DiscreteDistribution(likelihood*self.comm_probs)
 
-    # def update(self, ar_msg, type):
-    #     if type=='authentication':
-    #         if ar_msg.authenticated:
-    #             self.auth = True
-
-    #     if type=='communication':
-    #         # Increase weight for existing comms in incoming comms
-    #         temp_comms = self.comms # dictionary of comm dictionaries
-    #         new_comms = ar_msg # list of [situated_hri_interfaces/Comm]
-    #         self.comms = {}
-
-    #         # Handle incoming comms
-    #         for new_comm in new_comms:
-
-    #             # Incoming message word matches an existing word
-    #             if new_comm.comm in temp_comms.keys():
-
-    #                 # Fuse the two and update confidence value to self.comms dict, use parallel addition
-    #                 self.comms[new_comm.comm] = 1 - (1 - new_comm.conf)*(1 - temp_comms[new_comm.comm])/((1 - new_comm.conf) + (1 - temp_comms[new_comm.comm]))
-
-    #                 # Remove word from temp_comms
-    #                 del temp_comms[new_comm.comm]
-
-    #             elif new_comm.conf > self.det_thresh: # Create new word
-    #                 self.comms[new_comm.comm] = new_comm.conf
-
-    #         # Now, find unmatched words in last comm step and reduce confidence
-    #         for word in temp_comms.keys():
-
-    #             new_score = temp_comms[word] - self.score_decay
-    #             if new_score > self.del_thresh: # Only publish if above delete threshold
-    #                 self.comms[word] = new_score
-
-    #     if type=='identity':
-    #         self.identity = ar_msg.identity
+        normalized_pmf = normalize_vector(self.comm_probs.pmf(), self.upper_prob_limit, self.lower_prob_limit)
+        self.comm_probs = gtsam.DiscreteDistribution((self.comm_var_symbol,len(self.comm_labels)),normalized_pmf)

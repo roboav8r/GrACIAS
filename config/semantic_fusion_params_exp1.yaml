@@ -1,0 +1,44 @@
+/**:
+  ros__parameters:
+
+    loop_time_sec: 1.
+    objects_of_interest: ['person']
+    clip_model: 'ViT-B/32'
+    object_classes: ['person']
+
+    upper_prob_limit: .95
+    lower_prob_limit: .01
+
+    ang_match_threshold: .524 # ! 30 degrees
+
+    person:
+
+      attributes:
+        variables: []
+
+      states:
+        variables: ['role']
+        role:
+          labels: ['unknown','pedestrian','teammate','supervisor']
+          descriptions: ['', 'a person','a person wearing a university of texas robotics t-shirt and orange hat', 'a person wearing a university of texas robotics t-shirt and an orange hat and a yellow reflective safety vest']
+          probs: [10., 1., 1., 1.]
+          sensor_model_coeffs: [.6, .1, .1, .1,
+                                .1, .6, .1, .1,
+                                .1, .1, .6, .1,
+                                .1, .1, .1, .6]
+          update_method: 'time'
+          update_threshold: .75
+          
+      comms:
+        labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        transcripts: ['','advance','attention','follow me','halt','move forward','move in reverse','rally']
+        probs: [10., 1., 1., 1., 1., 1., 1., 1.]
+        # p(command_detected|command_issued)
+        sensor_model_coeffs: [.84, .02, .02, .02, .02, .02, .02, .02,
+                              .03, .9, .01, .01, .01, .01, .01, .01,
+                              .03, .01, .9, .01, .01, .01, .01, .01,
+                              .03, .1, .01, .81, .01, .01, .01, .01,
+                              .03, .01, .01, .01, .9, .01, .01, .01,
+                              .03, .01, .01, .01, .01, .9, .01, .01,
+                              .03, .01, .01, .01, .01, .01, .9, .01,
+                              .03, .01, .01, .01, .01, .01, .01, .9]
