@@ -246,7 +246,7 @@ class SemanticTrackerNode(Node):
                 self.get_logger().info('Pos in tracker frame: %s\n' % (pos_in_tracker_frame))
 
                 # Compute 
-                match_key = self.compute_pos_match(pos_in_tracker_frame.point)
+                match_key = compute_pos_match(self, pos_in_tracker_frame.point)
                 self.get_logger().info('Matched to person %s\n' % (match_key))
 
             # TODO fuse all matches, decay non-matched people

@@ -59,13 +59,13 @@ def compute_delta_az(az_1, az_2):
 
     return np.abs(delta_az)
 
-def compute_pos_match(self, pos):
-    similarity_vector = np.zeros(len(self.semantic_objects.keys()))
+def compute_pos_match(tracker, pos):
+    similarity_vector = np.zeros(len(tracker.semantic_objects.keys()))
 
-    for ii,key in enumerate(self.semantic_objects.keys()): 
-        similarity_vector[ii] = np.linalg.norm([pos.x - self.semantic_objects[key].pos_x, pos.y - self.semantic_objects[key].pos_y, pos.z - self.semantic_objects[key].pos_z])
+    for ii,key in enumerate(tracker.semantic_objects.keys()): 
+        similarity_vector[ii] = np.linalg.norm([pos.x - tracker.semantic_objects[key].pos_x, pos.y - tracker.semantic_objects[key].pos_y, pos.z - tracker.semantic_objects[key].pos_z])
 
-    return list(self.semantic_objects.keys())[np.argmin(similarity_vector)] if self.semantic_objects.keys() else -1
+    return list(tracker.semantic_objects.keys())[np.argmin(similarity_vector)] if tracker.semantic_objects.keys() else -1
 
 def compute_delta_pos(pos_1, pos_2):
     # Euclidean distance between positions
