@@ -1,17 +1,6 @@
 
 services:
 
-  ros_master_srv:
-    build:
-      context: .
-      dockerfile: ros1.Dockerfile
-    container_name: ros_master_cont
-    network_mode: host
-    entrypoint: /ros1_master_entrypoint.sh
-    environment:
-      - ROS_MASTER_URI=http://localhost:11311
-      - ROS_IP=localhost
-
   # Bridge ROS1->ROS2 messages
   philbart_bridge_srv:
 
@@ -82,8 +71,6 @@ services:
       dockerfile: ros1.Dockerfile
 
     environment:
-      - ROS_MASTER_URI=http://localhost:11311
-      - ROS_IP=localhost
       - PCL_TOPIC=/philbart/lidar_points
       - SCAN_TOPIC=/philbart/scan
 
@@ -112,8 +99,6 @@ services:
       dockerfile: ros1.Dockerfile
 
     environment:
-      - ROS_MASTER_URI=http://localhost:11311
-      - ROS_IP=localhost
       - SCAN_TOPIC=/philbart/scan
 
     security_opt:
