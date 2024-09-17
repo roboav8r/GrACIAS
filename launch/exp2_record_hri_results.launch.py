@@ -19,7 +19,7 @@ def generate_launch_description():
         get_package_share_directory('situated_interaction'),
         'config',
         'exp2_cfgs',
-        'semantic_fusion_params_exp2.yaml'
+        'exp2_ar_role_ar_cmd.yaml'
     )
 
     tracker_params = os.path.join(
@@ -52,13 +52,13 @@ def generate_launch_description():
     ld.add_action(tracks_rec_node)
 
     # Object recognition
-    clip_obj_rec_server = Node(package = "situated_interaction", 
+    clip_vis_rec_server = Node(package = "situated_interaction", 
                     executable = "clip_vis_rec_server.py",
                     name = "clip_vis_rec_server",
                     # remappings=[('/clip_scene_image','/oak/rgb/image_raw')],
                     parameters=[params]
     )
-    ld.add_action(clip_obj_rec_server)
+    ld.add_action(clip_vis_rec_server)
 
     ### MULTIMODAL PROCESSING
     

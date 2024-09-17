@@ -22,7 +22,7 @@ from foxglove_msgs.msg import SceneUpdate
 from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, CategoricalDistribution
 from situated_hri_interfaces.srv import ObjectVisRec
 
-from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_delta_az, solve_assignment_matrix
+from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_delta_az, compute_delta_pos, solve_assignment_matrix
 from situated_interaction.datatypes import DiscreteVariable, SemanticObject
 from situated_interaction.output import foxglove_visualization
 from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params
@@ -32,16 +32,18 @@ class SemanticTrackerNode(Node):
     def __init__(self):
         super().__init__('semantic_tracker_node')
 
-        sub_cb_group = MutuallyExclusiveCallbackGroup()
-        timer_cb_group = MutuallyExclusiveCallbackGroup()
-        client_cb_group = MutuallyExclusiveCallbackGroup()
+        self.sub_cb_group = MutuallyExclusiveCallbackGroup()
+        self.timer_cb_group = MutuallyExclusiveCallbackGroup()
+        self.client_cb_group = MutuallyExclusiveCallbackGroup()
+
+        self.initialize_sensors()
         
         # Subscribe to object tracks
         self.subscription_tracks = self.create_subscription(
             Tracks3D,
             'tracks',
             self.tracks_callback,
-            10, callback_group=sub_cb_group)
+            10, callback_group=self.sub_cb_group)
         self.subscription_tracks  # prevent unused variable warning
 
         # Subscribe to localized speech
@@ -49,16 +51,8 @@ class SemanticTrackerNode(Node):
             SpeechAzSources,
             'speech_az_sources',
             self.speech_callback,
-            10, callback_group=sub_cb_group)
+            10, callback_group=self.sub_cb_group)
         self.subscription_speech  # prevent unused variable warning
-
-        # Subscribe to AR markers
-        self.subscription_ar = self.create_subscription(
-            AlvarMarkers,
-            'ar_pose_marker',
-            self.ar_callback,
-            10, callback_group=sub_cb_group)
-        self.subscription_ar  # prevent unused variable warning
 
         # Define pubs
         self.semantic_scene_pub = self.create_publisher(
@@ -69,14 +63,14 @@ class SemanticTrackerNode(Node):
         # Create timer
         self.declare_parameter('loop_time_sec', rclpy.Parameter.Type.DOUBLE)
         self.loop_time_sec = self.get_parameter('loop_time_sec').get_parameter_value().double_value
-        self.timer = self.create_timer(self.loop_time_sec, self.timer_callback, callback_group=timer_cb_group)
+        self.timer = self.create_timer(self.loop_time_sec, self.timer_callback, callback_group=self.timer_cb_group)
         self.service_timeout = .25
 
-        # Create clip service client
-        self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec', callback_group=client_cb_group)
-        while not self.clip_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        self.clip_req = ObjectVisRec.Request()
+        # # Create clip service client
+        # self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec', callback_group=self.client_cb_group)
+        # while not self.clip_client.wait_for_service(timeout_sec=1.0):
+        #     self.get_logger().info('service not available, waiting again...')
+        # self.clip_req = ObjectVisRec.Request()
 
         # Create reset server
         self.reset_srv = self.create_service(Empty, '~/reset', self.reset_callback)
@@ -101,6 +95,49 @@ class SemanticTrackerNode(Node):
         self.semantic_objects = {}
         self.tracks_msg = Tracks3D()
         self.scene_out_msg = SceneUpdate()
+
+    def initialize_sensors(self):
+        self.declare_parameter('sensor_names', rclpy.Parameter.Type.STRING_ARRAY)
+        self.sensor_names = self.get_parameter('sensor_names').get_parameter_value().string_array_value
+        self.sensor_dict = {}
+
+        for sensor_name in self.sensor_names:
+            
+            self.sensor_dict[sensor_name] = {}
+
+            self.declare_parameter('sensors.%s.type' % sensor_name, rclpy.Parameter.Type.STRING)
+            self.declare_parameter('sensors.%s.topic' % sensor_name, rclpy.Parameter.Type.STRING)
+            self.declare_parameter('sensors.%s.match_threshold' % sensor_name, rclpy.Parameter.Type.DOUBLE)
+            self.sensor_dict[sensor_name]['type'] = self.get_parameter('sensors.%s.type' % sensor_name).get_parameter_value().string_value
+            self.sensor_dict[sensor_name]['topic'] = self.get_parameter('sensors.%s.topic' % sensor_name).get_parameter_value().string_value
+            self.sensor_dict[sensor_name]['match_threshold'] = self.get_parameter('sensors.%s.match_threshold' % sensor_name).get_parameter_value().double_value
+
+            # TODO - update method, update thresh
+
+            # Create subscriber
+            if self.sensor_dict[sensor_name]['type']=='fiducial':
+                self.sensor_dict[sensor_name]['sub'] = self.create_subscription(AlvarMarkers, 
+                                                                                self.sensor_dict[sensor_name]['topic'],
+                                                                                eval("lambda msg: self.ar_callback(msg, \"" + sensor_name + "\")",locals()),
+                                                                                10, callback_group=self.sub_cb_group)
+
+                self.declare_parameter('sensors.%s.ar_tag_ids' % sensor_name, rclpy.Parameter.Type.INTEGER_ARRAY)
+                self.declare_parameter('sensors.%s.ar_tag_types' % sensor_name, rclpy.Parameter.Type.STRING_ARRAY)
+                self.declare_parameter('sensors.%s.ar_tag_words' % sensor_name, rclpy.Parameter.Type.STRING_ARRAY)
+                self.sensor_dict[sensor_name]['ar_tag_ids'] = self.get_parameter('sensors.%s.ar_tag_ids' % sensor_name).get_parameter_value().integer_array_value
+                self.sensor_dict[sensor_name]['ar_tag_types'] = self.get_parameter('sensors.%s.ar_tag_types' % sensor_name).get_parameter_value().string_array_value
+                self.sensor_dict[sensor_name]['ar_tag_words'] = self.get_parameter('sensors.%s.ar_tag_words' % sensor_name).get_parameter_value().string_array_value
+
+                self.sensor_dict[sensor_name]['ar_tag_dict'] = {}
+                
+                for index, tag_id in enumerate(self.sensor_dict[sensor_name]['ar_tag_ids']):
+                    self.sensor_dict[sensor_name]['ar_tag_dict'][tag_id] = {}
+                    self.sensor_dict[sensor_name]['ar_tag_dict'][tag_id]['type'] = self.sensor_dict[sensor_name]['ar_tag_types'][index]
+                    self.sensor_dict[sensor_name]['ar_tag_dict'][tag_id]['word'] = self.sensor_dict[sensor_name]['ar_tag_words'][index]
+
+            else:
+                self.get_logger.info("Invalid sensor type %s" % self.sensor_dict[sensor_name]['type'])
+
 
     def reset_callback(self, _, resp):
 
@@ -136,40 +173,38 @@ class SemanticTrackerNode(Node):
         self.semantic_objects[id].image_available = False
 
     def timer_callback(self):
-        start_time = self.get_clock().now()
+        # start_time = self.get_clock().now()
 
-        # For each object, check if state is stale. If so, send state update request.
-        for id in self.semantic_objects.keys():
+        # # For each object, check if state is stale. If so, send state update request.
+        # for id in self.semantic_objects.keys():
 
-            obj = self.semantic_objects[id]
+        #     obj = self.semantic_objects[id]
 
-            # self.get_logger().info("Checking object %s with atts %s, states: %s" % (id, str(obj.attributes),str(obj.states)))
+        #     # self.get_logger().info("Checking object %s with atts %s, states: %s" % (id, str(obj.attributes),str(obj.states)))
 
-            if obj.new_image_available==False:
-                continue
+        #     if obj.new_image_available==False:
+        #         continue
 
-            states_to_est = []
-            atts_to_est = []
+        #     states_to_est = []
+        #     atts_to_est = []
 
-            for att in obj.attributes:
-                if obj.attributes[att].needs_update(start_time):
-                    atts_to_est.append(att)
+        #     for att in obj.attributes:
+        #         if obj.attributes[att].needs_update(start_time):
+        #             atts_to_est.append(att)
                 
-            for state in obj.states:
-                if obj.states[state].needs_update(start_time):
-                    states_to_est.append(state)
+        #     for state in obj.states:
+        #         if obj.states[state].needs_update(start_time):
+        #             states_to_est.append(state)
 
-            if self.object_params[obj.class_string]['comms']['gesture_descriptions'] != ['']:
-                est_comms = True
+        #     if self.object_params[obj.class_string]['comms']['gesture_descriptions'] != ['']:
+        #         est_comms = True
 
-            if atts_to_est or states_to_est or est_comms:
-                self.get_logger().info("atts to est: %s" % atts_to_est)
-                self.get_logger().info("states to est: %s" % states_to_est)
-                self.send_obj_clip_req(id, atts_to_est, states_to_est, est_comms)
+        #     if atts_to_est or states_to_est or est_comms:
+        #         self.get_logger().info("atts to est: %s" % atts_to_est)
+        #         self.get_logger().info("states to est: %s" % states_to_est)
+        #         self.send_obj_clip_req(id, atts_to_est, states_to_est, est_comms)
 
         foxglove_visualization(self)
-
-        # self.get_logger().info("Timer callback time (s): %s" % ((self.get_clock().now() - start_time).nanoseconds/10**9))
 
     def tracks_callback(self, msg):
         self.tracks_msg = msg
@@ -237,32 +272,122 @@ class SemanticTrackerNode(Node):
                     self.semantic_objects[object_key].update_verbal_comms(msg.sources[speech_idx].transcript, msg.sources[speech_idx].confidence, self)
 
 
-    def ar_callback(self, msg):
+    def ar_callback(self, msg, sensor_name):
+
+        # Compute number of comms and role markers to assign
+        n_comm_assignments = 0
+        n_role_assignments = 0
         for marker in msg.markers:
+            self.get_logger().info('%s: got ar msg %s' % (sensor_name, marker.id))
 
-            self.get_logger().info('got ar msg %s' % marker.id)
-
-            if marker.id in self.object_params['person']['comms']['ar_tag_dict'].keys():
+            if marker.id in self.sensor_dict[sensor_name]['ar_tag_dict'].keys():
 
                 # Get semantic meaning, word type
-                type = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['type']
-                word = self.object_params['person']['comms']['ar_tag_dict'][marker.id]['word']
+                type = self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type']
+                word = self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['word']
                 self.get_logger().info('%s: %s\n' % (type, word))
 
-                # Convert to tracker frame
-                artag_tracker_tf = self.tf_buffer.lookup_transform(self.tracker_frame,self.artag_frame,time=rclpy.time.Time(),timeout=rclpy.duration.Duration(seconds=.1))
-                pos_in_ar_frame = PointStamped()
-                pos_in_ar_frame.point.x = marker.pose.pose.position.x
-                pos_in_ar_frame.point.y = marker.pose.pose.position.y
-                pos_in_ar_frame.point.z = marker.pose.pose.position.z
-                pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,artag_tracker_tf)
-                self.get_logger().info('Pos in tracker frame: %s\n' % (pos_in_tracker_frame))
+                if self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type'] == 'command':
+                    n_comm_assignments +=1
 
-                # Compute 
-                match_key = compute_pos_match(self, pos_in_tracker_frame.point)
-                self.get_logger().info('Matched to person %s\n' % (match_key))
+                elif self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type'] == 'role':
+                    n_role_assignments +=1
 
-            # TODO fuse all matches, decay non-matched people
+        self.get_logger().info('Have %s objects' % (len(self.semantic_objects.keys())))
+        self.get_logger().info('Got %s role and %s comm AR tags\n' % (n_role_assignments, n_comm_assignments))
+
+        # Compute TF
+        artag_tracker_tf = self.tf_buffer.lookup_transform(self.tracker_frame,self.artag_frame,time=rclpy.time.Time(),timeout=rclpy.duration.Duration(seconds=.1))
+
+        # Initialize, populate, and solve assignment matrices
+        comm_assignment_matrix = np.zeros((n_comm_assignments,len(self.semantic_objects.keys())))
+        if n_comm_assignments != 0:
+            marker_idx = 0
+        
+            for marker in msg.markers:
+                if marker.id not in self.sensor_dict[sensor_name]['ar_tag_dict'].keys() or self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type'] != 'command':
+
+                    continue
+
+                for jj, object_key in enumerate(self.semantic_objects.keys()):
+                
+                    pos_in_ar_frame = PointStamped()
+                    pos_in_ar_frame.point.x = marker.pose.pose.position.x
+                    pos_in_ar_frame.point.y = marker.pose.pose.position.y
+                    pos_in_ar_frame.point.z = marker.pose.pose.position.z
+                    pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,artag_tracker_tf)
+
+                    object = self.semantic_objects[object_key]
+                    marker_pos = np.array([pos_in_tracker_frame.point.x,pos_in_tracker_frame.point.y,pos_in_tracker_frame.point.z])
+                    object_pos = np.array([object.pos_x,object.pos_y,object.pos_z])
+                    delta_pos = compute_delta_pos(marker_pos, object_pos)
+                    comm_assignment_matrix[marker_idx,jj] += delta_pos
+
+
+        # Solve comm assignment matrix
+        comm_assignments = solve_assignment_matrix('greedy', comm_assignment_matrix, self.sensor_dict[sensor_name]['match_threshold'])
+        self.get_logger().info('AR Tag comm assignments: %s\n' % (comm_assignments))
+
+        role_assignment_matrix = np.zeros((n_role_assignments,len(self.semantic_objects.keys())))
+        role_idx = 0
+        if n_role_assignments != 0:
+        
+            for marker in msg.markers:
+                if marker.id not in self.sensor_dict[sensor_name]['ar_tag_dict'].keys() or self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type'] != 'role':
+                    continue
+
+                for jj, object_key in enumerate(self.semantic_objects.keys()):
+                
+                    pos_in_ar_frame = PointStamped()
+                    pos_in_ar_frame.point.x = marker.pose.pose.position.x
+                    pos_in_ar_frame.point.y = marker.pose.pose.position.y
+                    pos_in_ar_frame.point.z = marker.pose.pose.position.z
+                    pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,artag_tracker_tf)
+
+                    object = self.semantic_objects[object_key]
+                    marker_pos = np.array([pos_in_tracker_frame.point.x,pos_in_tracker_frame.point.y,pos_in_tracker_frame.point.z])
+                    object_pos = np.array([object.pos_x,object.pos_y,object.pos_z])
+                    delta_pos = compute_delta_pos(marker_pos, object_pos)
+                    role_assignment_matrix[role_idx,jj] += delta_pos
+
+                role_idx +=1
+
+        # Solve assignment matrix
+        role_assignments = solve_assignment_matrix('greedy', role_assignment_matrix, self.sensor_dict[sensor_name]['match_threshold'])
+        self.get_logger().info('AR Tag role assignments: %s\n' % (role_assignments))
+
+        # Handle role matches
+        for assignment in role_assignments:
+
+            object_idx = assignment[1]
+            object_key = list(self.semantic_objects.keys())[object_idx]
+            marker_id = msg.markers[assignment[0]].id
+            role = self.sensor_dict[sensor_name]['ar_tag_dict'][marker_id]['word']
+            confidence = msg.markers[assignment[0]].confidence
+
+            self.semantic_objects[object_key].update_semantic_state('role', role, confidence, self)
+
+        # note - no penalty for missing role AR tag
+
+
+        # Handle comm matches
+        for assignment in comm_assignments:
+
+            object_idx = assignment[1]
+            object_key = list(self.semantic_objects.keys())[object_idx]
+            marker_id = msg.markers[assignment[0]].id
+            comm = self.sensor_dict[sensor_name]['ar_tag_dict'][marker_id]['word']
+            confidence = msg.markers[assignment[0]].confidence
+
+            self.semantic_objects[object_key].update_comms(comm, confidence, self)
+
+        # Handle objects with no speech
+        for jj, object_key in enumerate(self.semantic_objects.keys()):
+
+            if jj not in comm_assignments[:,1]: # If track is unmatched, handle it as a missed detection
+
+                self.semantic_objects[object_key].update_comms("\'\'", confidence, self)
+
 
 def main(args=None):
     rclpy.init(args=args)

@@ -73,7 +73,9 @@ cd ~/sit_int_ws/src/situated_interaction/scripts/training
 python3 exp0c_evaluate_speech_rec.py
 ```
 
-## Analysis / Experiment 1
+## Evaluate Perception System
+
+## Task 1: Evaluate audio, visual, and fused scene recognition - TODO
 Run the ROS nodes
 ```
 mamba activate sit_int
@@ -94,7 +96,7 @@ source install/setup.bash
 jupyter-notebook
 ```
 
-## Analysis - HRI data experiments
+## Task 2: Evaluate simultaneous role & command recognition
 Launch the Docker container
 ```
 cd ~/sit_int_ws/src/situated_interaction/docker
@@ -123,6 +125,8 @@ jupyter-notebook
 ```
 - Navigate to `/src/situated_interaction/scripts/playback_and_recording`
 - Run the `exp2_hri_playback.ipynb` notebook
+
+## Analyzing the data
 
 # Future Work
 
