@@ -11,6 +11,7 @@ from rclpy.node import Node
 from rclpy.time import Time, Duration
 import tf2_ros
 
+from std_srvs.srv import Empty
 from geometry_msgs.msg import PointStamped
 from tf2_geometry_msgs import do_transform_point
 from ar_track_alvar_msgs.msg import AlvarMarker, AlvarMarkers
@@ -71,12 +72,15 @@ class SemanticTrackerNode(Node):
         self.timer = self.create_timer(self.loop_time_sec, self.timer_callback, callback_group=timer_cb_group)
         self.service_timeout = .25
 
-        # Create service client
+        # Create clip service client
         self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec', callback_group=client_cb_group)
         while not self.clip_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
         self.clip_req = ObjectVisRec.Request()
 
+        # Create reset server
+        self.reset_srv = self.create_service(Empty, '~/reset', self.reset_callback)
+        
         # Create transform buffer/listener
         self.declare_parameter('tracker_frame', rclpy.Parameter.Type.STRING)
         self.declare_parameter('mic_frame', rclpy.Parameter.Type.STRING)
@@ -98,6 +102,15 @@ class SemanticTrackerNode(Node):
         self.tracks_msg = Tracks3D()
         self.scene_out_msg = SceneUpdate()
 
+    def reset_callback(self, _, resp):
+
+        self.get_logger().info("Resetting")
+        self.semantic_objects = {}
+        self.tracks_msg = Tracks3D()
+        self.scene_out_msg = SceneUpdate()
+
+        return resp
+    
     def send_obj_clip_req(self, id, atts_to_est, states_to_est, est_comms):
         self.clip_req = ObjectVisRec.Request()
         self.clip_req.object_id = id
