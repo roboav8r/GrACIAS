@@ -209,17 +209,14 @@ class SemanticTrackerNode(Node):
     def tracks_callback(self, msg):
         self.tracks_msg = msg
 
-        # Temporary list for this callback
-        self.semantic_object_ids = []
+        tracked_object_ids = []
 
-        # add new tracked objects from incoming message
-        for tracked_object in msg.tracks:
+        for tracked_object in self.tracks_msg.tracks:
 
             if tracked_object.class_string not in self.objects_of_interest:
                 continue
 
-            # Add 
-            self.semantic_object_ids.append(tracked_object.track_id)
+            tracked_object_ids.append(tracked_object.track_id)
 
             # Initialize object and add to dict if not currently tracked
             if tracked_object.track_id not in self.semantic_objects.keys():
@@ -229,12 +226,13 @@ class SemanticTrackerNode(Node):
                 self.semantic_objects[tracked_object.track_id].update_spatial_state(tracked_object)
 
         # Remove untracked objects
-        objects_temp = self.semantic_objects
-        self.semantic_objects = {}
-        self.semantic_objects = {key: val for key, val in objects_temp.items() if key in self.semantic_object_ids}
+        semantic_objects_to_remove = []
+        for semantic_obj_key in self.semantic_objects.keys():
+            if semantic_obj_key not in tracked_object_ids:
+                semantic_objects_to_remove.append(semantic_obj_key)
 
-        foxglove_visualization(self)
-
+        for key in semantic_objects_to_remove:
+            self.semantic_objects.pop(key)
 
     def speech_callback(self, msg):
 
@@ -365,7 +363,7 @@ class SemanticTrackerNode(Node):
             role = self.sensor_dict[sensor_name]['ar_tag_dict'][marker_id]['word']
             confidence = msg.markers[assignment[0]].confidence
 
-            self.semantic_objects[object_key].update_semantic_state('role', role, confidence, self)
+            self.semantic_objects[object_key].update_semantic_state('role', role, .99, self)
 
         # note - no penalty for missing role AR tag
 
@@ -379,14 +377,14 @@ class SemanticTrackerNode(Node):
             comm = self.sensor_dict[sensor_name]['ar_tag_dict'][marker_id]['word']
             confidence = msg.markers[assignment[0]].confidence
 
-            self.semantic_objects[object_key].update_comms(comm, confidence, self)
+            self.semantic_objects[object_key].update_comms(comm, .99, self)
 
         # Handle objects with no speech
         for jj, object_key in enumerate(self.semantic_objects.keys()):
 
             if jj not in comm_assignments[:,1]: # If track is unmatched, handle it as a missed detection
 
-                self.semantic_objects[object_key].update_comms("\'\'", confidence, self)
+                self.semantic_objects[object_key].update_comms("\'\'", .99, self)
 
 
 def main(args=None):
