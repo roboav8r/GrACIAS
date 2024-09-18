@@ -161,6 +161,8 @@ semantic_fusion_node:
 
         match_threshold: 0.5
 
+        default_confidence: .9  #Actual value from node is 0!
+
         ar_tag_ids: [1,2,3,4,5,6,7,8,9,10,11,12]
         ar_tag_types: ['command','command','command','command','command','command','command','command','role','role','role','command']
         ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','','move-in-reverse','pedestrian','teammate','supervisor','advance']

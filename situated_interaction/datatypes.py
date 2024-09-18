@@ -42,10 +42,9 @@ class DiscreteVariable():
         self.last_updated = stamp
 
 class SemanticObject():
-    def __init__(self, msg, params, frame_id):
+    def __init__(self, msg, params):
 
         self.track_id = msg.track_id
-        self.frame_id = frame_id
         self.class_string = msg.class_string
         self.stamp = msg.time_updated
 
@@ -62,8 +61,10 @@ class SemanticObject():
         
         self.vis_rec_complete = False
 
-        # Initialize attributes, states, and obs models
+
         symbol_idx = 0
+        
+        # Initialize attributes
         self.attributes = {}
         for att in params['attributes']:
             self.attributes[att] = DiscreteVariable(att, 'attribute', 
@@ -71,6 +72,7 @@ class SemanticObject():
                                                         self.track_id, params['attributes'][att]['probs'], params['states'][state]['upper_prob_limit'], params['states'][state]['lower_prob_limit'])
             symbol_idx+=1
 
+        # Initialize states
         self.states = {}
         for state in params['states']:
 
@@ -79,16 +81,19 @@ class SemanticObject():
                                             self.track_id, params['states'][state]['probs'], params['states'][state]['upper_prob_limit'], params['states'][state]['lower_prob_limit'])
             symbol_idx+=1
 
+        # Initialize communication
         self.comm_labels = params['comms']['labels']
-
         self.comm_var_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx)
-        # self.comm_gesture_obs_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx + 100)
-        # self.comm_verbal_obs_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx + 101)
         self.comm_probs = gtsam.DiscreteDistribution((self.comm_var_symbol,len(self.comm_labels)), params['comms']['probs'])
-        # self.comm_gesture_obs_model = gtsam.DiscreteConditional([self.comm_gesture_obs_symbol,len(self.comm_labels)],[[self.comm_var_symbol,len(self.comm_labels)]],pmf_to_spec(params['comms']['gesture_sensor_model_array']))
-        # self.comm_verbal_obs_model = gtsam.DiscreteConditional([self.comm_verbal_obs_symbol,len(self.comm_labels)],[[self.comm_var_symbol,len(self.comm_labels)]],pmf_to_spec(params['comms']['verbal_sensor_model_array']))
         self.upper_prob_limit = params['comms']['upper_prob_limit']
         self.lower_prob_limit = params['comms']['lower_prob_limit']
+
+        
+        # self.comm_gesture_obs_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx + 100)
+        # self.comm_verbal_obs_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx + 101)
+        # self.comm_gesture_obs_model = gtsam.DiscreteConditional([self.comm_gesture_obs_symbol,len(self.comm_labels)],[[self.comm_var_symbol,len(self.comm_labels)]],pmf_to_spec(params['comms']['gesture_sensor_model_array']))
+        # self.comm_verbal_obs_model = gtsam.DiscreteConditional([self.comm_verbal_obs_symbol,len(self.comm_labels)],[[self.comm_var_symbol,len(self.comm_labels)]],pmf_to_spec(params['comms']['verbal_sensor_model_array']))
+
 
     def update_spatial_state(self, tracked_object_msg):
                 

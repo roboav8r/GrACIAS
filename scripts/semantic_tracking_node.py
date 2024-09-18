@@ -116,6 +116,9 @@ class SemanticTrackerNode(Node):
 
             # Create subscriber
             if self.sensor_dict[sensor_name]['type']=='fiducial':
+                self.declare_parameter('sensors.%s.default_confidence' % sensor_name, rclpy.Parameter.Type.DOUBLE)
+                self.sensor_dict[sensor_name]['default_confidence'] = self.get_parameter('sensors.%s.default_confidence' % sensor_name).get_parameter_value().double_value
+
                 self.sensor_dict[sensor_name]['sub'] = self.create_subscription(AlvarMarkers, 
                                                                                 self.sensor_dict[sensor_name]['topic'],
                                                                                 eval("lambda msg: self.ar_callback(msg, \"" + sensor_name + "\")",locals()),
@@ -220,7 +223,7 @@ class SemanticTrackerNode(Node):
 
             # Initialize object and add to dict if not currently tracked
             if tracked_object.track_id not in self.semantic_objects.keys():
-                self.semantic_objects[tracked_object.track_id] = SemanticObject(tracked_object, self.object_params[tracked_object.class_string], self.tracks_msg.header.frame_id) # TODO - pass frame_id some other way
+                self.semantic_objects[tracked_object.track_id] = SemanticObject(tracked_object, self.object_params[tracked_object.class_string])
             else:
                 # Update existing track
                 self.semantic_objects[tracked_object.track_id].update_spatial_state(tracked_object)
@@ -363,7 +366,7 @@ class SemanticTrackerNode(Node):
             role = self.sensor_dict[sensor_name]['ar_tag_dict'][marker_id]['word']
             confidence = msg.markers[assignment[0]].confidence
 
-            self.semantic_objects[object_key].update_semantic_state('role', role, .99, self)
+            self.semantic_objects[object_key].update_semantic_state('role', role, self.sensor_dict[sensor_name]['default_confidence'], self)
 
         # note - no penalty for missing role AR tag
 
@@ -377,14 +380,14 @@ class SemanticTrackerNode(Node):
             comm = self.sensor_dict[sensor_name]['ar_tag_dict'][marker_id]['word']
             confidence = msg.markers[assignment[0]].confidence
 
-            self.semantic_objects[object_key].update_comms(comm, .99, self)
+            self.semantic_objects[object_key].update_comms(comm, self.sensor_dict[sensor_name]['default_confidence'], self)
 
         # Handle objects with no speech
         for jj, object_key in enumerate(self.semantic_objects.keys()):
 
             if jj not in comm_assignments[:,1]: # If track is unmatched, handle it as a missed detection
 
-                self.semantic_objects[object_key].update_comms("\'\'", .99, self)
+                self.semantic_objects[object_key].update_comms("\'\'", self.sensor_dict[sensor_name]['default_confidence'], self)
 
 
 def main(args=None):
