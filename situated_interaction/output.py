@@ -36,7 +36,7 @@ def foxglove_visualization(semantic_fusion_node):
             text.text += "%s: %s %2.0f%%\n" % (state, obj.states[state].var_labels[obj.states[state].probs.argmax()], 100*obj.states[state].probs(obj.states[state].probs.argmax()))
 
         text.text += '\n'
-        text.text += "command: %s %2.0f%%\n" % (obj.comm_labels[obj.comm_probs.argmax()], 100*obj.comm_probs(obj.comm_probs.argmax()))
+        text.text += "command: %s %2.0f%%\n" % (obj.comm_labels[obj.comms.probs.argmax()], 100*obj.comms.probs(obj.comms.probs.argmax()))
         entity_msg.texts.append(text)
 
         semantic_fusion_node.scene_out_msg.entities.append(entity_msg)

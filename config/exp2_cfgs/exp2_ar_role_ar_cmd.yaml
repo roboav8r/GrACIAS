@@ -151,6 +151,7 @@ semantic_fusion_node:
     loop_time_sec: 0.5
 
     sensor_names: ['ar_tag']
+    sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
     sensors:
       ar_tag:
         type: 'fiducial'
@@ -161,12 +162,27 @@ semantic_fusion_node:
 
         match_threshold: 0.5
 
-        default_confidence: .9  #Actual value from node is 0!
+        # How to interpret each AR tag id
+        ar_tag_ids: [1,2,3,4,5,6,8,9,10,11,12]
+        ar_tag_types: ['command','command','command','command','command','command','command','role','role','role','command']
+        ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','move-in-reverse','pedestrian','teammate','supervisor','advance']
 
-        ar_tag_ids: [1,2,3,4,5,6,7,8,9,10,11,12]
-        ar_tag_types: ['command','command','command','command','command','command','command','command','role','role','role','command']
-        ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','','move-in-reverse','pedestrian','teammate','supervisor','advance']
-
+        # GTSAM fusion variables
+        role_obs_labels: ['pedestrian','teammate','supervisor']
+        role_obs_model_coeffs: [0., 0., 0.,
+                                1., 0., 0.,
+                                0., 1., 0.,
+                                0., 0., 1.]
+        comm_obs_labels: ['follow-me','advance','halt','rally','attention','move-forward','move-in-reverse']
+        comm_obs_model_coeffs: [0., 0., 0., 0., 0., 0., 0.,
+                                0., 0., 0., 0., 0., 0., 0.,
+                                0., 1., 0., 0., 0., 0., 0.,
+                                0., 0., 0., 0., 1., 0., 0.,
+                                1., 0., 0., 0., 0., 0., 0.,
+                                0., 0., 1., 0., 0., 0., 0.,
+                                0., 0., 0., 0., 0., 1., 0.,
+                                0., 0., 0., 0., 0., 0., 1.,
+                                0., 0., 0., 1., 0., 0., 0.]
 
     objects_of_interest: ['person']
     object_classes: ['person']
@@ -178,12 +194,14 @@ semantic_fusion_node:
       states:
         variables: ['role']
         role:
+          symbol: 'r' # Letter to uniquely identify the variable in GTSAM.
           labels: ['unknown','pedestrian','robot-teammate','robot-supervisor']
           probs: [10., 1., 1., 1.]
           upper_prob_limit: .90
           lower_prob_limit: .01
       
       comms: 
+        symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
         labels: ['none','other','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
         probs: [10., 1., 1., 1., 1., 1., 1., 1., 1.]  
         upper_prob_limit: .90

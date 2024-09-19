@@ -2,7 +2,6 @@
 
 import gtsam
 import numpy as np
-from string import ascii_lowercase as alc
 
 from rclpy.time import Time
 
@@ -21,8 +20,7 @@ class DiscreteVariable():
         self.last_updated = stamp
     
         # GTSAM
-        self.var_labels = labels # TODO - make separate obs_labels for different detectors
-        self.obs_labels = labels
+        self.var_labels = labels
         self.var_symbol = gtsam.symbol(sym, idx)
         
         self.probs = gtsam.DiscreteDistribution((self.var_symbol,len(self.var_labels)), init_prob)
@@ -31,9 +29,8 @@ class DiscreteVariable():
         self.upper_prob_limit = upper_prob_limit
         self.lower_prob_limit = lower_prob_limit
         
-    def update(self, obs_probs, stamp):
-        obs = gtsam.DiscreteDistribution([self.obs_symbol,len(self.obs_labels)], obs_probs)
-        likelihood = self.obs_model.likelihood(obs.argmax())
+    def update(self, likelihood, stamp):
+
         self.probs = gtsam.DiscreteDistribution(likelihood*self.probs)
 
         normalized_pmf = normalize_vector(self.probs.pmf(), self.upper_prob_limit, self.lower_prob_limit)
@@ -44,10 +41,12 @@ class DiscreteVariable():
 class SemanticObject():
     def __init__(self, msg, params):
 
+        # Admin/metadata
         self.track_id = msg.track_id
         self.class_string = msg.class_string
         self.stamp = msg.time_updated
 
+        # Initialize spatial state
         self.pos_x = msg.pose.pose.position.x
         self.pos_y = msg.pose.pose.position.y
         self.pos_z = msg.pose.pose.position.z
@@ -60,40 +59,23 @@ class SemanticObject():
             self.image = None
         
         self.vis_rec_complete = False
-
-
-        symbol_idx = 0
         
-        # Initialize attributes
+        # Initialize discrete attributes and states
         self.attributes = {}
         for att in params['attributes']:
             self.attributes[att] = DiscreteVariable(att, 'attribute', 
-                                                        Time.from_msg(self.stamp), params['attributes'][att]['labels'], alc[symbol_idx], 
+                                                        Time.from_msg(self.stamp), params['attributes'][att]['labels'], params['attributes'][att]['symbol'], 
                                                         self.track_id, params['attributes'][att]['probs'], params['states'][state]['upper_prob_limit'], params['states'][state]['lower_prob_limit'])
-            symbol_idx+=1
-
-        # Initialize states
         self.states = {}
         for state in params['states']:
-
             self.states[state] = DiscreteVariable(state, 'state',
-                                            Time.from_msg(self.stamp), params['states'][state]['labels'], alc[symbol_idx], 
+                                            Time.from_msg(self.stamp), params['states'][state]['labels'], params['states'][state]['symbol'], 
                                             self.track_id, params['states'][state]['probs'], params['states'][state]['upper_prob_limit'], params['states'][state]['lower_prob_limit'])
-            symbol_idx+=1
 
         # Initialize communication
-        self.comm_labels = params['comms']['labels']
-        self.comm_var_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx)
-        self.comm_probs = gtsam.DiscreteDistribution((self.comm_var_symbol,len(self.comm_labels)), params['comms']['probs'])
-        self.upper_prob_limit = params['comms']['upper_prob_limit']
-        self.lower_prob_limit = params['comms']['lower_prob_limit']
-
-        
-        # self.comm_gesture_obs_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx + 100)
-        # self.comm_verbal_obs_symbol = gtsam.symbol(alc[symbol_idx], symbol_idx + 101)
-        # self.comm_gesture_obs_model = gtsam.DiscreteConditional([self.comm_gesture_obs_symbol,len(self.comm_labels)],[[self.comm_var_symbol,len(self.comm_labels)]],pmf_to_spec(params['comms']['gesture_sensor_model_array']))
-        # self.comm_verbal_obs_model = gtsam.DiscreteConditional([self.comm_verbal_obs_symbol,len(self.comm_labels)],[[self.comm_var_symbol,len(self.comm_labels)]],pmf_to_spec(params['comms']['verbal_sensor_model_array']))
-
+        self.comms = DiscreteVariable('comms', 'comms',
+                                            Time.from_msg(self.stamp), params['comms']['labels'], params['comms']['symbol'], 
+                                            self.track_id, params['comms']['probs'], params['comms']['upper_prob_limit'], params['comms']['lower_prob_limit'])
 
     def update_spatial_state(self, tracked_object_msg):
                 
@@ -105,6 +87,9 @@ class SemanticObject():
         self.image = tracked_object_msg.image
 
         self.stamp = tracked_object_msg.time_updated
+
+    def update_comms(self, likelihood, stamp):
+        self.comms.update(likelihood, stamp)
 
     def update_verbal_comms(self, transcript, confidence, parent_node):
         
@@ -143,9 +128,3 @@ class SemanticObject():
 
         normalized_pmf = normalize_vector(self.comm_probs.pmf(), self.upper_prob_limit, self.lower_prob_limit)
         self.comm_probs = gtsam.DiscreteDistribution((self.comm_var_symbol,len(self.comm_labels)),normalized_pmf)
-
-    def update_comms(self, word, conf, parent_node):
-        parent_node.get_logger().info('Update comm %s with confidence %s' % (word, conf))
-
-    def update_semantic_state(self, name, value, conf, parent_node):
-        parent_node.get_logger().info('Update semantic state %s with value %s confidence %s' % (name, value, conf))
