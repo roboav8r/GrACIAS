@@ -157,8 +157,8 @@ semantic_fusion_node:
         type: 'fiducial'
         topic: 'ar_pose_marker'
 
-        update_type: 'count'
-        update_count: 3 # Update every 3 messages received
+        update_method: 'count' # time, count, or confidence
+        update_threshold: 4 # Update every 3 messages received
 
         match_threshold: 0.5
 
@@ -169,20 +169,19 @@ semantic_fusion_node:
 
         # GTSAM fusion variables
         role_obs_labels: ['pedestrian','teammate','supervisor']
-        role_obs_model_coeffs: [0., 0., 0.,
+        role_obs_model_coeffs: [1., 1., 1.,
                                 1., 0., 0.,
                                 0., 1., 0.,
                                 0., 0., 1.]
-        comm_obs_labels: ['follow-me','advance','halt','rally','attention','move-forward','move-in-reverse']
-        comm_obs_model_coeffs: [0., 0., 0., 0., 0., 0., 0.,
-                                0., 0., 0., 0., 0., 0., 0.,
-                                0., 1., 0., 0., 0., 0., 0.,
-                                0., 0., 0., 0., 1., 0., 0.,
-                                1., 0., 0., 0., 0., 0., 0.,
-                                0., 0., 1., 0., 0., 0., 0.,
-                                0., 0., 0., 0., 0., 1., 0.,
-                                0., 0., 0., 0., 0., 0., 1.,
-                                0., 0., 0., 1., 0., 0., 0.]
+        comm_obs_labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        comm_obs_model_coeffs: [1., 0., 0., 0., 0., 0., 0., 0.,
+                                0., 1., 0., 0., 0., 0., 0., 0.,
+                                0., 0., 1., 0., 0., 0., 0., 0.,
+                                0., 0., 0., 1., 0., 0., 0., 0.,
+                                0., 0., 0., 0., 1., 0., 0., 0.,
+                                0., 0., 0., 0., 0., 1., 0., 0.,
+                                0., 0., 0., 0., 0., 0., 1., 0.,
+                                0., 0., 0., 0., 0., 0., 0., 1.]
 
     objects_of_interest: ['person']
     object_classes: ['person']
@@ -202,8 +201,8 @@ semantic_fusion_node:
       
       comms: 
         symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
-        labels: ['none','other','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
-        probs: [10., 1., 1., 1., 1., 1., 1., 1., 1.]  
+        labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        probs: [10., 1., 1., 1., 1., 1., 1., 1.]  
         upper_prob_limit: .90
         lower_prob_limit: .01
        

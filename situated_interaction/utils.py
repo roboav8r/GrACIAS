@@ -7,6 +7,12 @@ import rclpy
 
 from ar_track_alvar_msgs.msg import AlvarMarkers
 
+def process_sensor_update(sensor_params):
+    if sensor_params['update_method']=='count':
+        return sensor_params['count']%sensor_params['update_threshold']==0
+    else:
+        return False
+
 def initialize_sensors(semantic_fusion_node):
     semantic_fusion_node.sensor_dict = {}
     
@@ -28,6 +34,17 @@ def initialize_sensors(semantic_fusion_node):
         semantic_fusion_node.sensor_dict[sensor_name]['match_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.match_threshold' % sensor_name).get_parameter_value().double_value
 
         # TODO - update method, update thresh
+        semantic_fusion_node.declare_parameter('sensors.%s.update_method' % sensor_name, rclpy.Parameter.Type.STRING)
+        semantic_fusion_node.sensor_dict[sensor_name]['update_method'] = semantic_fusion_node.get_parameter('sensors.%s.update_method' % sensor_name).get_parameter_value().string_value
+
+        if semantic_fusion_node.sensor_dict[sensor_name]['update_method'] == 'count':
+            semantic_fusion_node.declare_parameter('sensors.%s.update_threshold' % sensor_name, rclpy.Parameter.Type.INTEGER)
+            semantic_fusion_node.sensor_dict[sensor_name]['update_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.update_threshold' % sensor_name).get_parameter_value().integer_value
+            semantic_fusion_node.sensor_dict[sensor_name]['count'] = 0
+
+        elif semantic_fusion_node.sensor_dict[sensor_name]['update_method'] in ['confidence', 'time']:
+            semantic_fusion_node.declare_parameter('sensors.%s.update_threshold' % sensor_name, rclpy.Parameter.Type.DOUBLE)
+            semantic_fusion_node.sensor_dict[sensor_name]['update_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.update_threshold' % sensor_name).get_parameter_value().double_value
 
         # Create subscribers, GTSAM observation models
         if semantic_fusion_node.sensor_dict[sensor_name]['type']=='fiducial':

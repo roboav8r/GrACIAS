@@ -25,7 +25,7 @@ from situated_hri_interfaces.srv import ObjectVisRec
 from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_delta_az, compute_delta_pos, solve_assignment_matrix
 from situated_interaction.datatypes import DiscreteVariable, SemanticObject
 from situated_interaction.output import foxglove_visualization
-from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params, initialize_sensors
+from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params, initialize_sensors, process_sensor_update
 
 class SemanticTrackerNode(Node):
 
@@ -197,81 +197,68 @@ class SemanticTrackerNode(Node):
 
     def ar_callback(self, msg, sensor_name):
 
+        if process_sensor_update(self.sensor_dict[sensor_name])==False:
+            return
+
         # Compute number of comms and role markers to assign
-        n_comm_assignments = 0
-        n_role_assignments = 0
+        comm_markers = {}
+        role_markers = {}
+
+        # Compute TF
+        artag_tracker_tf = self.tf_buffer.lookup_transform(self.tracker_frame,self.artag_frame,time=rclpy.time.Time(),timeout=rclpy.duration.Duration(seconds=.1))
+
         for marker in msg.markers:
-            self.get_logger().info('%s: got ar msg %s' % (sensor_name, marker.id))
+            # self.get_logger().info('%s: got ar msg %s' % (sensor_name, marker.id))
 
             if marker.id in self.sensor_dict[sensor_name]['ar_tag_dict'].keys():
 
                 # Get semantic meaning, word type
                 type = self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type']
                 word = self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['word']
-                self.get_logger().info('%s: %s\n' % (type, word))
 
-                if self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type'] == 'command':
-                    n_comm_assignments +=1
+                # Compute marker position in tracker frame
+                pos_in_ar_frame = PointStamped()
+                pos_in_ar_frame.point.x = marker.pose.pose.position.x
+                pos_in_ar_frame.point.y = marker.pose.pose.position.y
+                pos_in_ar_frame.point.z = marker.pose.pose.position.z
+                pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,artag_tracker_tf)
+                marker_pos = np.array([pos_in_tracker_frame.point.x,pos_in_tracker_frame.point.y,pos_in_tracker_frame.point.z])
 
-                elif self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type'] == 'role':
-                    n_role_assignments +=1
+                if type == 'command':
+                    comm_markers[marker.id] = {}
+                    comm_markers[marker.id]['pos'] = marker_pos
+                    comm_markers[marker.id]['marker'] = marker
 
-        # Compute TF
-        artag_tracker_tf = self.tf_buffer.lookup_transform(self.tracker_frame,self.artag_frame,time=rclpy.time.Time(),timeout=rclpy.duration.Duration(seconds=.1))
+                elif type == 'role':
+                    role_markers[marker.id] = {}
+                    role_markers[marker.id]['pos'] = marker_pos
+                    role_markers[marker.id]['marker'] = marker
 
-        # Initialize, populate, and solve assignment matrices
-        comm_assignment_matrix = np.zeros((n_comm_assignments,len(self.semantic_objects.keys())))
-        if n_comm_assignments != 0:
-            marker_idx = 0
-        
-            for marker in msg.markers:
-                if marker.id not in self.sensor_dict[sensor_name]['ar_tag_dict'].keys() or self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type'] != 'command':
+        # Initialize, populate, and solve comm assignment matrix
+        comm_assignment_matrix = np.zeros((len(comm_markers.keys()),len(self.semantic_objects.keys())))
+        for marker_idx, marker_key in enumerate(comm_markers.keys()):
 
-                    continue
+            for jj, object_key in enumerate(self.semantic_objects.keys()):
+            
+                object = self.semantic_objects[object_key]
+                marker_pos = comm_markers[marker_key]['pos']
+                object_pos = np.array([object.pos_x,object.pos_y,object.pos_z])
+                delta_pos = compute_delta_pos(marker_pos, object_pos)
+                comm_assignment_matrix[marker_idx,jj] += delta_pos
 
-                for jj, object_key in enumerate(self.semantic_objects.keys()):
-                
-                    pos_in_ar_frame = PointStamped()
-                    pos_in_ar_frame.point.x = marker.pose.pose.position.x
-                    pos_in_ar_frame.point.y = marker.pose.pose.position.y
-                    pos_in_ar_frame.point.z = marker.pose.pose.position.z
-                    pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,artag_tracker_tf)
-
-                    object = self.semantic_objects[object_key]
-                    marker_pos = np.array([pos_in_tracker_frame.point.x,pos_in_tracker_frame.point.y,pos_in_tracker_frame.point.z])
-                    object_pos = np.array([object.pos_x,object.pos_y,object.pos_z])
-                    delta_pos = compute_delta_pos(marker_pos, object_pos)
-                    comm_assignment_matrix[marker_idx,jj] += delta_pos
-
-
-        # Solve comm assignment matrix
         comm_assignments = solve_assignment_matrix('greedy', comm_assignment_matrix, self.sensor_dict[sensor_name]['match_threshold'])
 
-        role_assignment_matrix = np.zeros((n_role_assignments,len(self.semantic_objects.keys())))
-        role_idx = 0
-        if n_role_assignments != 0:
-        
-            for marker in msg.markers:
-                if marker.id not in self.sensor_dict[sensor_name]['ar_tag_dict'].keys() or self.sensor_dict[sensor_name]['ar_tag_dict'][marker.id]['type'] != 'role':
-                    continue
+        # Initialize, populate, and solve role assignment matrix
+        role_assignment_matrix = np.zeros((len(role_markers.keys()),len(self.semantic_objects.keys())))
+        for marker_idx, marker_key in enumerate(role_markers.keys()):
+            for jj, object_key in enumerate(self.semantic_objects.keys()):
 
-                for jj, object_key in enumerate(self.semantic_objects.keys()):
-                
-                    pos_in_ar_frame = PointStamped()
-                    pos_in_ar_frame.point.x = marker.pose.pose.position.x
-                    pos_in_ar_frame.point.y = marker.pose.pose.position.y
-                    pos_in_ar_frame.point.z = marker.pose.pose.position.z
-                    pos_in_tracker_frame = do_transform_point(pos_in_ar_frame,artag_tracker_tf)
+                object = self.semantic_objects[object_key]
+                marker_pos = role_markers[marker_key]['pos']
+                object_pos = np.array([object.pos_x,object.pos_y,object.pos_z])
+                delta_pos = compute_delta_pos(marker_pos, object_pos)
+                role_assignment_matrix[marker_idx,jj] += delta_pos
 
-                    object = self.semantic_objects[object_key]
-                    marker_pos = np.array([pos_in_tracker_frame.point.x,pos_in_tracker_frame.point.y,pos_in_tracker_frame.point.z])
-                    object_pos = np.array([object.pos_x,object.pos_y,object.pos_z])
-                    delta_pos = compute_delta_pos(marker_pos, object_pos)
-                    role_assignment_matrix[role_idx,jj] += delta_pos
-
-                role_idx +=1
-
-        # Solve assignment matrix
         role_assignments = solve_assignment_matrix('greedy', role_assignment_matrix, self.sensor_dict[sensor_name]['match_threshold'])
 
         # Handle role matches
@@ -279,16 +266,26 @@ class SemanticTrackerNode(Node):
 
             object_idx = assignment[1]
             object_key = list(self.semantic_objects.keys())[object_idx]
-            marker_id = msg.markers[assignment[0]].id
+            marker_idx = assignment[0]
+            marker_id = list(role_markers.keys())[marker_idx]
             role_word = self.sensor_dict[sensor_name]['ar_tag_dict'][marker_id]['word']
+
+            # self.get_logger().info('Assigning role id %s (%s) to object id %s\n' % (marker_id, role_word, object_key))
 
             # Get variable symbol
             role_var = self.semantic_objects[object_key].states['role']
             role_obs_idx = self.sensor_dict[sensor_name]['role_obs_labels'].index(role_word)
 
+            # self.get_logger().info('Role labels %s' % (role_var.var_labels))
+            # self.get_logger().info('Role probs %s' % (role_var.probs))
+            # self.get_logger().info('Role obs index %s' % (role_obs_idx))
+
             # Compute obs model, update state variable
             role_obs_model = gtsam.DiscreteConditional([self.sensor_dict[sensor_name]['role_obs_symbol'],len(self.sensor_dict[sensor_name]['role_obs_labels'])],[[role_var.var_symbol,len(role_var.var_labels)]],self.sensor_dict[sensor_name]['role_obs_spec'])
             role_likelihood = role_obs_model.likelihood(role_obs_idx)
+
+            # self.get_logger().info('Role obs model %s' % (role_obs_model))
+            # self.get_logger().info('Role obs likelihood %s' % (role_likelihood))
 
             role_var.update(role_likelihood, msg.header.stamp)
 
@@ -297,17 +294,36 @@ class SemanticTrackerNode(Node):
 
             object_idx = assignment[1]
             object_key = list(self.semantic_objects.keys())[object_idx]
-            marker_id = msg.markers[assignment[0]].id
-            comm = self.sensor_dict[sensor_name]['ar_tag_dict'][marker_id]['word']
+            marker_idx = assignment[0]
+            marker_id = list(comm_markers.keys())[marker_idx]
+            comm_word = self.sensor_dict[sensor_name]['ar_tag_dict'][marker_id]['word']
 
-            self.semantic_objects[object_key].update_comms(comm, self.sensor_dict[sensor_name]['default_confidence'], self)
+            # self.get_logger().info('Assigning comm id %s (%s) to object id %s\n' % (marker_id, comm_word, object_key))
+
+            # Get comms symbol
+            comm_var = self.semantic_objects[object_key].comms
+            comm_obs_idx = self.sensor_dict[sensor_name]['comm_obs_labels'].index(comm_word)
+
+            comm_obs_model = gtsam.DiscreteConditional([self.sensor_dict[sensor_name]['comm_obs_symbol'],len(self.sensor_dict[sensor_name]['comm_obs_labels'])],[[comm_var.var_symbol,len(comm_var.var_labels)]],self.sensor_dict[sensor_name]['comm_obs_spec'])
+            comm_likelihood = comm_obs_model.likelihood(comm_obs_idx)
+
+            comm_var.update(comm_likelihood, msg.header.stamp)
 
         # Handle objects with no speech
         for jj, object_key in enumerate(self.semantic_objects.keys()):
 
             if jj not in comm_assignments[:,1]: # If track is unmatched, handle it as a missed detection
 
-                self.semantic_objects[object_key].update_comms("\'\'", self.sensor_dict[sensor_name]['default_confidence'], self)
+                comm_word = 'none'
+
+                # Get comms symbol
+                comm_var = self.semantic_objects[object_key].comms
+                comm_obs_idx = self.sensor_dict[sensor_name]['comm_obs_labels'].index(comm_word)
+
+                comm_obs_model = gtsam.DiscreteConditional([self.sensor_dict[sensor_name]['comm_obs_symbol'],len(self.sensor_dict[sensor_name]['comm_obs_labels'])],[[comm_var.var_symbol,len(comm_var.var_labels)]],self.sensor_dict[sensor_name]['comm_obs_spec'])
+                comm_likelihood = comm_obs_model.likelihood(comm_obs_idx)
+
+                comm_var.update(comm_likelihood, msg.header.stamp)
 
 
 def main(args=None):

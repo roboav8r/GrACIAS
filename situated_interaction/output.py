@@ -14,7 +14,7 @@ def foxglove_visualization(semantic_fusion_node):
         entity_msg.timestamp = semantic_fusion_node.tracks_msg.header.stamp
         entity_msg.id = str(obj.track_id)
         entity_msg.frame_locked = True
-        entity_msg.lifetime.nanosec = 500000000
+        entity_msg.lifetime.nanosec = int(semantic_fusion_node.loop_time_sec*1000000000)
 
         text = TextPrimitive()
         text.billboard = True
@@ -36,7 +36,7 @@ def foxglove_visualization(semantic_fusion_node):
             text.text += "%s: %s %2.0f%%\n" % (state, obj.states[state].var_labels[obj.states[state].probs.argmax()], 100*obj.states[state].probs(obj.states[state].probs.argmax()))
 
         text.text += '\n'
-        text.text += "command: %s %2.0f%%\n" % (obj.comm_labels[obj.comms.probs.argmax()], 100*obj.comms.probs(obj.comms.probs.argmax()))
+        text.text += "command: %s %2.0f%%\n" % (obj.comms.var_labels[obj.comms.probs.argmax()], 100*obj.comms.probs(obj.comms.probs.argmax()))
         entity_msg.texts.append(text)
 
         semantic_fusion_node.scene_out_msg.entities.append(entity_msg)
