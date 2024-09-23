@@ -25,7 +25,7 @@ from situated_hri_interfaces.srv import ObjectVisRec
 from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_delta_az, compute_delta_pos, solve_assignment_matrix
 from situated_interaction.datatypes import DiscreteVariable, SemanticObject
 from situated_interaction.output import foxglove_visualization
-from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params, initialize_sensors, process_sensor_update
+from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params, initialize_sensors, process_sensor_update, delete_sensors
 
 class SemanticTrackerNode(Node):
 
@@ -46,13 +46,13 @@ class SemanticTrackerNode(Node):
             10, callback_group=self.sub_cb_group)
         self.subscription_tracks  # prevent unused variable warning
 
-        # Subscribe to localized speech
-        self.subscription_speech = self.create_subscription(
-            SpeechAzSources,
-            'speech_az_sources',
-            self.speech_callback,
-            10, callback_group=self.sub_cb_group)
-        self.subscription_speech  # prevent unused variable warning
+        # # Subscribe to localized speech
+        # self.subscription_speech = self.create_subscription(
+        #     SpeechAzSources,
+        #     'speech_az_sources',
+        #     self.speech_callback,
+        #     10, callback_group=self.sub_cb_group)
+        # self.subscription_speech  # prevent unused variable warning
 
         # Define pubs
         self.semantic_scene_pub = self.create_publisher(
@@ -72,8 +72,9 @@ class SemanticTrackerNode(Node):
         #     self.get_logger().info('service not available, waiting again...')
         # self.clip_req = ObjectVisRec.Request()
 
-        # Create reset server
+        # Create reset & reconfigure servers
         self.reset_srv = self.create_service(Empty, '~/reset', self.reset_callback)
+        self.reconfigure_srv = self.create_service(Empty, '~/reconfigure', self.reconfigure_callback)
         
         # Create transform buffer/listener
         self.declare_parameter('tracker_frame', rclpy.Parameter.Type.STRING)
@@ -106,6 +107,19 @@ class SemanticTrackerNode(Node):
 
         return resp
     
+    def reconfigure_callback(self, _, resp):
+
+        self.get_logger().info("Reconfiguring")
+
+        # Delete sensor subscribers
+        delete_sensors(self)
+
+        # Initialize subscribers and object parameters
+        initialize_sensors(self)
+        load_object_params(self)
+
+        return resp
+
     def send_obj_clip_req(self, id, atts_to_est, states_to_est, est_comms):
         self.clip_req = ObjectVisRec.Request()
         self.clip_req.object_id = id

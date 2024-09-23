@@ -18,8 +18,7 @@ def generate_launch_description():
     params = os.path.join(
         get_package_share_directory('situated_interaction'),
         'config',
-        'exp2_cfgs',
-        'exp2_ar_role_ar_cmd.yaml'
+        'default_exp_params.yaml'
     )
 
     tracker_params = os.path.join(
@@ -84,6 +83,17 @@ def generate_launch_description():
     )
     ld.add_action(semantic_fusion_node)
 
+    ### EXPERIMENT MANAGER NODE
+    experiment_mgr_node = Node(
+        package='situated_interaction',
+        executable='hri_exp_mgr.py',
+        name='hri_exp_mgr',
+        output='screen',
+        parameters=[params]
+    )
+    ld.add_action(experiment_mgr_node)
+
+    ### MISCELLANY
     # Foxglove bridge for visualization
     viz_node = IncludeLaunchDescription(
         XMLLaunchDescriptionSource(
