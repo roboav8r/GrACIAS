@@ -63,7 +63,6 @@ class HRIExpManager(Node):
             last_root = None
 
             # Traverse filepath
-            self.get_logger().info(f"Looking for .mcap files in {self.mcap_dir}")
             for root, _, files in os.walk(self.mcap_dir):
 
                 # Examine each file

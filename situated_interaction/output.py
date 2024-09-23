@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from situated_hri_interfaces.msg import HierarchicalCommand, HierarchicalCommands
 from foxglove_msgs.msg import SceneUpdate, SceneEntity, TextPrimitive
 
 def foxglove_visualization(semantic_fusion_node):
@@ -42,3 +42,23 @@ def foxglove_visualization(semantic_fusion_node):
         semantic_fusion_node.scene_out_msg.entities.append(entity_msg)
 
     semantic_fusion_node.semantic_scene_pub.publish(semantic_fusion_node.scene_out_msg)
+
+def publish_hierarchical_commands(semantic_fusion_node):
+    semantic_fusion_node.hierarchical_cmds_msg = HierarchicalCommands()
+
+    for idx in semantic_fusion_node.semantic_objects.keys():
+        obj = semantic_fusion_node.semantic_objects[idx]
+        hierarchical_cmd_msg = HierarchicalCommand()
+
+        # Populate message
+        for att in obj.attributes:
+            hierarchical_cmd_msg.attributes.append(obj.attributes[att].var_labels[obj.attributes[att].probs.argmax()])
+
+        for state in obj.states:
+            hierarchical_cmd_msg.states.append(obj.states[state].var_labels[obj.states[state].probs.argmax()])
+        
+        hierarchical_cmd_msg.comms = obj.comms.var_labels[obj.comms.probs.argmax()]
+
+        semantic_fusion_node.hierarchical_cmds_msg.commands.append(hierarchical_cmd_msg)
+
+    semantic_fusion_node.hierarchical_cmd_pub.publish(semantic_fusion_node.hierarchical_cmds_msg)

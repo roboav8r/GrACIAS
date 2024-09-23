@@ -19,12 +19,12 @@ from tracking_msgs.msg import Tracks3D
 from ros_audition.msg import SpeechAzSources
 from foxglove_msgs.msg import SceneUpdate
 
-from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, CategoricalDistribution
+from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, CategoricalDistribution, HierarchicalCommands
 from situated_hri_interfaces.srv import ObjectVisRec
 
 from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_delta_az, compute_delta_pos, solve_assignment_matrix
 from situated_interaction.datatypes import DiscreteVariable, SemanticObject
-from situated_interaction.output import foxglove_visualization
+from situated_interaction.output import foxglove_visualization, publish_hierarchical_commands
 from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params, initialize_sensors, process_sensor_update, delete_sensors
 
 class SemanticTrackerNode(Node):
@@ -58,6 +58,11 @@ class SemanticTrackerNode(Node):
         self.semantic_scene_pub = self.create_publisher(
             SceneUpdate,
             'semantic_scene',
+            10)
+
+        self.hierarchical_cmd_pub = self.create_publisher(
+            HierarchicalCommands,
+            'hierarchical_commands',
             10)
         
         # Create main timer
@@ -148,6 +153,7 @@ class SemanticTrackerNode(Node):
         # TODO - check futures
 
         foxglove_visualization(self)
+        publish_hierarchical_commands(self)
 
     def tracks_callback(self, msg):
         self.tracks_msg = msg
