@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from situated_hri_interfaces.msg import HierarchicalCommand, HierarchicalCommands
+
+from diagnostic_msgs.msg import KeyValue
 from foxglove_msgs.msg import SceneUpdate, SceneEntity, TextPrimitive
 
 def foxglove_visualization(semantic_fusion_node):
@@ -45,17 +47,32 @@ def foxglove_visualization(semantic_fusion_node):
 
 def publish_hierarchical_commands(semantic_fusion_node):
     semantic_fusion_node.hierarchical_cmds_msg = HierarchicalCommands()
+    semantic_fusion_node.hierarchical_cmds_msg.header.frame_id = semantic_fusion_node.tracker_frame
+    semantic_fusion_node.hierarchical_cmds_msg.header.stamp = semantic_fusion_node.tracks_msg.header.stamp
 
     for idx in semantic_fusion_node.semantic_objects.keys():
         obj = semantic_fusion_node.semantic_objects[idx]
         hierarchical_cmd_msg = HierarchicalCommand()
 
+        hierarchical_cmd_msg.pose.position.x = obj.pos_x
+        hierarchical_cmd_msg.pose.position.y = obj.pos_y
+        hierarchical_cmd_msg.pose.position.z = obj.pos_z
+
+        hierarchical_cmd_msg.class_string = obj.class_string
+        hierarchical_cmd_msg.object_id = obj.track_id
+
         # Populate message
         for att in obj.attributes:
-            hierarchical_cmd_msg.attributes.append(obj.attributes[att].var_labels[obj.attributes[att].probs.argmax()])
+            kv_msg = KeyValue()
+            kv_msg.key = att
+            kv_msg.value = obj.attributes[att].var_labels[obj.attributes[att].probs.argmax()]
+            hierarchical_cmd_msg.attributes.append(kv_msg)
 
         for state in obj.states:
-            hierarchical_cmd_msg.states.append(obj.states[state].var_labels[obj.states[state].probs.argmax()])
+            kv_msg = KeyValue()
+            kv_msg.key = state
+            kv_msg.value = obj.states[state].var_labels[obj.states[state].probs.argmax()]
+            hierarchical_cmd_msg.states.append(kv_msg)
         
         hierarchical_cmd_msg.comms = obj.comms.var_labels[obj.comms.probs.argmax()]
 

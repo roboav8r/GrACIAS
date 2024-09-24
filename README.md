@@ -142,6 +142,8 @@ jupyter-notebook
 - rename/rebrand node: semantic tracking? situated interaction node? hierarchical control node?
 
 ## Refactoring
+- set variable for detections
+- function: update_states(detections, assignments)
 
 ## Demo ideas
 - focus: attention at robot, away from robot as state

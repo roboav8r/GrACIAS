@@ -17,7 +17,7 @@ def try_to_declare_parameter(node, param, type):
     try:
         node.declare_parameter(param, type)
     except rclpy.exceptions.ParameterAlreadyDeclaredException:
-        node.get_logger().info(f"Parameter {param} already declared.")
+        return
 
 def delete_sensors(semantic_fusion_node):
     for sensor_name in semantic_fusion_node.sensor_names:
@@ -30,16 +30,18 @@ def delete_sensors(semantic_fusion_node):
 def initialize_sensors(semantic_fusion_node):
     semantic_fusion_node.sensor_dict = {}
     
+    try_to_declare_parameter(semantic_fusion_node,'role_rec_method', rclpy.Parameter.Type.STRING)
+    try_to_declare_parameter(semantic_fusion_node,'command_rec_method', rclpy.Parameter.Type.STRING)
     try_to_declare_parameter(semantic_fusion_node,'sensor_names', rclpy.Parameter.Type.STRING_ARRAY)
     try_to_declare_parameter(semantic_fusion_node,'sensor_symbol', rclpy.Parameter.Type.STRING)
-    semantic_fusion_node.get_logger().info("AAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHH YAEAHHHHHH")
+    semantic_fusion_node.role_rec_method = semantic_fusion_node.get_parameter('role_rec_method').get_parameter_value().string_value
+    semantic_fusion_node.command_rec_method = semantic_fusion_node.get_parameter('command_rec_method').get_parameter_value().string_value
     semantic_fusion_node.sensor_names = semantic_fusion_node.get_parameter('sensor_names').get_parameter_value().string_array_value
     semantic_fusion_node.sensor_dict['symbol'] = semantic_fusion_node.get_parameter('sensor_symbol').get_parameter_value().string_value
 
     observer_idx = 0 # Used for GTSAM observation factors
 
     for sensor_name in semantic_fusion_node.sensor_names:
-        semantic_fusion_node.get_logger().info("AAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHH YAEAHHHHHH handling sensor %s" % sensor_name)
 
         if sensor_name == '':
             continue
@@ -67,7 +69,7 @@ def initialize_sensors(semantic_fusion_node):
             semantic_fusion_node.sensor_dict[sensor_name]['update_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.update_threshold' % sensor_name).get_parameter_value().double_value
 
         # Create subscribers, GTSAM observation models
-        if semantic_fusion_node.sensor_dict[sensor_name]['type']=='fiducial':
+        if semantic_fusion_node.sensor_dict[sensor_name]['type']=='artag':
 
             # Create subscriber
             semantic_fusion_node.sensor_dict[sensor_name]['sub'] = semantic_fusion_node.create_subscription(AlvarMarkers, 
@@ -174,37 +176,6 @@ def load_object_params(semantic_fusion_node):
             semantic_fusion_node.object_params[obj]['comms']['probs'] = semantic_fusion_node.get_parameter(obj + '.comms.probs').get_parameter_value().double_array_value
             semantic_fusion_node.object_params[obj]['comms']['upper_prob_limit'] = semantic_fusion_node.get_parameter(obj + '.comms.upper_prob_limit').get_parameter_value().double_value
             semantic_fusion_node.object_params[obj]['comms']['lower_prob_limit'] = semantic_fusion_node.get_parameter(obj + '.comms.lower_prob_limit').get_parameter_value().double_value
-
-
-        # # Get AR tag parameters
-        # try_to_declare_parameter(semantic_fusion_node,obj + '.comms.ar_tag_ids', rclpy.Parameter.Type.INTEGER_ARRAY)
-        # try_to_declare_parameter(semantic_fusion_node,obj + '.comms.ar_tag_types', rclpy.Parameter.Type.STRING_ARRAY)
-        # try_to_declare_parameter(semantic_fusion_node,obj + '.comms.ar_tag_words', rclpy.Parameter.Type.STRING_ARRAY)
-        # semantic_fusion_node.object_params[obj]['comms']['ar_tag_ids'] = semantic_fusion_node.get_parameter(obj + '.comms.ar_tag_ids').get_parameter_value().integer_array_value
-        # semantic_fusion_node.object_params[obj]['comms']['ar_tag_types'] = semantic_fusion_node.get_parameter(obj + '.comms.ar_tag_types').get_parameter_value().string_array_value
-        # semantic_fusion_node.object_params[obj]['comms']['ar_tag_words'] = semantic_fusion_node.get_parameter(obj + '.comms.ar_tag_words').get_parameter_value().string_array_value
-        # semantic_fusion_node.object_params[obj]['comms']['ar_tag_dict'] = {}
-        # assert len(semantic_fusion_node.object_params[obj]['comms']['ar_tag_ids']) == len(semantic_fusion_node.object_params[obj]['comms']['ar_tag_types'])
-        # assert len(semantic_fusion_node.object_params[obj]['comms']['ar_tag_words']) == len(semantic_fusion_node.object_params[obj]['comms']['ar_tag_types'])
-        # for index, tag_id in enumerate(semantic_fusion_node.object_params[obj]['comms']['ar_tag_ids']):
-        #     semantic_fusion_node.object_params[obj]['comms']['ar_tag_dict'][tag_id] = {}
-        #     semantic_fusion_node.object_params[obj]['comms']['ar_tag_dict'][tag_id]['type'] = semantic_fusion_node.object_params[obj]['comms']['ar_tag_types'][index]
-        #     semantic_fusion_node.object_params[obj]['comms']['ar_tag_dict'][tag_id]['word'] = semantic_fusion_node.object_params[obj]['comms']['ar_tag_words'][index]
-
-        # # Get gesture parameters
-        # try_to_declare_parameter(semantic_fusion_node,obj + '.comms.gesture_descriptions', rclpy.Parameter.Type.STRING_ARRAY)
-        # try_to_declare_parameter(semantic_fusion_node,obj + '.comms.transcripts', rclpy.Parameter.Type.STRING_ARRAY)
-        # try_to_declare_parameter(semantic_fusion_node,obj + '.comms.probs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-        # try_to_declare_parameter(semantic_fusion_node,obj + '.comms.gesture_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-        # try_to_declare_parameter(semantic_fusion_node,obj + '.comms.verbal_sensor_model_coeffs', rclpy.Parameter.Type.DOUBLE_ARRAY)
-        # semantic_fusion_node.object_params[obj]['comms']['gesture_descriptions'] = semantic_fusion_node.get_parameter(obj + '.comms.gesture_descriptions').get_parameter_value().string_array_value
-        # semantic_fusion_node.object_params[obj]['comms']['transcripts'] = semantic_fusion_node.get_parameter(obj + '.comms.transcripts').get_parameter_value().string_array_value
-        # semantic_fusion_node.object_params[obj]['comms']['probs'] = semantic_fusion_node.get_parameter(obj + '.comms.probs').get_parameter_value().double_array_value
-        # semantic_fusion_node.object_params[obj]['comms']['gesture_sensor_model_coeffs'] = semantic_fusion_node.get_parameter(obj + '.comms.gesture_sensor_model_coeffs').get_parameter_value().double_array_value
-        # semantic_fusion_node.object_params[obj]['comms']['gesture_sensor_model_array'] = np.array(semantic_fusion_node.object_params[obj]['comms']['gesture_sensor_model_coeffs']).reshape(-1,len(semantic_fusion_node.object_params[obj]['comms']['labels']))
-        # semantic_fusion_node.object_params[obj]['comms']['verbal_sensor_model_coeffs'] = semantic_fusion_node.get_parameter(obj + '.comms.verbal_sensor_model_coeffs').get_parameter_value().double_array_value
-        # semantic_fusion_node.object_params[obj]['comms']['verbal_sensor_model_array'] = np.array(semantic_fusion_node.object_params[obj]['comms']['verbal_sensor_model_coeffs']).reshape(-1,len(semantic_fusion_node.object_params[obj]['comms']['labels']))
-    
 
 def pmf_to_spec(pmf):
     spec = ''

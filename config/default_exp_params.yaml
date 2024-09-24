@@ -150,11 +150,14 @@ semantic_fusion_node:
 
     loop_time_sec: 0.5
 
-    sensor_names: ['ar_tag']
+    role_rec_method: 'artag'
+    command_rec_method: 'artag'
+
+    sensor_names: ['artag']
     sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
     sensors:
-      ar_tag:
-        type: 'fiducial'
+      artag:
+        type: 'artag'
         topic: 'ar_pose_marker'
 
         update_method: 'count' # time, count, or confidence
@@ -184,7 +187,6 @@ semantic_fusion_node:
                                 0., 0., 0., 0., 0., 0., 0., 1.]
 
     objects_of_interest: ['person']
-    object_classes: ['person']
 
     person:
       attributes:

@@ -4,6 +4,8 @@ import os
 import time
 import json
 import subprocess
+import re
+
 from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
@@ -19,6 +21,11 @@ from rosidl_runtime_py.utilities import get_message
 from foxglove_msgs.msg import SceneUpdate
 from tracking_msgs.msg import Tracks3D
 from std_srvs.srv import Empty
+from rcl_interfaces.srv import GetParameters
+
+from situated_hri_interfaces.srv import RecordEpoch
+
+from situated_interaction.utils import try_to_declare_parameter
 
 class HRIExpManager(Node):
     def __init__(self):
@@ -37,6 +44,10 @@ class HRIExpManager(Node):
         self.reset_spatial_tracker_client = self.create_client(Empty, 'tbd_tracker_node/reset_tracker')
         self.reset_semantic_tracker_client = self.create_client(Empty, 'semantic_fusion_node/reset')
         self.reconf_semantic_tracker_client = self.create_client(Empty, 'semantic_fusion_node/reconfigure')
+        self.get_tracker_params_client = self.create_client(GetParameters, 'semantic_fusion_node/get_parameters')
+
+        self.start_recording_client = self.create_client(RecordEpoch, 'record_hierarchical_cmd_results_node/record_epoch')
+        self.stop_recording_client = self.create_client(Empty, 'record_hierarchical_cmd_results_node/stop_recording')
         self.empty_req = Empty.Request()
     
     def run_experiments(self):
@@ -50,14 +61,24 @@ class HRIExpManager(Node):
             self.get_logger().info("Loading tracker experiment configuration: %s" % (self.exp_name))
             self.get_logger().info("ros2 param load /semantic_fusion_node %s" % os.path.join(self.package_dir,exp_path))
             subprocess.run(["ros2", "param", "load", "/semantic_fusion_node", os.path.join(self.package_dir,exp_path)])
+            self.get_logger().info("Loaded to semantic fusion node")
             
             # Reconfigure semantic node
             self.future = self.reconf_semantic_tracker_client.call_async(self.empty_req)
-            rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
-            while self.future.done() is False:
-                self.get_logger().info("Could not reconfigure, retrying")
-                self.future = self.reconf_semantic_tracker_client.call_async(self.empty_req)
-                rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+            rclpy.spin_until_future_complete(self, self.future)
+
+            # Get command recognition method from semantic node
+            param_request = GetParameters.Request()
+            param_request.names = ['role_rec_method','command_rec_method']
+            self.future = self.get_tracker_params_client.call_async(param_request)
+            rclpy.spin_until_future_complete(self, self.future)
+
+            # handle response
+            response = self.future.result()
+
+            role_rec_method = response.values[0].string_value
+            cmd_rec_method = response.values[1].string_value
+            self.get_logger().info(f"Rec methods: cmd - {cmd_rec_method} role - {role_rec_method}")
 
             ### Play mcap files as if live
             last_root = None
@@ -77,14 +98,17 @@ class HRIExpManager(Node):
                         cmd_mode_actual = labels[-2]
                         role_actual = labels[-3]
                         scene_actual = labels[-4]
-                        iteration = os.path.splitext(file)[-2].split('_')[-1]
 
-                        # scene_actual_idx = actual_scene_labels.index(scene_actual)
+
 
                         if root != last_root: # Avoid playing mcap file multiple times
 
-                            time.sleep(1)
+                            # Check to see if mcap contains data relevant to the command recognition method
+                            if cmd_rec_method=='artag' and cmd_mode_actual!='artag':
+                                self.get_logger().info("No data for cmd rec method")
+                                continue
 
+                            self.get_logger().info("Resetting nodes and playing data")
                             # Reset tracker
                             self.future = self.reset_spatial_tracker_client.call_async(self.empty_req)
                             rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
@@ -101,6 +125,20 @@ class HRIExpManager(Node):
                                 self.future = self.reconf_semantic_tracker_client.call_async(self.empty_req)
                                 rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
 
+                            # Start recording epoch
+                            record_epoch_req = RecordEpoch.Request()
+                            record_epoch_req.config = exp
+                            record_epoch_req.scene = scene_actual
+                            record_epoch_req.role = role_actual
+                            record_epoch_req.cmd_mode = cmd_mode_actual
+                            record_epoch_req.cmd = cmd_actual
+                            self.future = self.start_recording_client.call_async(record_epoch_req)
+                            rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+                            while self.future.done() is False:
+                                self.get_logger().info("Could not start recording epoch, retrying")
+                                self.future = self.start_recording_client.call_async(record_epoch_req)
+                                rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+                           
                             bag_play_cmd = "ros2 bag play %s --clock 1" % root
                             self.get_logger().info(bag_play_cmd)
                             try:
@@ -109,11 +147,16 @@ class HRIExpManager(Node):
                             except subprocess.CalledProcessError as e:
                                 self.get_logger().info(f"Error executing command: {e}")
 
+                        self.get_logger().info("On to next file")
                         last_root = root
+
+            self.future = self.stop_recording_client.call_async(self.empty_req)
+            rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+            while self.future.done() is False:
+                self.get_logger().info("Could not stop recording, retrying")
+                self.future = self.stop_recording_client.call_async(self.empty_req)
+                rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
                 
-            
-
-
 def main(args=None):
     rclpy.init(args=args)
 

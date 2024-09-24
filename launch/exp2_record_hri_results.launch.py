@@ -42,13 +42,6 @@ def generate_launch_description():
         remappings=[('/converted_detections','/converted_img_detections'),('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
         parameters=[params])    
     ld.add_action(oakd_preproc_node)
-    
-    tracks_rec_node = Node(package = "situated_interaction", 
-                    executable = "record_tracker_results_node.py",
-                    name = "record_tracker_results_node",
-                    output = 'screen'
-    )
-    ld.add_action(tracks_rec_node)
 
     # Object recognition
     clip_vis_rec_server = Node(package = "situated_interaction", 
@@ -83,7 +76,7 @@ def generate_launch_description():
     )
     ld.add_action(semantic_fusion_node)
 
-    ### EXPERIMENT MANAGER NODE
+    ### EXPERIMENT NODES
     experiment_mgr_node = Node(
         package='situated_interaction',
         executable='hri_exp_mgr.py',
@@ -92,6 +85,13 @@ def generate_launch_description():
         parameters=[params]
     )
     ld.add_action(experiment_mgr_node)
+
+    rec_cmd_results_node = Node(package = "situated_interaction", 
+                    executable = "record_hierarchical_cmd_results_node.py",
+                    name = "record_hierarchical_cmd_results_node",
+                    output = 'screen'
+    )
+    ld.add_action(rec_cmd_results_node)
 
     ### MISCELLANY
     # Foxglove bridge for visualization

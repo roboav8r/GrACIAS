@@ -38,6 +38,7 @@ install(PROGRAMS
   scripts/dummy_sub.py
   scripts/record_scene_results_node.py
   scripts/record_tracker_results_node.py
+  scripts/record_hierarchical_cmd_results_node.py
   scripts/hri_exp_mgr.py
   DESTINATION lib/${PROJECT_NAME}
 )
