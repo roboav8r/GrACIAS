@@ -132,12 +132,11 @@ class HRIExpManager(Node):
                             record_epoch_req.role = role_actual
                             record_epoch_req.cmd_mode = cmd_mode_actual
                             record_epoch_req.cmd = cmd_actual
+                            record_epoch_req.cmd_rec_method = cmd_rec_method
+                            record_epoch_req.role_rec_method = role_rec_method
+
                             self.future = self.start_recording_client.call_async(record_epoch_req)
                             rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
-                            while self.future.done() is False:
-                                self.get_logger().info("Could not start recording epoch, retrying")
-                                self.future = self.start_recording_client.call_async(record_epoch_req)
-                                rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
                            
                             bag_play_cmd = "ros2 bag play %s --clock 1" % root
                             self.get_logger().info(bag_play_cmd)

@@ -225,7 +225,7 @@ class SemanticTrackerNode(Node):
         role_markers = {}
 
         # Compute TF
-        artag_tracker_tf = self.tf_buffer.lookup_transform(self.tracker_frame,self.artag_frame,time=rclpy.time.Time(),timeout=rclpy.duration.Duration(seconds=.1))
+        artag_tracker_tf = self.tf_buffer.lookup_transform(self.tracker_frame,self.artag_frame,time=rclpy.time.Time(),timeout=rclpy.duration.Duration(seconds=1.))
 
         for marker in msg.markers:
             # self.get_logger().info('%s: got ar msg %s' % (sensor_name, marker.id))

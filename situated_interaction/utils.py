@@ -204,3 +204,6 @@ def normalize_vector(vec, upper, lower):
         elif num < lower:
             vec[ii] = lower
     return vec
+
+def time_to_float(sec, nsec):
+    return sec + nsec/1e9

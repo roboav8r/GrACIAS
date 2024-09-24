@@ -11,6 +11,8 @@ from std_srvs.srv import Empty
 from situated_hri_interfaces.msg import CategoricalDistribution, HierarchicalCommands
 from situated_hri_interfaces.srv import RecordEpoch
 
+from situated_interaction.utils import time_to_float
+
 class RecHierarchicalCmdResultsNode(Node):
 
     def __init__(self):
@@ -22,7 +24,7 @@ class RecHierarchicalCmdResultsNode(Node):
         self.record_epoch_srv = self.create_service(RecordEpoch, '~/record_epoch', self.record_epoch)
         self.stop_record_srv = self.create_service(Empty, '~/stop_recording', self.stop_recording)
 
-        self.results_columns = ['config','scene','role','cmd_mode','cmd','stamp','object id','object class','estimated role','estimated command']
+        self.results_columns = ['config','scene','role','cmd_mode','cmd','role rec method','cmd rec method','stamp','object id','object class','estimated role','estimated command']
         self.results_df = pd.DataFrame(columns = self.results_columns)
     
     def hierarchical_cmd_callback(self, msg):
@@ -47,7 +49,10 @@ class RecHierarchicalCmdResultsNode(Node):
 
 
         # Add experiment result to dataframe
-        result_df = pd.DataFrame([[self.exp_config, self.scene, self.role, self.cmd_mode, self.cmd, msg.header.stamp, obj_id, obj_class, est_role, est_cmd]], columns=self.results_columns)
+        time = rclpy.time.Time.from_msg(msg.header.stamp)
+        time_sec, time_nsec = time.seconds_nanoseconds()
+        stamp = time_to_float(time_sec, time_nsec)
+        result_df = pd.DataFrame([[self.exp_config, self.scene, self.role, self.cmd_mode, self.cmd, self.role_rec_method, self.cmd_rec_method, stamp, obj_id, obj_class, est_role, est_cmd]], columns=self.results_columns)
 
         self.results_df = pd.concat([self.results_df, result_df],axis=0, ignore_index=True)
 
@@ -60,19 +65,15 @@ class RecHierarchicalCmdResultsNode(Node):
         self.role = req.role
         self.cmd_mode = req.cmd_mode
         self.cmd = req.cmd
+        self.cmd_rec_method = req.cmd_rec_method
+        self.role_rec_method = req.role_rec_method
 
         self.epoch_start_time = req.epoch_start_time
-
-        # Reset estimate counts
-
-        self.get_logger().info("Recording epoch: %s/%s/%s/%s with experimental config %s" % (self.scene, self.role, self.cmd_mode, self.cmd, self.exp_config))
 
         return resp
 
     def stop_recording(self, _, resp):
-
-        self.results_df.to_csv('hierarchical_cmd_results.csv',columns = self.results_columns)
-
+        self.results_df.to_csv('src/situated_interaction/results/exp2_hierarchical_cmd/hierarchical_cmd_results.csv',columns = self.results_columns)
         return resp
 
 
