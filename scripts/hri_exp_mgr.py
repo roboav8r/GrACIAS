@@ -104,7 +104,7 @@ class HRIExpManager(Node):
                         if root != last_root: # Avoid playing mcap file multiple times
 
                             # Check to see if mcap contains data relevant to the command recognition method
-                            if cmd_rec_method=='artag' and cmd_mode_actual!='artag':
+                            if (cmd_rec_method=='artag' and cmd_mode_actual!='artag') or (cmd_rec_method=='verbal' and cmd_mode_actual not in ['verbal','verb_gest']):
                                 self.get_logger().info("No data for cmd rec method")
                                 continue
 
