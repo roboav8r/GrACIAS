@@ -115,17 +115,6 @@ source install/setup.bash
 ros2 launch situated_interaction exp2_record_hri_results.launch.py
 ```
 
-Replay the data
-```
-cd ~/sit_int_ws
-mamba activate sit_int
-source /opt/ros/humble/setup.bash 
-source install/setup.bash
-jupyter-notebook
-```
-- Navigate to `/src/situated_interaction/scripts/playback_and_recording`
-- Run the `exp2_hri_playback.ipynb` notebook
-
 ## Analyzing the data
 
 # Future Work
@@ -133,6 +122,8 @@ jupyter-notebook
 ## Debugging
 
 ## Improves/New features
+- python3 exp0a_compute_scene_rec_models.py to exp manager node
+
 - datatypes.SemanticObject: add continuous variables. Add id, auth, comms.
 - For object/track message - instead of .image_available and .image, make generic feature vector dict with names, type
 - Check weight division calcs

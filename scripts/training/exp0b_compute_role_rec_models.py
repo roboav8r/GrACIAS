@@ -182,24 +182,24 @@ for model_key in clip_role_results.keys():
     for scene_key in clip_role_results[model_key]['model'].keys():
 
         # Save times to json file
-        with open("../../results/exp0_obs_models/%s/%s_inference_times.json" % (scene_key,path_key),"w") as outfile:
+        with open("../../results/exp0_obs_models/role_recognition/%s/%s_inference_times.json" % (scene_key,path_key),"w") as outfile:
             outfile.write(json.dumps(clip_role_results[model_key]['times']))
 
         
         raw_df = pd.DataFrame(clip_role_results[model_key]['model'][scene_key], index=actual_role_labels, columns=est_role_labels)
-        raw_df.to_csv("../../results/exp0_obs_models/%s/%s_role_obs_model_raw.csv" % (scene_key,path_key))
+        raw_df.to_csv("../../results/exp0_obs_models/role_recognition/%s/%s_role_obs_model_raw.csv" % (scene_key,path_key))
                
         # Smooth the model
         smoothed_clip_model = raw_df + 1
         smoothed_clip_model_df = pd.DataFrame(smoothed_clip_model,index=actual_role_labels, columns=est_role_labels)
-        smoothed_clip_model_df.to_csv("../../results/exp0_obs_models/%s/%s_role_obs_model_smoothed.csv" % (scene_key,path_key))
+        smoothed_clip_model_df.to_csv("../../results/exp0_obs_models/role_recognition/%s/%s_role_obs_model_smoothed.csv" % (scene_key,path_key))
         
         # Normalize the smoothed model
         norm_vector = np.expand_dims(smoothed_clip_model.sum(axis=1),axis=1)
         
         normalized_clip_model = smoothed_clip_model / norm_vector
         normalized_clip_model_df = pd.DataFrame(normalized_clip_model,index=actual_role_labels, columns=est_role_labels)
-        normalized_clip_model_df.to_csv("../../results/exp0_obs_models/%s/%s_role_obs_model_normalized.csv" % (scene_key,path_key))
+        normalized_clip_model_df.to_csv("../../results/exp0_obs_models/role_recognition/%s/%s_role_obs_model_normalized.csv" % (scene_key,path_key))
         
 
 

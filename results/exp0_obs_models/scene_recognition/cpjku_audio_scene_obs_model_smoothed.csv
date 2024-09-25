@@ -1,0 +1,5 @@
+,airport,bus,metro,metro_station,park,public_square,shopping_mall,street_pedestrian,street_traffic,tram
+campus,9.0,18.0,48.0,12.0,171.0,4.0,1.0,1.0,40.0,1984.0
+courtyard,4.0,302.0,7.0,9.0,760.0,2.0,1.0,1.0,12.0,1377.0
+lab,18.0,154.0,2110.0,34.0,91.0,3.0,2.0,1.0,68.0,26.0
+lobby,445.0,43.0,237.0,463.0,987.0,1.0,59.0,20.0,26.0,171.0
