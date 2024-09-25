@@ -72,50 +72,55 @@ clip_vis_rec_server:
         verbal_sensor_model_coeffs: []
 
 ### UNIMODAL PROCESSING - AUDITION
-audio_acq_node:
+/**:
   ros__parameters:
-    n_channels: 16
-    src: 'plughw:1,0'
+
+    # General audio params / time domain
+    n_total_channels: 16
+    channel_indices_used: [0, 1, 2, 3, 4, 5, 6, 7]
     sample_rate: 44100
     hop_size: 44100
     frame_size: 44100 # publish 1 second every second
+    speed_sound: 343.
     microphone_frame_id: 'philbart/base_link'
+    
+    # Frequency domain processing
+    n_fft: 512
+    n_sources: 2
+    f_min: 300
+    f_max: 8000
 
-audio_scene_rec:
+audio_acq_node:
   ros__parameters:
-    n_channels: 16
-    sample_rate: 441000
-    downsample_rate: 32000
-    frame_size: 44100
-    scene_size: 44100
-    scene_index: [0]
-    labels: ['airport', 'bus', 'metro', 'metro_station', 'park', 'public_square', 'shopping_mall', 'street_pedestrian', 'street_traffic', 'tram']
-    scene_est_interval: 1.0
-    wandb_id: 'fjycgepm'
 
-    # Model path params
-    project_name: DCASE23_Task1
-    wandb_id: 'c0a7nzin'
+    # Signal acquisition
+    src: 'plughw:1,0'
+    codec: 'pcm_s16le'
 
-    # Mel pre-processing parameters
-    resample_rate: 32000
-    window_size: 3072
-    hop_size: 500
-    n_fft: 4096
-    n_mels: 256
-    freqm: 48
-    timem: 0
-    fmin: 0
-    fmax: 0
-    fmin_aug_range: 1
-    fmax_aug_range: 1000
+pra_node:
+  ros__parameters:
 
-    # Model parameters
-    n_classes: 10
-    in_channels: 1
-    base_channels: 32
-    channels_multiplier: 2.3
-    expansion_rate: 3
+    # Sound source localization
+    doa_dimension: 2
+    array_x_pos: [0.43, 0.43, -0.34, -0.34, 0., 0., 0., 0.]
+    array_y_pos: [-0.28, 0.28, 0.30, -0.30, -0.29, 0.29, -0.11, 0.11]
+    array_z_pos: [0.395, 0.395, 0.395, 0.395, 0.610, 0.610, 0.660, 0.660]
+    ssl_algo: 'MUSIC'
+
+directional_speech_rec_node:
+  ros__parameters:
+
+    # Speech activity detection & recognition
+    n_silent_frames: 2
+    trigger_level: 3.0
+    trigger_time: 0.25
+    search_time: 0.25
+    allowed_gap: 0.25
+    pre_trigger_time: 0.25
+    min_voice_samples: 31200
+    src_match_thresh_rad: .175 # .5 = ~28.6 degrees # .175 rad = ~10 degrees
+    lexicon_package: 'ros_audition'
+    lexicon_file: 'config/rocog_lexicon.txt'
 
 
 ### MULTIMODAL PROCESSING - SCENE RECOGNITION
@@ -212,5 +217,6 @@ semantic_fusion_node:
 ### EXPERIMENT MANAGER NODE
 hri_exp_mgr:
   ros__parameters:
-    exp_configs: ['config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml']
+    exp_configs: ['config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml', 
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd.yaml']
     mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'

@@ -118,7 +118,6 @@ directional_speech_rec_node:
     allowed_gap: 0.25
     pre_trigger_time: 0.25
     min_voice_samples: 31200
-    src_match_thresh_rad: .175 # .5 = ~28.6 degrees # .175 rad = ~10 degrees
     lexicon_package: 'ros_audition'
     lexicon_file: 'config/rocog_lexicon.txt'
 
@@ -156,9 +155,9 @@ semantic_fusion_node:
     loop_time_sec: 0.5
 
     role_rec_method: 'artag'
-    command_rec_method: 'artag'
+    command_rec_method: 'verbal'
 
-    sensor_names: ['artag']
+    sensor_names: ['artag','verbal_cmd']
     sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
     sensors:
       artag:
@@ -181,6 +180,26 @@ semantic_fusion_node:
                                 1., 0., 0.,
                                 0., 1., 0.,
                                 0., 0., 1.]
+        comm_obs_labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        comm_obs_model_coeffs: [1., 0., 0., 0., 0., 0., 0., 0.,
+                                0., 1., 0., 0., 0., 0., 0., 0.,
+                                0., 0., 1., 0., 0., 0., 0., 0.,
+                                0., 0., 0., 1., 0., 0., 0., 0.,
+                                0., 0., 0., 0., 1., 0., 0., 0.,
+                                0., 0., 0., 0., 0., 1., 0., 0.,
+                                0., 0., 0., 0., 0., 0., 1., 0.,
+                                0., 0., 0., 0., 0., 0., 0., 1.]
+
+      verbal_cmd:
+        type: 'verbal'
+        topic: 'speech_az_sources'
+
+        update_method: 'count' # time, count, or confidence
+        update_threshold: 1 # Update every 3 messages received
+
+        match_threshold: .175 # .5 = ~28.6 degrees # .175 rad = ~10 degrees
+
+        # GTSAM fusion variables
         comm_obs_labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
         comm_obs_model_coeffs: [1., 0., 0., 0., 0., 0., 0., 0.,
                                 0., 1., 0., 0., 0., 0., 0., 0.,

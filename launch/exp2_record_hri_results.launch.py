@@ -18,6 +18,7 @@ def generate_launch_description():
     params = os.path.join(
         get_package_share_directory('situated_interaction'),
         'config',
+        'exp2_cfgs',
         'default_exp_params.yaml'
     )
 
@@ -42,6 +43,26 @@ def generate_launch_description():
         remappings=[('/converted_detections','/converted_img_detections'),('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
         parameters=[params])    
     ld.add_action(oakd_preproc_node)
+
+    # Direction of arrival (DOA)/PyRoomAcoustics node
+    pra_node = Node(
+        package='ros_audition',
+        executable='pra_node.py',
+        name='pra_node',
+        output='screen',
+        parameters=[params]
+    )
+    ld.add_action(pra_node)
+
+    # Directional speech recognition node
+    speech_node = Node(
+        package='ros_audition',
+        executable='doa_speech_rec_node.py',
+        name='directional_speech_rec_node',
+        output='screen',
+        parameters=[params]
+    )
+    ld.add_action(speech_node)
 
     # Object recognition
     clip_vis_rec_server = Node(package = "situated_interaction", 
