@@ -56,14 +56,13 @@ class RecSceneResultsNode(Node):
         self.role = req.role
         self.cmd_mode = req.cmd_mode
         self.cmd = req.cmd
-        self.iteration = req.iteration
 
         self.epoch_start_time = req.epoch_start_time
 
         # Reset estimate counts
         self.scene_est_count_dict = {'audio': 0, 'clip': 0, 'fused': 0}
 
-        self.get_logger().info("Recording epoch: %s/%s/%s/%s/%s" % (self.scene, self.role, self.cmd_mode, self.cmd, self.iteration))
+        self.get_logger().info("Recording epoch: %s/%s/%s/%s" % (self.scene, self.role, self.cmd_mode, self.cmd))
 
         return resp
 

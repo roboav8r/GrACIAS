@@ -55,7 +55,7 @@ def initialize_sensors(semantic_fusion_node):
         semantic_fusion_node.sensor_dict[sensor_name]['topic'] = semantic_fusion_node.get_parameter('sensors.%s.topic' % sensor_name).get_parameter_value().string_value
         semantic_fusion_node.sensor_dict[sensor_name]['match_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.match_threshold' % sensor_name).get_parameter_value().double_value
 
-        # TODO - update method, update thresh
+        # Update method, update thresh
         try_to_declare_parameter(semantic_fusion_node,'sensors.%s.update_method' % sensor_name, rclpy.Parameter.Type.STRING)
         semantic_fusion_node.sensor_dict[sensor_name]['update_method'] = semantic_fusion_node.get_parameter('sensors.%s.update_method' % sensor_name).get_parameter_value().string_value
 
@@ -112,6 +112,20 @@ def initialize_sensors(semantic_fusion_node):
             semantic_fusion_node.sensor_dict[sensor_name]['comm_obs_spec'] = pmf_to_spec(semantic_fusion_node.sensor_dict[sensor_name]['comm_obs_model_array'])
             observer_idx += 1
             semantic_fusion_node.get_logger().info("Created comm obs model with array %s, spec %s" % (semantic_fusion_node.sensor_dict[sensor_name]['comm_obs_model_array'],semantic_fusion_node.sensor_dict[sensor_name]['comm_obs_spec']))
+
+        elif semantic_fusion_node.sensor_dict[sensor_name]['type']=='vision':
+
+            # Generate observation models for role, communication
+            try_to_declare_parameter(semantic_fusion_node,'sensors.%s.role_obs_labels' % sensor_name, rclpy.Parameter.Type.STRING_ARRAY)
+            try_to_declare_parameter(semantic_fusion_node,'sensors.%s.role_obs_model_coeffs' % sensor_name, rclpy.Parameter.Type.DOUBLE_ARRAY)
+
+            semantic_fusion_node.sensor_dict[sensor_name]['role_obs_symbol'] = gtsam.symbol(semantic_fusion_node.sensor_dict['symbol'], observer_idx)
+            semantic_fusion_node.sensor_dict[sensor_name]['role_obs_labels'] = semantic_fusion_node.get_parameter('sensors.%s.role_obs_labels' % sensor_name,).get_parameter_value().string_array_value
+            semantic_fusion_node.sensor_dict[sensor_name]['role_obs_model_coeffs'] = semantic_fusion_node.get_parameter('sensors.%s.role_obs_model_coeffs' % sensor_name).get_parameter_value().double_array_value
+            semantic_fusion_node.sensor_dict[sensor_name]['role_obs_model_array'] = np.array(semantic_fusion_node.sensor_dict[sensor_name]['role_obs_model_coeffs']).reshape(-1,len(semantic_fusion_node.sensor_dict[sensor_name]['role_obs_labels']))
+            semantic_fusion_node.sensor_dict[sensor_name]['role_obs_spec'] = pmf_to_spec(semantic_fusion_node.sensor_dict[sensor_name]['role_obs_model_array'])
+            observer_idx += 1
+            semantic_fusion_node.get_logger().info("Created role obs model with array %s, spec %s" % (semantic_fusion_node.sensor_dict[sensor_name]['role_obs_model_array'],semantic_fusion_node.sensor_dict[sensor_name]['role_obs_spec']))
 
         else:
             semantic_fusion_node.get_logger().info("Invalid sensor type %s" % semantic_fusion_node.sensor_dict[sensor_name]['type'])

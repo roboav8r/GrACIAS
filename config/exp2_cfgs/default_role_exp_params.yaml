@@ -50,18 +50,10 @@ clip_vis_rec_server:
       states:
         variables: ['role']
         role:
-          labels: ['unknown','pedestrian','robot-teammate','robot-supervisor']
-          descriptions: ['', 
-                         'a picture of a person', 
+          labels: ['pedestrian','teammate','supervisor']
+          descriptions: ['a picture of a person', 
                          'a picture of a person wearing a university of texas robotics shirt and orange texas hat', 
                          'a picture of a person wearing a university of texas robotics shirt and orange texas hat and a yellow safety vest']
-          probs: [10., 1., 1., 1.]
-          sensor_model_coeffs: [.55, .15, .15, .15,
-                                .1, .7, .1, .1,
-                                .1, .1, .7, .1,
-                                .1, .1, .1, .7]
-          update_method: 'time'
-          update_threshold: .5
       
       comms:
         labels: ['']
@@ -210,7 +202,9 @@ semantic_fusion_node:
 
 
 ### EXPERIMENT MANAGER NODE
-hri_exp_mgr:
+/**:
   ros__parameters:
-    exp_configs: ['config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml']
+    exp_configs: ['config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml',
+                  'config/exp2_cfgs/exp2_vis_role_ar_cmd.yaml']
     mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
+    result_dir: 'sit_int_ws/src/situated_interaction/results/exp2_hierarchical_cmd/role_rec'

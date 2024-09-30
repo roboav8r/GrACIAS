@@ -17,7 +17,7 @@ class DiscreteVariable():
         # Admin
         self.name = name
         self.var_type = var_type
-        self.last_updated = stamp
+        self.last_updated = None
     
         # GTSAM
         self.var_labels = labels

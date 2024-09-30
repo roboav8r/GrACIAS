@@ -62,14 +62,6 @@ clip_vis_rec_server:
         # p(command_detected|command_issued)
         gesture_sensor_model_coeffs: []        
         verbal_sensor_model_coeffs: []
-      
-      comms:
-        labels: ['']
-        gesture_descriptions: ['']
-        probs: []
-        # p(command_detected|command_issued)
-        gesture_sensor_model_coeffs: []        
-        verbal_sensor_model_coeffs: []
 
 ### UNIMODAL PROCESSING - AUDITION
 audio_acq_node:
@@ -150,10 +142,10 @@ semantic_fusion_node:
 
     loop_time_sec: 0.5
 
-    role_rec_method: 'artag'
+    role_rec_method: 'visual'
     command_rec_method: 'artag'
 
-    sensor_names: ['artag']
+    sensor_names: ['artag','clip_role_rec']
     sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
     sensors:
       artag:
@@ -185,6 +177,19 @@ semantic_fusion_node:
                                 0., 0., 0., 0., 0., 1., 0., 0.,
                                 0., 0., 0., 0., 0., 0., 1., 0.,
                                 0., 0., 0., 0., 0., 0., 0., 1.]
+      clip_role_rec:
+        type: 'vision'
+        topic: ''
+
+        update_method: '' # 
+
+        # GTSAM fusion variables
+        # TODO - update with real data
+        role_obs_labels: ['pedestrian','teammate','supervisor']
+        role_obs_model_coeffs: [1., 1., 1.,
+                                1., 0., 0.,
+                                0., 1., 0.,
+                                0., 0., 1.]
 
     objects_of_interest: ['person']
 

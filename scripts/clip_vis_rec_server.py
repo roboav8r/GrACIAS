@@ -81,8 +81,6 @@ class CLIPVisRecServer(Node):
                 self.object_params[obj]['comms']['text_features'] = self.model.encode_text(self.object_params[obj]['comms']['text_tokens'])
 
 
-        # self.get_logger().info("Object dictionary: %s" % self.object_params)
-
     def clip_rec_callback(self, req, resp):
 
         with torch.no_grad():
