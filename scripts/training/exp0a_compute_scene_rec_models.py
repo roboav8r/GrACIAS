@@ -124,7 +124,10 @@ clip_models = ['RN50','ViT-B/32','ViT-L/14'] # available: ['RN50', 'RN101','RN50
 
 # text descriptions
 scene_descriptions = {'basic_description': ['a college campus','an outdoor courtyard','a lab', 'a lobby'],
-                     'social_in_out_desc': ['a picture of a public outdoor college campus with high social activity','a picture of a private outdoor courtyard with low social activity','a picture of a private indoor laboratory with low social activity','a picture of a public indoor lobby with high social activity']}
+                     'social_in_out_desc': ['a picture of a public outdoor area with high social activity',
+                                            'a picture of a private outdoor area with low social activity',
+                                            'a picture of a private indoor area with low social activity',
+                                            'a picture of a public indoor area with high social activity']}
 
 clip_scene_results = dict()
 

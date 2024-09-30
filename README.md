@@ -31,7 +31,7 @@ source install/setup.bash
 # Usage
 ## Task 0: Compute observation models
 
-### Task 0a: Compute audio and visual scene recognition models
+### Task 0a: Compute audio and visual scene recognition models (~16 hours)
 Run the ROS nodes
 ```
 cd ~/sit_int_ws
