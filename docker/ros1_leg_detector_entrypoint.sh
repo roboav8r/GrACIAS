@@ -8,5 +8,5 @@ cd /ros1_ws
 source devel/setup.bash 
 
 # Launch the leg detector
-roslaunch dr_spaam_ros philbart_dr_spaam_ros.launch
+roslaunch dr_spaam_ros philbart_dr_spaam_ros.launch --wait
 exec "$@"

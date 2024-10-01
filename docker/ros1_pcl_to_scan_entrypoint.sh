@@ -7,5 +7,5 @@ source "/opt/ros/$ROS1_DISTRO/setup.bash"
 cd /ros1_ws 
 source devel/setup.bash 
 
-roslaunch dr_spaam_ros philbart_pcl_to_laserscan.launch
+roslaunch dr_spaam_ros philbart_pcl_to_laserscan.launch --wait
 exec "$@"
