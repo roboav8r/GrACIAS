@@ -105,9 +105,6 @@ class SceneExpManager(Node):
                             clip_future = self.reset_clip_scene_client.call_async(Empty.Request())
                             rclpy.spin_until_future_complete(self, clip_future,timeout_sec=10)
 
-                            reset_oakd_trkr_future = self.reset_oakd_tracker_client.call_async(Empty.Request())
-                            rclpy.spin_until_future_complete(self, reset_oakd_trkr_future)
-
                             # Start recording epoch
                             record_epoch_req = RecordEpoch.Request()
                             record_epoch_req.config = exp
@@ -127,7 +124,6 @@ class SceneExpManager(Node):
                             except subprocess.CalledProcessError as e:
                                 self.get_logger().info(f"Error executing command: {e}")
 
-                        self.get_logger().info("On to next file")
                         last_root = root
 
             self.future = self.stop_recording_client.call_async(self.empty_req)

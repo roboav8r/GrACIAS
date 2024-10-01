@@ -85,7 +85,7 @@ colcon build --packages-select ar_track_alvar_msgs audio_common_msgs situated_hr
 source install/setup.bash
 colcon build --packages-select marmot mm_scene_rec ros_audition situated_interaction
 source install/setup.bash
-ros2 launch situated_interaction analysis_1-1.launch.py
+ros2 launch situated_interaction exp1_record_scene_results.launch.py
 ```
 Run the analysis script
 ```
@@ -116,6 +116,14 @@ ros2 launch situated_interaction exp2_record_hri_results.launch.py
 ```
 
 ## Analyzing the data
+```
+mamba activate sit_int
+cd ~/sit_int_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+jupyter-notebook
+```
+
 
 # Future Work
 

@@ -30,7 +30,7 @@ class RecSceneResultsNode(Node):
         self.record_epoch_srv = self.create_service(RecordEpoch, '~/record_epoch', self.record_epoch)
         self.stop_record_srv = self.create_service(Empty, '~/stop_recording', self.stop_recording)
 
-        self.results_columns = ['scene','role','cmd_mode','cmd','iteration','scene_estimation_mode','n_audio_updates','n_visual_updates','scene_est','scene_conf']
+        self.results_columns = ['scene','role','cmd_mode','cmd','scene_estimation_mode','n_audio_updates','n_visual_updates','scene_est','scene_conf']
         self.results_df = pd.DataFrame(columns = self.results_columns)
     
         self.scene_est_count_dict = {'audio': 0, 'clip': 0, 'fused': 0}
@@ -41,10 +41,9 @@ class RecSceneResultsNode(Node):
 
 
     def scene_callback(self, msg, scene_mode):
-        # self.get_logger().info("From mode %s got msg: %s" % (scene_mode, msg))
         
         # Add experiment result to dataframe
-        result_df = pd.DataFrame([[self.scene, self.role, self.cmd_mode, self.cmd, self.iteration, scene_mode, self.scene_est_count_dict['audio'], self.scene_est_count_dict['clip'], msg.categories[np.argmax(msg.probabilities)],msg.probabilities[np.argmax(msg.probabilities)]]], columns=self.results_columns)
+        result_df = pd.DataFrame([[self.scene, self.role, self.cmd_mode, self.cmd, scene_mode, self.scene_est_count_dict['audio'], self.scene_est_count_dict['clip'], msg.categories[np.argmax(msg.probabilities)],msg.probabilities[np.argmax(msg.probabilities)]]], columns=self.results_columns)
 
         self.results_df = pd.concat([self.results_df, result_df],axis=0, ignore_index=True)
 
