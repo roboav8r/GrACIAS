@@ -108,5 +108,10 @@
 ### EXPERIMENT MANAGER NODE
 scene_exp_mgr:
   ros__parameters:
-    exp_configs: ['config/exp1_cfgs/rn50_basic.yaml']
+    exp_configs: ['config/exp1_cfgs/rn50_basic.yaml',
+                  'config/exp1_cfgs/rn50_detailed.yaml',
+                  'config/exp1_cfgs/vitb32_basic.yaml',
+                  'config/exp1_cfgs/vitb32_detailed.yaml',
+                  'config/exp1_cfgs/vitl14_basic.yaml',
+                  'config/exp1_cfgs/vitl14_detailed.yaml']
     mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
