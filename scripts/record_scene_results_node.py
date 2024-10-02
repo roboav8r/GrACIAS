@@ -29,6 +29,7 @@ class RecSceneResultsNode(Node):
 
         self.record_epoch_srv = self.create_service(RecordEpoch, '~/record_epoch', self.record_epoch)
         self.stop_record_srv = self.create_service(Empty, '~/stop_recording', self.stop_recording)
+        self.reconfigure_srv = self.create_service(Empty, '~/reconfigure', self.reconfigure)
 
         self.results_columns = ['scene','role','cmd_mode','cmd','scene_estimation_mode','n_audio_updates','n_visual_updates','scene_est','scene_conf']
         self.results_df = pd.DataFrame(columns = self.results_columns)
@@ -39,14 +40,12 @@ class RecSceneResultsNode(Node):
         # Increment update count
         self.scene_est_count_dict[scene_mode] += 1
 
-
     def scene_callback(self, msg, scene_mode):
         
         # Add experiment result to dataframe
         result_df = pd.DataFrame([[self.scene, self.role, self.cmd_mode, self.cmd, scene_mode, self.scene_est_count_dict['audio'], self.scene_est_count_dict['clip'], msg.categories[np.argmax(msg.probabilities)],msg.probabilities[np.argmax(msg.probabilities)]]], columns=self.results_columns)
 
         self.results_df = pd.concat([self.results_df, result_df],axis=0, ignore_index=True)
-
 
     def record_epoch(self, req, resp):
 
@@ -71,7 +70,9 @@ class RecSceneResultsNode(Node):
 
         return resp
 
-
+    def reconfigure(self, _, resp):
+        self.scene_config_name =  self.get_parameter('config_name').get_parameter_value().string_value
+        return resp
 
 def main(args=None):
     rclpy.init(args=args)

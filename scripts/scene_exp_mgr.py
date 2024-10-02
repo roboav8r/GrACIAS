@@ -52,6 +52,7 @@ class SceneExpManager(Node):
 
         self.start_recording_client = self.create_client(RecordEpoch, 'record_scene_results_node/record_epoch')
         self.stop_recording_client = self.create_client(Empty, 'record_scene_results_node/stop_recording')
+        self.reconf_recording_client = self.create_client(Empty, 'record_scene_results_node/reconfigure')
         self.empty_req = Empty.Request()
     
     def run_experiments(self):
@@ -64,10 +65,23 @@ class SceneExpManager(Node):
             self.exp_name = os.path.splitext(os.path.split(exp_path)[-1])[0]
             self.get_logger().info("Loading scene recognition experiment configuration: %s" % (self.exp_name))
             subprocess.run(["ros2", "param", "load", "/clip_scene_rec", os.path.join(self.package_dir,exp_path)])
+            subprocess.run(["ros2", "param", "load", "/record_scene_results_node", os.path.join(self.package_dir,exp_path)])
             
-            # Reconfigure clip scene rec node
+            # Reconfigure nodes
             self.future = self.reconf_clip_scene_client.call_async(self.empty_req)
-            rclpy.spin_until_future_complete(self, self.future)
+            rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+            while self.future.done() is False:
+                self.get_logger().info("Could not reconfigure clip scene client, retrying")
+                self.future = self.reconf_clip_scene_client.call_async(self.empty_req)
+                rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+
+            self.future = self.reconf_recording_client.call_async(self.empty_req)
+            rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+            while self.future.done() is False:
+                self.get_logger().info("Could not reconfigure scene rec client, retrying")
+                self.future = self.reconf_recording_client.call_async(self.empty_req)
+                rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+
 
             ### Play mcap files as if live
             last_root = None
