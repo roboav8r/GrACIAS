@@ -13,8 +13,8 @@ services:
       dockerfile: bridge.Dockerfile
 
     environment:
-      - ROS_MASTER_URI=http://localhost:11311
-      - ROS_IP=localhost
+      - ROS_MASTER_URI=http://192.168.131.1:11311
+      - ROS_IP=192.168.131.113
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
@@ -45,6 +45,8 @@ services:
       - AR_CAM_TOPIC=/oak/rgb/image_raw
       - AR_INFO_TOPIC=/oak/rgb/camera_info
       - OUTPUT_FRAME=oak_rgb_camera_optical_frame
+      - ROS_MASTER_URI=http://192.168.131.1:11311
+      - ROS_IP=192.168.131.113
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
@@ -73,6 +75,8 @@ services:
     environment:
       - PCL_TOPIC=/philbart/lidar_points
       - SCAN_TOPIC=/philbart/scan
+      - ROS_MASTER_URI=http://192.168.131.1:11311
+      - ROS_IP=192.168.131.113
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
@@ -100,7 +104,9 @@ services:
 
     environment:
       - SCAN_TOPIC=/philbart/scan
-
+      - ROS_MASTER_URI=http://192.168.131.1:11311
+      - ROS_IP=192.168.131.113
+      
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
       - apparmor:unconfined

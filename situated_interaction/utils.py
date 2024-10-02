@@ -50,10 +50,8 @@ def initialize_sensors(semantic_fusion_node):
 
         try_to_declare_parameter(semantic_fusion_node,'sensors.%s.type' % sensor_name, rclpy.Parameter.Type.STRING)
         try_to_declare_parameter(semantic_fusion_node,'sensors.%s.topic' % sensor_name, rclpy.Parameter.Type.STRING)
-        try_to_declare_parameter(semantic_fusion_node,'sensors.%s.match_threshold' % sensor_name, rclpy.Parameter.Type.DOUBLE)
         semantic_fusion_node.sensor_dict[sensor_name]['type'] = semantic_fusion_node.get_parameter('sensors.%s.type' % sensor_name).get_parameter_value().string_value
         semantic_fusion_node.sensor_dict[sensor_name]['topic'] = semantic_fusion_node.get_parameter('sensors.%s.topic' % sensor_name).get_parameter_value().string_value
-        semantic_fusion_node.sensor_dict[sensor_name]['match_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.match_threshold' % sensor_name).get_parameter_value().double_value
 
         # Update method, update thresh
         try_to_declare_parameter(semantic_fusion_node,'sensors.%s.update_method' % sensor_name, rclpy.Parameter.Type.STRING)
@@ -76,6 +74,9 @@ def initialize_sensors(semantic_fusion_node):
                                                                             semantic_fusion_node.sensor_dict[sensor_name]['topic'],
                                                                             eval("lambda msg: semantic_fusion_node.ar_callback(msg, \"" + sensor_name + "\")",locals()),
                                                                             10, callback_group=semantic_fusion_node.sub_cb_group)
+
+            try_to_declare_parameter(semantic_fusion_node,'sensors.%s.match_threshold' % sensor_name, rclpy.Parameter.Type.DOUBLE)
+            semantic_fusion_node.sensor_dict[sensor_name]['match_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.match_threshold' % sensor_name).get_parameter_value().double_value
 
             # Handle AR Tag interpretation
             try_to_declare_parameter(semantic_fusion_node,'sensors.%s.ar_tag_ids' % sensor_name, rclpy.Parameter.Type.INTEGER_ARRAY)
