@@ -1,6 +1,6 @@
 #!/bin/bash 
 set -e 
-echo "AR bridge entrypoint" 
+echo "ROS bridge entrypoint" 
 
 # Source ROS2 and bridge environments 
 source "/opt/ros/$ROS2_DISTRO/setup.bash" 
