@@ -170,10 +170,10 @@ audio_scene_rec:
 
     dcase23:
       obs_labels: ['airport', 'bus', 'metro', 'metro_station','park','public_square','shopping_mall','street_pedestrian','street_traffic','tram']
-      sensor_model_coeffs: [8., 17., 49., 22., 191., 7., 1., 1., 44., 1948.,
-                            4., 305., 5., 8., 765., 1., 1., 2., 22., 1362.,
-                            22., 156., 2125., 33., 79., 2., 1., 2., 66., 21.,
-                            457., 57., 205., 481., 977., 2., 70., 17., 20., 166.]
+      sensor_model_coeffs: [13., 19., 49., 14., 206., 7., 1., 1., 37., 1941.,
+                            6., 274., 9., 11., 767., 3., 2., 2., 19., 1382.,
+                            16., 157., 2111., 43., 80., 2., 1., 1., 65., 31.,
+                            479., 57., 191., 468., 974., 1., 68., 18., 21., 175.]
       topic: 'audio_scene_category'
 
 ### MULTIMODAL PROCESSING - SEMANTIC FUSION NODE

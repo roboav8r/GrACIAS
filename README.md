@@ -51,7 +51,7 @@ cd ~/sit_int_ws/src/situated_interaction/scripts/training
 python3 exp0a_compute_scene_rec_models.py
 ```
 
-### Task 0b: Compute visual role recognition model
+### Task 0b: Compute visual role recognition model (~12 hours)
 Run the playback/model computation script
 ```
 cd ~/sit_int_ws
@@ -75,7 +75,7 @@ python3 exp0c_evaluate_speech_rec.py
 
 ## Evaluate Perception System
 
-## Task 1: Evaluate audio, visual, and fused scene recognition - TODO
+## Task 1: Evaluate audio, visual, and fused scene recognition ()
 Run the ROS nodes
 ```
 mamba activate sit_int
@@ -86,14 +86,6 @@ source install/setup.bash
 colcon build --packages-select marmot mm_scene_rec ros_audition situated_interaction
 source install/setup.bash
 ros2 launch situated_interaction exp1_record_scene_results.launch.py
-```
-Run the analysis script
-```
-cd ~/sit_int_ws
-mamba activate sit_int
-source /opt/ros/humble/setup.bash
-source install/setup.bash
-jupyter-notebook
 ```
 
 ## Task 2: Evaluate simultaneous role & command recognition
