@@ -75,7 +75,7 @@ python3 exp0c_evaluate_speech_rec.py
 
 ## Evaluate Perception System
 
-## Task 1: Evaluate audio, visual, and fused scene recognition ()
+## Task 1: Evaluate audio, visual, and fused scene recognition (~17 hours)
 Run the ROS nodes
 ```
 mamba activate sit_int
