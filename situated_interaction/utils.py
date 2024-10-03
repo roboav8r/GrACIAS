@@ -25,11 +25,11 @@ def delete_sensors(semantic_fusion_node):
         if sensor_name == '':
             continue
         
-        semantic_fusion_node.destroy_subscription(semantic_fusion_node.sensor_dict[sensor_name]['sub'])
+        if 'sub' in semantic_fusion_node.sensor_dict[sensor_name].keys():
+            semantic_fusion_node.destroy_subscription(semantic_fusion_node.sensor_dict[sensor_name]['sub'])
 
 def initialize_sensors(semantic_fusion_node):
     semantic_fusion_node.sensor_dict = {}
-    
     try_to_declare_parameter(semantic_fusion_node,'role_rec_method', rclpy.Parameter.Type.STRING)
     try_to_declare_parameter(semantic_fusion_node,'command_rec_method', rclpy.Parameter.Type.STRING)
     try_to_declare_parameter(semantic_fusion_node,'sensor_names', rclpy.Parameter.Type.STRING_ARRAY)

@@ -64,6 +64,11 @@ class SceneExpManager(Node):
             exp_path = os.path.join(self.package_dir,exp)
             self.exp_name = os.path.splitext(os.path.split(exp_path)[-1])[0]
             self.get_logger().info("Loading scene recognition experiment configuration: %s" % (self.exp_name))
+
+            while ('clip_scene_rec' not in self.get_node_names()) or ('record_scene_results_node' not in self.get_node_names()):
+                self.get_logger().info("Waiting on experiment nodes to start.")
+                time.sleep(1.)
+
             subprocess.run(["ros2", "param", "load", "/clip_scene_rec", os.path.join(self.package_dir,exp_path)])
             subprocess.run(["ros2", "param", "load", "/record_scene_results_node", os.path.join(self.package_dir,exp_path)])
             
