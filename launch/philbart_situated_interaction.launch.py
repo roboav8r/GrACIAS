@@ -91,9 +91,11 @@ def generate_launch_description():
     
     preproc_node = Node(
         package='marmot',
-        executable='pose_array_preproc',
-        name='depthai_preproc_node',
-        remappings=[('/pose_array_detections','/philbart/dr_spaam_detections')],
+        executable='lidar_2d_preproc',
+        name='lidar_preproc_node',
+        remappings=[('/pose_array_detections','/philbart/dr_spaam_detections'),
+                    ('/scan','/philbart/scan'),
+                    ('/point_cloud','/philbart/lidar_points')],
         output='screen',
         parameters=[config])    
     ld.add_action(preproc_node)
