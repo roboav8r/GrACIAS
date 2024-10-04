@@ -213,7 +213,7 @@ class SemanticTrackerNode(Node):
                     self.visual_role_rec_futures.append((id,future,start_time))
 
         foxglove_visualization(self)
-        publish_hierarchical_commands(self)
+        # publish_hierarchical_commands(self)
 
     def tracks_callback(self, msg):
         self.tracks_msg = msg

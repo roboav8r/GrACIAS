@@ -1,6 +1,6 @@
 /**:
   ros__parameters:
-    use_sim_time: true
+    use_sim_time: false
     tracker_frame: 'philbart/base_link'
     mic_frame: 'philbart/base_link'
     artag_frame: 'oak_rgb_camera_optical_frame'
@@ -86,7 +86,7 @@ audio_acq_node:
   ros__parameters:
 
     # Signal acquisition
-    src: 'plughw:1,0'
+    src: 'plughw:2,0'
     codec: 'pcm_s16le'
 
 pra_node:
@@ -182,7 +182,7 @@ semantic_fusion_node:
 
     loop_time_sec: 0.5
 
-    role_rec_method: 'visual'
+    role_rec_method: 'artag'
     command_rec_method: 'artag'
 
     sensor_names: ['artag','clip_role_rec']
