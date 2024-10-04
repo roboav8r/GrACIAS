@@ -25,7 +25,7 @@ from situated_hri_interfaces.srv import ObjectVisRec
 from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_delta_az, compute_delta_pos, solve_assignment_matrix
 from situated_interaction.datatypes import DiscreteVariable, SemanticObject
 from situated_interaction.output import foxglove_visualization, publish_hierarchical_commands
-from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params, initialize_sensors, process_sensor_update, delete_sensors
+from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params, initialize_sensors, process_sensor_update, delete_sensors, time_to_float
 
 class SemanticTrackerNode(Node):
 
@@ -63,11 +63,11 @@ class SemanticTrackerNode(Node):
         self.timer = self.create_timer(self.loop_time_sec, self.timer_callback, callback_group=self.timer_cb_group)
         self.service_timeout = .25
 
-        # # TODO - Create clip service client
-        # self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec', callback_group=self.client_cb_group)
-        # while not self.clip_client.wait_for_service(timeout_sec=1.0):
-        #     self.get_logger().info('service not available, waiting again...')
-        # self.clip_req = ObjectVisRec.Request()
+        # Create clip service client
+        self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec', callback_group=self.client_cb_group)
+        while not self.clip_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.clip_req = ObjectVisRec.Request()
 
         # Create reset & reconfigure servers
         self.reset_srv = self.create_service(Empty, '~/reset', self.reset_callback)
@@ -123,7 +123,7 @@ class SemanticTrackerNode(Node):
         self.clip_req.class_string = self.semantic_objects[id].class_string
         self.clip_req.attributes_to_estimate = []
         self.clip_req.states_to_estimate = ['role']
-        self.clip_req.estimate_comms = []
+        self.clip_req.estimate_comms = False
         self.clip_req.image = self.semantic_objects[id].image
         self.clip_req.stamp = self.semantic_objects[id].stamp
         future = self.clip_client.call_async(self.clip_req)
@@ -155,32 +155,22 @@ class SemanticTrackerNode(Node):
         self.semantic_objects[id].image_available = False
 
     def timer_callback(self):
-            
+    
         if self.role_rec_method=='visual':
-
-            # Check if objects need update
-            start_time = self.get_clock().now()
-
-            # For each object, check if state is stale. If so, send state update request.
-            for id in self.semantic_objects.keys():
-
-                obj = self.semantic_objects[id]
-
-                if obj.states['role'].needs_update(start_time):
-                    
-                    future = self.recognize_role(id)
-                    self.visual_role_rec_futures.append((id,future))
 
             # Check futures
             temp_futures = self.visual_role_rec_futures
             self.visual_role_rec_futures = []
 
-            for (id,future) in temp_futures:
+            for (id,future,stamp) in temp_futures:
 
                 if future.done():
 
                     # Get role likelihood function
                     resp = future.result()
+
+                    self.get_logger().info(f"Future response for object id {id}: {resp}")
+
                     for state in resp.states:
                         if state.variable=='role':
                             role_probs = state.probabilities
@@ -193,11 +183,34 @@ class SemanticTrackerNode(Node):
                     role_obs_model = gtsam.DiscreteConditional([self.sensor_dict['clip_role_rec']['role_obs_symbol'],len(self.sensor_dict['clip_role_rec']['role_obs_labels'])],[[role_var.var_symbol,len(role_var.var_labels)]],self.sensor_dict['clip_role_rec']['role_obs_spec'])
                     role_likelihood = role_obs_model.likelihood(role_obs_idx)
 
-                    role_var.update(role_likelihood, start_time)
+                    role_var.update(role_likelihood, stamp)
 
                 else:
-                    self.visual_role_rec_futures.append((id,future))
+                    self.visual_role_rec_futures.append((id,future,stamp))
 
+            # Check if objects need update
+            start_time = self.get_clock().now()
+
+            # For each object, check if state is stale. If so, send state update request.
+            for id in self.semantic_objects.keys():
+
+                obj = self.semantic_objects[id]
+
+                needs_role_update = False
+
+                if (obj.states['role'].last_updated is None):
+                    needs_role_update = True
+                else: 
+                    time_since_update = (start_time - obj.states['role'].last_updated)
+                    sec_since_update = time_to_float(time_since_update.seconds,time_since_update.nsec)
+
+                    if sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold']:
+                        needs_role_update = True
+
+                if needs_role_update and obj.new_image_available:
+                    
+                    future = self.recognize_role(id)
+                    self.visual_role_rec_futures.append((id,future,start_time))
 
         foxglove_visualization(self)
         publish_hierarchical_commands(self)

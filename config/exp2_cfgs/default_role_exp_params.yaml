@@ -141,11 +141,11 @@ semantic_fusion_node:
   ros__parameters:
 
     loop_time_sec: 0.5
-
+    
     role_rec_method: 'artag'
     command_rec_method: 'artag'
 
-    sensor_names: ['artag']
+    sensor_names: ['artag','clip_role_rec']
     sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
     sensors:
       artag:
@@ -177,6 +177,20 @@ semantic_fusion_node:
                                 0., 0., 0., 0., 0., 1., 0., 0.,
                                 0., 0., 0., 0., 0., 0., 1., 0.,
                                 0., 0., 0., 0., 0., 0., 0., 1.]
+      clip_role_rec:
+        type: 'vision'
+        topic: ''
+
+        update_method: 'time'
+        update_threshold: 1. # 
+
+        # GTSAM fusion variables
+        # TODO - update with real data
+        role_obs_labels: ['pedestrian','teammate','supervisor']
+        role_obs_model_coeffs: [1., 1., 1.,
+                                1., 0., 0.,
+                                0., 1., 0.,
+                                0., 0., 1.]
 
     objects_of_interest: ['person']
 
@@ -188,7 +202,7 @@ semantic_fusion_node:
         variables: ['role']
         role:
           symbol: 'r' # Letter to uniquely identify the variable in GTSAM.
-          labels: ['unknown','pedestrian','robot-teammate','robot-supervisor']
+          labels: ['unknown','pedestrian','teammate','supervisor']
           probs: [10., 1., 1., 1.]
           upper_prob_limit: .90
           lower_prob_limit: .01
@@ -200,11 +214,10 @@ semantic_fusion_node:
         upper_prob_limit: .90
         lower_prob_limit: .01
 
-
 ### EXPERIMENT MANAGER NODE
 /**:
   ros__parameters:
-    exp_configs: ['config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml',
-                  'config/exp2_cfgs/exp2_vis_role_ar_cmd.yaml']
+    exp_configs: ['config/exp2_cfgs/exp2_vis_role_ar_cmd.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml']
     mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
     result_dir: 'sit_int_ws/src/situated_interaction/results/exp2_hierarchical_cmd/role_rec'

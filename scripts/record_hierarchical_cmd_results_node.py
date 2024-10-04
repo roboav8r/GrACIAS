@@ -3,6 +3,9 @@
 import pandas as pd
 import numpy as np
 
+import os
+from pathlib import Path
+
 import rclpy
 from rclpy.node import Node
 
@@ -23,6 +26,9 @@ class RecHierarchicalCmdResultsNode(Node):
 
         self.record_epoch_srv = self.create_service(RecordEpoch, '~/record_epoch', self.record_epoch)
         self.stop_record_srv = self.create_service(Empty, '~/stop_recording', self.stop_recording)
+
+        self.declare_parameter('result_dir', rclpy.Parameter.Type.STRING )
+        self.result_dir = Path.home() / self.get_parameter('result_dir').get_parameter_value().string_value
 
         self.results_columns = ['config','scene','role','cmd_mode','cmd','role rec method','cmd rec method','stamp','object id','object class','estimated role','estimated command']
         self.results_df = pd.DataFrame(columns = self.results_columns)
@@ -73,7 +79,7 @@ class RecHierarchicalCmdResultsNode(Node):
         return resp
 
     def stop_recording(self, _, resp):
-        self.results_df.to_csv('src/situated_interaction/results/exp2_hierarchical_cmd/hierarchical_cmd_results.csv',columns = self.results_columns)
+        self.results_df.to_csv(os.path.join(self.result_dir,'hierarchical_cmd_results.csv'),columns = self.results_columns)
         return resp
 
 

@@ -90,7 +90,8 @@ def generate_launch_description():
     rec_cmd_results_node = Node(package = "situated_interaction", 
                     executable = "record_hierarchical_cmd_results_node.py",
                     name = "record_hierarchical_cmd_results_node",
-                    output = 'screen'
+                    output = 'screen',
+                    parameters=[params]
     )
     ld.add_action(rec_cmd_results_node)
 

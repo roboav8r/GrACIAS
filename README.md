@@ -88,7 +88,9 @@ source install/setup.bash
 ros2 launch situated_interaction exp1_record_scene_results.launch.py
 ```
 
-## Task 2: Evaluate simultaneous role & command recognition
+## Task 2: Evaluate Bayesian role & command recognition
+
+### 2a: Role recognition
 Launch the Docker container
 ```
 cd ~/sit_int_ws/src/situated_interaction/docker
@@ -104,7 +106,7 @@ colcon build --packages-select ar_track_alvar_msgs audio_common_msgs situated_hr
 source install/setup.bash
 colcon build --packages-select marmot mm_scene_rec ros_audition situated_interaction
 source install/setup.bash
-ros2 launch situated_interaction exp2_record_hri_results.launch.py
+ros2 launch situated_interaction exp2a_record_role_results.launch.py
 ```
 
 ## Analyzing the data

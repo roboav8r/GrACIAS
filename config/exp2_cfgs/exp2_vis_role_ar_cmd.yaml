@@ -1,9 +1,9 @@
-/**:
-  ros__parameters:
-    use_sim_time: true
-    tracker_frame: 'philbart/base_link'
-    mic_frame: 'philbart/base_link'
-    artag_frame: 'oak_rgb_camera_optical_frame'
+# /**:
+#   ros__parameters:
+#     use_sim_time: true
+#     tracker_frame: 'philbart/base_link'
+#     mic_frame: 'philbart/base_link'
+#     artag_frame: 'oak_rgb_camera_optical_frame'
     
 
 ### UNIMODAL PROCESSING - VISION
@@ -51,9 +51,9 @@ clip_vis_rec_server:
         variables: ['role']
         role:
           labels: ['pedestrian','teammate','supervisor']
-          descriptions: ['a picture of a person', 
-                         'a picture of a person wearing a university of texas robotics shirt and orange texas hat', 
-                         'a picture of a person wearing a university of texas robotics shirt and orange texas hat and a yellow safety vest']
+          descriptions: ['person',
+                         'person with orange shirt and orange hat',
+                         'person with orange shirt and orange hat and yellow vest']
       
       comms:
         labels: ['']
@@ -110,34 +110,8 @@ audio_scene_rec:
     expansion_rate: 3
 
 
-### MULTIMODAL PROCESSING - SCENE RECOGNITION
-/bayes_fused_scene_est:
-  ros__parameters:
-
-    scene_labels: ['campus','courtyard','lab','lobby']
-    scene_prior: [.25,.25,.25,.25]
-
-    sensor_names: ['clip','dcase23']
-
-    clip:
-      obs_labels: ['campus','courtyard','lab','lobby']
-      sensor_model_coeffs: [35272., 3382., 1., 1.,
-                            154., 42755., 1., 1.,
-                            1., 54., 41930., 211.,
-                            1., 15., 4906., 36521.]
-      topic: 'clip_scene_category'
-
-    dcase23:
-      obs_labels: ['airport', 'bus', 'metro', 'metro_station','park','public_square','shopping_mall','street_pedestrian','street_traffic','tram']
-      sensor_model_coeffs: [8., 17., 49., 22., 191., 7., 1., 1., 44., 1948.,
-                            4., 305., 5., 8., 765., 1., 1., 2., 22., 1362.,
-                            22., 156., 2125., 33., 79., 2., 1., 2., 66., 21.,
-                            457., 57., 205., 481., 977., 2., 70., 17., 20., 166.]
-      topic: 'audio_scene_category'
-
-
 ### MULTIMODAL PROCESSING - SEMANTIC FUSION NODE
-semantic_fusion_node:
+/semantic_fusion_node:
   ros__parameters:
 
     loop_time_sec: 0.5
@@ -145,71 +119,71 @@ semantic_fusion_node:
     role_rec_method: 'visual'
     command_rec_method: 'artag'
 
-    sensor_names: ['artag','clip_role_rec']
-    sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
-    sensors:
-      artag:
-        type: 'artag'
-        topic: 'ar_pose_marker'
+    # sensor_names: ['artag','clip_role_rec']
+    # sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
+    # sensors:
+    #   artag:
+    #     type: 'artag'
+    #     topic: 'ar_pose_marker'
 
-        update_method: 'count' # time, count, or confidence
-        update_threshold: 4 # Update every 3 messages received
+    #     update_method: 'count' # time, count, or confidence
+    #     update_threshold: 4 # Update every 3 messages received
 
-        match_threshold: 0.5
+    #     match_threshold: 0.5
 
-        # How to interpret each AR tag id
-        ar_tag_ids: [1,2,3,4,5,6,8,9,10,11,12]
-        ar_tag_types: ['command','command','command','command','command','command','command','role','role','role','command']
-        ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','move-in-reverse','pedestrian','teammate','supervisor','advance']
+    #     # How to interpret each AR tag id
+    #     ar_tag_ids: [1,2,3,4,5,6,8,9,10,11,12]
+    #     ar_tag_types: ['command','command','command','command','command','command','command','role','role','role','command']
+    #     ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','move-in-reverse','pedestrian','teammate','supervisor','advance']
 
-        # GTSAM fusion variables
-        role_obs_labels: ['pedestrian','teammate','supervisor']
-        role_obs_model_coeffs: [1., 1., 1.,
-                                1., 0., 0.,
-                                0., 1., 0.,
-                                0., 0., 1.]
-        comm_obs_labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
-        comm_obs_model_coeffs: [1., 0., 0., 0., 0., 0., 0., 0.,
-                                0., 1., 0., 0., 0., 0., 0., 0.,
-                                0., 0., 1., 0., 0., 0., 0., 0.,
-                                0., 0., 0., 1., 0., 0., 0., 0.,
-                                0., 0., 0., 0., 1., 0., 0., 0.,
-                                0., 0., 0., 0., 0., 1., 0., 0.,
-                                0., 0., 0., 0., 0., 0., 1., 0.,
-                                0., 0., 0., 0., 0., 0., 0., 1.]
-      clip_role_rec:
-        type: 'vision'
-        topic: ''
+    #     # GTSAM fusion variables
+    #     role_obs_labels: ['pedestrian','teammate','supervisor']
+    #     role_obs_model_coeffs: [1., 1., 1.,
+    #                             1., 0., 0.,
+    #                             0., 1., 0.,
+    #                             0., 0., 1.]
+    #     comm_obs_labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+    #     comm_obs_model_coeffs: [1., 0., 0., 0., 0., 0., 0., 0.,
+    #                             0., 1., 0., 0., 0., 0., 0., 0.,
+    #                             0., 0., 1., 0., 0., 0., 0., 0.,
+    #                             0., 0., 0., 1., 0., 0., 0., 0.,
+    #                             0., 0., 0., 0., 1., 0., 0., 0.,
+    #                             0., 0., 0., 0., 0., 1., 0., 0.,
+    #                             0., 0., 0., 0., 0., 0., 1., 0.,
+    #                             0., 0., 0., 0., 0., 0., 0., 1.]
+    #   clip_role_rec:
+    #     type: 'vision'
+    #     topic: 'none'
 
-        update_method: '' # 
+    #     update_method: 'none' # 
 
-        # GTSAM fusion variables
-        # TODO - update with real data
-        role_obs_labels: ['pedestrian','teammate','supervisor']
-        role_obs_model_coeffs: [1., 1., 1.,
-                                1., 0., 0.,
-                                0., 1., 0.,
-                                0., 0., 1.]
+    #     # GTSAM fusion variables
+    #     # TODO - update with real data
+    #     role_obs_labels: ['pedestrian','teammate','supervisor']
+    #     role_obs_model_coeffs: [1., 1., 1.,
+    #                             1., 0., 0.,
+    #                             0., 1., 0.,
+    #                             0., 0., 1.]
 
-    objects_of_interest: ['person']
+    # objects_of_interest: ['person']
 
-    person:
-      attributes:
-        variables: ['']
+    # person:
+    #   attributes:
+    #     variables: ['']
 
-      states:
-        variables: ['role']
-        role:
-          symbol: 'r' # Letter to uniquely identify the variable in GTSAM.
-          labels: ['unknown','pedestrian','teammate','supervisor']
-          probs: [10., 1., 1., 1.]
-          upper_prob_limit: .90
-          lower_prob_limit: .01
+    #   states:
+    #     variables: ['role']
+    #     role:
+    #       symbol: 'r' # Letter to uniquely identify the variable in GTSAM.
+    #       labels: ['unknown','pedestrian','teammate','supervisor']
+    #       probs: [10., 1., 1., 1.]
+    #       upper_prob_limit: .90
+    #       lower_prob_limit: .01
       
-      comms: 
-        symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
-        labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
-        probs: [10., 1., 1., 1., 1., 1., 1., 1.]  
-        upper_prob_limit: .90
-        lower_prob_limit: .01
+    #   comms: 
+    #     symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
+    #     labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+    #     probs: [10., 1., 1., 1., 1., 1., 1., 1.]  
+    #     upper_prob_limit: .90
+    #     lower_prob_limit: .01
        

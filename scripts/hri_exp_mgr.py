@@ -65,7 +65,11 @@ class HRIExpManager(Node):
             
             # Reconfigure semantic node
             self.future = self.reconf_semantic_tracker_client.call_async(self.empty_req)
-            rclpy.spin_until_future_complete(self, self.future)
+            rclpy.spin_until_future_complete(self, self.future, timeout_sec=5)
+            while self.future.done() is False:
+                self.get_logger().info("Could not reconfigure semantic node, retrying")
+                self.future = self.reconf_semantic_tracker_client.call_async(self.empty_req)
+                rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
 
             # Get command recognition method from semantic node
             param_request = GetParameters.Request()
@@ -75,6 +79,8 @@ class HRIExpManager(Node):
 
             # handle response
             response = self.future.result()
+
+            self.get_logger().info("Response: %s" % response)
 
             role_rec_method = response.values[0].string_value
             cmd_rec_method = response.values[1].string_value
@@ -99,14 +105,7 @@ class HRIExpManager(Node):
                         role_actual = labels[-3]
                         scene_actual = labels[-4]
 
-
-
                         if root != last_root: # Avoid playing mcap file multiple times
-
-                            # Check to see if mcap contains data relevant to the command recognition method
-                            if cmd_rec_method=='artag' and cmd_mode_actual!='artag':
-                                self.get_logger().info("No data for cmd rec method")
-                                continue
 
                             self.get_logger().info("Resetting nodes and playing data")
                             # Reset tracker
@@ -146,7 +145,6 @@ class HRIExpManager(Node):
                             except subprocess.CalledProcessError as e:
                                 self.get_logger().info(f"Error executing command: {e}")
 
-                        self.get_logger().info("On to next file")
                         last_root = root
 
             self.future = self.stop_recording_client.call_async(self.empty_req)
