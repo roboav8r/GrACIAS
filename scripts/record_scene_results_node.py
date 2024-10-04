@@ -49,6 +49,9 @@ class RecSceneResultsNode(Node):
 
     def record_epoch(self, req, resp):
 
+        # Clear dataframe
+        self.results_df = pd.DataFrame(columns = self.results_columns)
+
         # Get epoch information
         self.scene = req.scene
         self.role = req.role
