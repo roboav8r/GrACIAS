@@ -3,26 +3,57 @@ This is my development scratchpad - don't judge
 
 # Setup
 
-## Prerequisites
+## System
 This assumes that you have ROS2 Humble installed on Ubuntu 22.04 and have an NVidia GPU.
 
-## Create environment
-sudo apt-get install libasound2-dev
-sudo apt-get install ffmpeg
+## Prerequisites
+### Install Mamba (or another virtual environment manager of your choice)
+Follow the instructions at https://github.com/conda-forge/miniforge:
+```curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+bash Miniforge3-$(uname)-$(uname -m).sh # ...and follow the prompts
+conda install mamba
+```
+### NVidia with Docker
+https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+
+## Installation
+Create the workspace. At a terminal:
+```
+cd ~
+mkdir -p sit_int_ws/src && cd ~/sit_int_ws/src
+```
+
+Clone the repo and its dependencies.
+```
+git clone https://github.com/ros-drivers/audio_common -b ros2
+git clone https://github.com/roboav8r/situated_hri_interfaces -b devel
+git clone https://github.com/roboav8r/tracking_msgs -b devel
+git clone https://github.com/roboav8r/ar_track_alvar_msgs -b ros2
+git clone https://github.com/roboav8r/marmot -b devel
+git clone https://github.com/roboav8r/ros_audition -b devel
+git clone https://github.com/roboav8r/mm_scene_rec -b devel
+git clone https://github.com/roboav8r/situated_interaction
+
+```
+
+Create the virtual environment.
+```
+sudo apt-get install libasound2-dev ffmpeg
+cd ~/sit_int_ws/src/situated_interaction
 mamba env create -f sit_int_env.yml
 mamba activate sit_int
 conda remove --force ffmpeg
 ffmpeg -devices # Optional - should have an "ALSA" device listed
+```
 
-## NVidia with Docker
-https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
-
-## Clone and build the repo
 ```
 mamba activate sit_int
 source /opt/ros/humble/setup.bash
 cd ~/sit_int_ws
-colcon build --packages-select ar_track_alvar_msgs audio_common_msgs situated_hri_interfaces tracking_msgs # build messages and interfaces
+rosdep install --from-paths src -y --ignore-src
+colcon build --packages-select ar_track_alvar_msgs audio_common_msgs tracking_msgs # build messages and interfaces
+source install/setup.bash
+colcon build --packages-select situated_hri_interfaces
 source install/setup.bash
 colcon build --packages-select marmot mm_scene_rec ros_audition situated_interaction
 source install/setup.bash
