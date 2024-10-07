@@ -49,9 +49,6 @@ class RecSceneResultsNode(Node):
 
     def record_epoch(self, req, resp):
 
-        # Clear dataframe
-        self.results_df = pd.DataFrame(columns = self.results_columns)
-
         # Get epoch information
         self.scene = req.scene
         self.role = req.role
@@ -70,6 +67,9 @@ class RecSceneResultsNode(Node):
     def stop_recording(self, _, resp):
 
         self.results_df.to_csv("src/situated_interaction/results/exp1a_scene_recognition/scene_results_%s.csv" % self.scene_config_name, columns = self.results_columns)
+
+        # Clear dataframe
+        self.results_df = pd.DataFrame(columns = self.results_columns)
 
         return resp
 

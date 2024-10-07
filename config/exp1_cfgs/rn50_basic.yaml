@@ -5,7 +5,7 @@
 ### CLIP SCENE ESTIMATION PARAMS
 /clip_scene_rec:
   ros__parameters:
-    num_est_interval_samples: 19 # Number of samples 
+    num_est_interval_samples: 18 # Number of samples 
     scene_labels: ['campus','courtyard','lab','lobby']
     scene_descriptions: ['a college campus','an outdoor courtyard','a lab', 'a lobby']
     clip_model: 'RN50'

@@ -115,3 +115,4 @@ scene_exp_mgr:
                   'config/exp1_cfgs/vitl14_basic.yaml',
                   'config/exp1_cfgs/vitl14_detailed.yaml']
     mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
+    # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_dev'
