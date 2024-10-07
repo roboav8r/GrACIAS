@@ -216,19 +216,19 @@ class SemanticTrackerNode(Node):
 
                 obj = self.semantic_objects[id]
 
-                needs_role_update = False
-
-                if (obj.states['role'].last_updated is None):
-                    needs_role_update = True
-                
-                else: 
+                role_not_initialized = (obj.states['role'].last_updated is None)
+                if role_not_initialized:
+                    role_is_stale = True
+                else: # role was initialized
                     time_since_update = (start_time - obj.states['role'].last_updated)
                     sec_since_update = time_to_float(0.,time_since_update.nanoseconds)
+                    role_is_stale = (sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold'])
+                future_was_sent = (id in self.visual_role_rec_futures.keys())
+                needs_role_update = (role_not_initialized | role_is_stale) & (future_was_sent == False)
 
-                    if sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold']:
-                        needs_role_update = True
+                update_is_possible = obj.new_image_available
 
-                if (needs_role_update) and (obj.new_image_available) and (id not in self.visual_role_rec_futures.keys()):
+                if (needs_role_update & update_is_possible):
                     
                     future = self.recognize_role(id)
                     self.visual_role_rec_futures[id] = {}

@@ -31,6 +31,10 @@ class CLIPVisRecServer(Node):
         self.model, self.preprocess = clip.load(self.clip_model, device=self.device)
 
         # Generate object att/state variable dictionary
+        self.create_obj_param_dict()
+        self.get_logger().info(f"PARAM DICT: {self.object_params}")
+
+    def create_obj_param_dict(self):
         self.object_params = {}
         self.declare_parameter('object_classes', rclpy.Parameter.Type.STRING_ARRAY)
         self.object_classes = self.get_parameter('object_classes').get_parameter_value().string_array_value
@@ -80,12 +84,9 @@ class CLIPVisRecServer(Node):
                 self.object_params[obj]['comms']['text_tokens'] = clip.tokenize(self.object_params[obj]['comms']['gesture_descriptions']).to(self.device)
                 self.object_params[obj]['comms']['text_features'] = self.model.encode_text(self.object_params[obj]['comms']['text_tokens'])
 
-
     def clip_rec_callback(self, req, resp):
 
         with torch.no_grad():
-
-            self.get_logger().info('Incoming request to recognize %s-%s\nstates: %s\natts: %s\n' % (req.class_string, req.object_id, req.states_to_estimate, req.attributes_to_estimate))
 
             cv_image = self.bridge.imgmsg_to_cv2(req.image)
             clip_image = self.preprocess(PILImage.fromarray(cv_image)).unsqueeze(0).to(self.device)
@@ -96,6 +97,7 @@ class CLIPVisRecServer(Node):
                 att_dist = CategoricalDistribution()
                 att_dist.variable = att
                 att_dist.categories = self.object_params[req.class_string]['attributes'][att]['labels']
+                self.object_params[req.class_string]['attributes'][att]['text_features'] = self.model.encode_text(self.object_params[req.class_string]['attributes'][att]['text_tokens'])
                 logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['attributes'][att]['text_tokens'])
                 att_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
                 resp.attributes.append(att_dist)
@@ -105,6 +107,7 @@ class CLIPVisRecServer(Node):
                 state_dist = CategoricalDistribution()
                 state_dist.variable = state
                 state_dist.categories = self.object_params[req.class_string]['states'][state]['labels']
+                self.object_params[req.class_string]['states'][state]['text_features'] = self.model.encode_text(self.object_params[req.class_string]['states'][state]['text_tokens'])
                 logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['states'][state]['text_tokens'])
                 state_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
                 resp.states.append(state_dist)
@@ -113,12 +116,14 @@ class CLIPVisRecServer(Node):
                 comm_dist = CategoricalDistribution()
                 comm_dist.variable = 'gesture_comms'
                 comm_dist.categories = self.object_params[req.class_string]['comms']['labels']
+                self.object_params[req.class_string]['attributes'][att]['text_features'] = self.model.encode_text(self.object_params[req.class_string]['attributes'][att]['text_tokens'])
                 logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['comms']['text_tokens'])
                 comm_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
                 resp.comms = comm_dist
             
             resp.stamp = req.stamp
 
+            cv2.imwrite('/home/jd/sit_int_ws/server_img.png',cv_image)
             return resp
 
 
