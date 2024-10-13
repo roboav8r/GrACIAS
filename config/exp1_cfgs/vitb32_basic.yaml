@@ -7,6 +7,49 @@
 /clip_scene_rec:
   ros__parameters:
     num_est_interval_samples: 18 # Number of samples 
+    update_interval: 1. # Update after 1 second elapses
     scene_labels: ['campus','courtyard','lab','lobby']
     scene_descriptions: ['a college campus','an outdoor courtyard','a lab', 'a lobby']
     clip_model: 'ViT-B/32'
+
+### CLIP BAYES ESTIMATOR PARAMS
+/bayes_clip_scene_est:
+  ros__parameters:
+
+    scene_labels: ['campus','courtyard','lab','lobby']
+    scene_prior: [.25,.25,.25,.25]
+
+    sensor_names: ['clip']
+
+    clip:
+      obs_labels: ['campus','courtyard','lab','lobby']
+      sensor_model_coeffs: [30017., 1276., 4815., 2548.,
+                            27558., 5800., 9550., 3.,
+                            1., 1., 38290., 3904.,
+                            1., 1., 1., 41440.]
+      topic: 'clip_scene_category'
+
+### FUSED BAYES ESTIMATOR PARAMS
+/bayes_fused_scene_est:
+  ros__parameters:
+
+    scene_labels: ['campus','courtyard','lab','lobby']
+    scene_prior: [.25,.25,.25,.25]
+
+    sensor_names: ['clip','dcase23']
+
+    clip:
+      obs_labels: ['campus','courtyard','lab','lobby']
+      sensor_model_coeffs: [30017., 1276., 4815., 2548.,
+                            27558., 5800., 9550., 3.,
+                            1., 1., 38290., 3904.,
+                            1., 1., 1., 41440.]
+      topic: 'clip_scene_category'
+
+    dcase23:
+      obs_labels: ['airport', 'bus', 'metro', 'metro_station','park','public_square','shopping_mall','street_pedestrian','street_traffic','tram']
+      sensor_model_coeffs: [13., 19., 49., 14., 206., 7., 1., 1., 37., 1941.,
+                            6., 274., 9., 11., 767., 3., 2., 2., 19., 1382.,
+                            16., 157., 2111., 43., 80., 2., 1., 1., 65., 31.,
+                            479., 57., 191., 468., 974., 1., 68., 18., 21., 175.]
+      topic: 'audio_scene_category'

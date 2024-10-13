@@ -41,6 +41,7 @@
     ### CLIP SCENE ESTIMATION PARAMS
 
     num_est_interval_samples: 19 # Number of samples 
+    update_interval: 1. # Update after 1 second elapses
     scene_labels: ['campus','courtyard','lab','lobby']
     scene_descriptions: ['a college campus','an outdoor courtyard','a lab', 'a lobby']
     clip_model: 'RN50'
@@ -84,6 +85,8 @@
 /bayes_fused_scene_est:
   ros__parameters:
 
+    loop_time_sec: 1.
+
     scene_labels: ['campus','courtyard','lab','lobby']
     scene_prior: [.25,.25,.25,.25]
 
@@ -114,5 +117,5 @@ scene_exp_mgr:
                   'config/exp1_cfgs/vitb32_detailed.yaml',
                   'config/exp1_cfgs/vitl14_basic.yaml',
                   'config/exp1_cfgs/vitl14_detailed.yaml']
-    mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
-    # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_dev'
+    # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
+    mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_dev'

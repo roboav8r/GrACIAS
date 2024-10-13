@@ -56,7 +56,7 @@ def generate_launch_description():
     ld.add_action(clip_bayes_rec_node)
 
     fused_bayes_rec_node = Node(package = "mm_scene_rec", 
-                    executable = "bayes_scene_est.py",
+                    executable = "multimodal_bayes_scene_est.py",
                     name = "bayes_fused_scene_est",
                     output = 'screen',
                     parameters=[params]

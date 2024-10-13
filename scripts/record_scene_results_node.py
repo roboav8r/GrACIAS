@@ -20,8 +20,8 @@ class RecSceneResultsNode(Node):
         self.declare_parameter('config_name', rclpy.Parameter.Type.STRING)    
         self.scene_config_name =  self.get_parameter('config_name').get_parameter_value().string_value
 
-        self.audio_scene_est_sub = self.create_subscription(CategoricalDistribution, 'audio_scene_category', lambda msg: self.scene_est_count_callback(msg, 'audio'), 10)
-        self.clip_scene_est_sub = self.create_subscription(CategoricalDistribution, 'clip_scene_category', lambda msg: self.scene_est_count_callback(msg, 'clip'), 10)
+        # self.audio_scene_est_sub = self.create_subscription(CategoricalDistribution, 'audio_scene_category', lambda msg: self.scene_est_count_callback(msg, 'audio'), 10)
+        # self.clip_scene_est_sub = self.create_subscription(CategoricalDistribution, 'clip_scene_category', lambda msg: self.scene_est_count_callback(msg, 'clip'), 10)
 
         self.audio_scene_sub = self.create_subscription(CategoricalDistribution, 'bayes_audio_scene_est/fused_scene_category', lambda msg: self.scene_callback(msg, 'audio'), 10)
         self.clip_scene_sub = self.create_subscription(CategoricalDistribution, 'bayes_clip_scene_est/fused_scene_category', lambda msg: self.scene_callback(msg, 'clip'), 10)
@@ -31,19 +31,21 @@ class RecSceneResultsNode(Node):
         self.stop_record_srv = self.create_service(Empty, '~/stop_recording', self.stop_recording)
         self.reconfigure_srv = self.create_service(Empty, '~/reconfigure', self.reconfigure)
 
-        self.results_columns = ['scene','role','cmd_mode','cmd','scene_estimation_mode','n_audio_updates','n_visual_updates','scene_est','scene_conf']
+        self.results_columns = ['scene','role','cmd_mode','cmd','scene_estimation_mode','n_updates','scene_est','scene_conf']
         self.results_df = pd.DataFrame(columns = self.results_columns)
     
         self.scene_est_count_dict = {'audio': 0, 'clip': 0, 'fused': 0}
 
-    def scene_est_count_callback(self, _, scene_mode):
-        # Increment update count
-        self.scene_est_count_dict[scene_mode] += 1
+    # def scene_est_count_callback(self, _, scene_mode):
+    #     # Increment update count
+    #     self.scene_est_count_dict[scene_mode] += 1
 
     def scene_callback(self, msg, scene_mode):
-        
+
+        self.scene_est_count_dict[scene_mode] += 1
+
         # Add experiment result to dataframe
-        result_df = pd.DataFrame([[self.scene, self.role, self.cmd_mode, self.cmd, scene_mode, self.scene_est_count_dict['audio'], self.scene_est_count_dict['clip'], msg.categories[np.argmax(msg.probabilities)],msg.probabilities[np.argmax(msg.probabilities)]]], columns=self.results_columns)
+        result_df = pd.DataFrame([[self.scene, self.role, self.cmd_mode, self.cmd, scene_mode, self.scene_est_count_dict[scene_mode], msg.categories[np.argmax(msg.probabilities)],msg.probabilities[np.argmax(msg.probabilities)]]], columns=self.results_columns)
 
         self.results_df = pd.concat([self.results_df, result_df],axis=0, ignore_index=True)
 

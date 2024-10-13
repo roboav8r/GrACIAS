@@ -49,6 +49,8 @@ class SceneExpManager(Node):
         self.reset_bayes_audio_scene_client = self.create_client(Empty, 'bayes_audio_scene_est/reset') 
         self.reset_bayes_clip_scene_client = self.create_client(Empty, 'bayes_clip_scene_est/reset')
         self.reset_bayes_fused_scene_client = self.create_client(Empty, 'bayes_fused_scene_est/reset')
+        self.reconf_bayes_clip_scene_client = self.create_client(Empty, 'bayes_clip_scene_est/reconfigure')
+        self.reconf_bayes_fused_scene_client = self.create_client(Empty, 'bayes_fused_scene_est/reconfigure')
 
         self.start_recording_client = self.create_client(RecordEpoch, 'record_scene_results_node/record_epoch')
         self.stop_recording_client = self.create_client(Empty, 'record_scene_results_node/stop_recording')
@@ -70,6 +72,8 @@ class SceneExpManager(Node):
                 time.sleep(1.)
 
             subprocess.run(["ros2", "param", "load", "/clip_scene_rec", os.path.join(self.package_dir,exp_path)])
+            subprocess.run(["ros2", "param", "load", "/bayes_clip_scene_est", os.path.join(self.package_dir,exp_path)])
+            subprocess.run(["ros2", "param", "load", "/bayes_fused_scene_est", os.path.join(self.package_dir,exp_path)])
             subprocess.run(["ros2", "param", "load", "/record_scene_results_node", os.path.join(self.package_dir,exp_path)])
             
             # Reconfigure nodes
@@ -78,6 +82,20 @@ class SceneExpManager(Node):
             while self.future.done() is False:
                 self.get_logger().info("Could not reconfigure clip scene client, retrying")
                 self.future = self.reconf_clip_scene_client.call_async(self.empty_req)
+                rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+
+            self.future = self.reconf_bayes_clip_scene_client.call_async(self.empty_req)
+            rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+            while self.future.done() is False:
+                self.get_logger().info("Could not reconfigure bayes clip scene node, retrying")
+                self.future = self.reconf_bayes_clip_scene_client.call_async(self.empty_req)
+                rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+
+            self.future = self.reconf_bayes_fused_scene_client.call_async(self.empty_req)
+            rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+            while self.future.done() is False:
+                self.get_logger().info("Could not reconfigure bayes fused scene node, retrying")
+                self.future = self.reconf_bayes_fused_scene_client.call_async(self.empty_req)
                 rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
 
             self.future = self.reconf_recording_client.call_async(self.empty_req)
@@ -135,7 +153,7 @@ class SceneExpManager(Node):
                             self.future = self.start_recording_client.call_async(record_epoch_req)
                             rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
                            
-                            bag_play_cmd = "ros2 bag play %s --clock 1" % root
+                            bag_play_cmd = "ros2 bag play %s --clock 100" % root
                             self.get_logger().info(bag_play_cmd)
                             try:
                                 result = subprocess.check_output(bag_play_cmd, shell=True, text=True)
