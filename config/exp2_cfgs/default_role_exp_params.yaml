@@ -143,6 +143,10 @@ audio_scene_rec:
 semantic_fusion_node:
   ros__parameters:
 
+    x_label_offset: .0 # meters
+    y_label_offset: -.75 # meters
+    z_label_offset: .75 # meters
+
     update_loop_time_sec: 0.1
     pub_loop_time_sec: 1.
     
@@ -219,8 +223,8 @@ semantic_fusion_node:
 ### EXPERIMENT MANAGER NODE
 /**:
   ros__parameters:
-    exp_configs: ['config/exp2_cfgs/exp2_vis_role_ar_cmd.yaml']
-                  # 'config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml']
+    exp_configs: ['config/exp2_cfgs/exp2_vis_role_ar_cmd.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml']
     mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_dev'
     # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
     result_dir: 'sit_int_ws/src/situated_interaction/results/exp2_hierarchical_cmd/role_rec'

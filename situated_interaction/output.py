@@ -2,7 +2,8 @@
 from situated_hri_interfaces.msg import HierarchicalCommand, HierarchicalCommands
 
 from diagnostic_msgs.msg import KeyValue
-from foxglove_msgs.msg import SceneUpdate, SceneEntity, TextPrimitive
+from foxglove_msgs.msg import SceneUpdate, SceneEntity, TextPrimitive, LinePrimitive
+from geometry_msgs.msg import Point
 
 def foxglove_visualization(semantic_fusion_node):
     semantic_fusion_node.scene_out_msg = SceneUpdate()
@@ -18,26 +19,47 @@ def foxglove_visualization(semantic_fusion_node):
         entity_msg.frame_locked = True
         entity_msg.lifetime.nanosec = int(semantic_fusion_node.pub_loop_time_sec*1000000000)
 
+        # Add callout lines
+        line = LinePrimitive()
+        line.thickness = .01
+        line.color.r = 1.
+        line.color.g = 1.
+        line.color.b = 1.
+        line.color.a = 1.
+        top_point = Point()
+        top_point.x = obj.pos_x + semantic_fusion_node.x_label_offset
+        top_point.y = obj.pos_y + semantic_fusion_node.y_label_offset
+        top_point.z = obj.pos_z + semantic_fusion_node.z_label_offset        
+        mid_point = Point()
+        mid_point.x = obj.pos_x + semantic_fusion_node.x_label_offset
+        mid_point.y = obj.pos_y + semantic_fusion_node.y_label_offset
+        mid_point.z = obj.pos_z + 0.5*semantic_fusion_node.z_label_offset
+        bottom_point = Point()
+        bottom_point.x = obj.pos_x
+        bottom_point.y = obj.pos_y
+        bottom_point.z = obj.pos_z
+        line.points.append(top_point)
+        line.points.append(mid_point)
+        line.points.append(bottom_point)
+        entity_msg.lines.append(line)
+
+        # Add text box
         text = TextPrimitive()
         text.billboard = True
         text.font_size = 16.
         text.scale_invariant = True
         text.color.a = 1.0
-        text.pose.position.x = obj.pos_x
-        text.pose.position.y = obj.pos_y
-        text.pose.position.z = obj.pos_z
-        # text.text = "%s #%s: \nID: %s \nAuth: %s\n" % (obj.class_string, obj.track_id, obj.identity, obj.auth)
-        text.text = "%s #%s: \n" % (obj.class_string, obj.track_id)
+        text.pose.position.x = obj.pos_x + semantic_fusion_node.x_label_offset
+        text.pose.position.y = obj.pos_y + semantic_fusion_node.y_label_offset
+        text.pose.position.z = obj.pos_z + semantic_fusion_node.z_label_offset
+        text.text = "%s #%s:\n" % (obj.class_string, obj.track_id)
         
-        text.text += '\n'
         for att in obj.attributes:
             text.text += "%s: %s %2.0f%%\n" % (att, obj.attributes[att].var_labels[obj.attributes[att].probs.argmax()], 100*obj.attributes[att].probs(obj.attributes[att].probs.argmax()))
 
-        text.text += '\n'
         for state in obj.states:
             text.text += "%s: %s %2.0f%%\n" % (state, obj.states[state].var_labels[obj.states[state].probs.argmax()], 100*obj.states[state].probs(obj.states[state].probs.argmax()))
 
-        text.text += '\n'
         text.text += "command: %s %2.0f%%\n" % (obj.comms.var_labels[obj.comms.probs.argmax()], 100*obj.comms.probs(obj.comms.probs.argmax()))
         entity_msg.texts.append(text)
 

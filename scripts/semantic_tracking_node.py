@@ -92,6 +92,14 @@ class SemanticTrackerNode(Node):
         # Generate object att/state variable dictionary
         load_object_params(self)
 
+        # Other parameters
+        self.declare_parameter('x_label_offset', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('y_label_offset', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('z_label_offset', rclpy.Parameter.Type.DOUBLE)
+        self.x_label_offset = self.get_parameter('x_label_offset').get_parameter_value().double_value
+        self.y_label_offset = self.get_parameter('y_label_offset').get_parameter_value().double_value
+        self.z_label_offset = self.get_parameter('z_label_offset').get_parameter_value().double_value
+
         # Define member variables
         self.semantic_objects = {}
         self.tracks_msg = Tracks3D()
@@ -175,12 +183,8 @@ class SemanticTrackerNode(Node):
     
         if self.role_rec_method=='visual':
 
-            self.get_logger().info("****************************** Visual role recognition")
-
             # Check future status and update variable if needed
             if self.ready_to_send_vis_rec_req==False:
-
-                self.get_logger().info("****************************** Checking future")
 
                 # Check if future is completed and update
                 if self.future.done():
@@ -191,13 +195,9 @@ class SemanticTrackerNode(Node):
                     ### CHECK IF THE OBJECT IS BEING TRACKED AND CAN BE UPDATED
                     if resp.object_id in self.semantic_objects.keys():
 
-                        self.get_logger().info("****************************** Future done with result %s" % resp)
-
                         for state in resp.states:
                             if state.variable=='role':
                                 role_probs = state.probabilities
-
-                        # self.get_logger().info("Role probs: %s" % role_probs)
 
                         role_obs_idx = np.array(role_probs).argmax()
 
@@ -223,61 +223,37 @@ class SemanticTrackerNode(Node):
                 # For each object, check if state is stale. If so, send state update request.
                 for id in self.semantic_objects.keys():
 
-                    self.get_logger().info("****************************** Object %s" % id)
                     obj = self.semantic_objects[id]
 
                     ### CHECK IF OBJECT NEEDS AN UPDATE
                     role_not_initialized = (obj.states['role'].last_updated is None)
                     if role_not_initialized:
                         role_is_stale = True
-                        self.get_logger().info("****************************** Role not initialized")
+
                     else: # role was initialized
                         time_since_update = (now_stamp - Time.from_msg(obj.states['role'].last_updated))
                         sec_since_update = time_to_float(0.,time_since_update.nanoseconds)
                         role_is_stale = (sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold'])
 
-                        self.get_logger().info("****************************** %s sec since update, %s threshold, Role is stale = %s" % (sec_since_update, self.sensor_dict['clip_role_rec']['update_threshold'], role_is_stale))
-
-
                     ### CHECK IF UPDATE REQUEST HAS ALREADY BEEN SENT
-                    self.get_logger().info("****************************** Req queue: %s" % self.req_queue.qsize())
-                    self.get_logger().info("****************************** IDs to recognize: %s" % self.ids_to_recognize)
-
                     req_in_queue = (id in self.ids_to_recognize) 
                     needs_role_update = (role_not_initialized | role_is_stale) & (req_in_queue == False)
 
                     update_is_possible = obj.new_image_available
 
                     if (needs_role_update & update_is_possible):
-
-                        self.get_logger().info("****************************** Update is possible, and object needs a role update")
-
                         self.req_queue.put(self.vis_rec_req(id,now_stamp))
                         self.ids_to_recognize.append(id)
-                    
-                        self.get_logger().info("****************************** Req queue: %s" % self.req_queue.qsize())
-                        self.get_logger().info("****************************** IDs to recognize: %s" % self.ids_to_recognize)
-
-
+                
 
                     ### SEND REQUESTS
-                    self.get_logger().info("****************************** Ready to send request")
-
-
                     if self.req_queue.empty() == False:
-
-                        self.get_logger().info("****************************** There is something in the queue")
 
                         del self.ids_to_recognize[self.ids_to_recognize.index(id)]
                         clip_req = self.req_queue.get()
                         self.future = self.clip_client.call_async(clip_req)
 
                         self.ready_to_send_vis_rec_req = False
-
-                        self.get_logger().info("****************************** Sent request, req queue length is now %s" % self.req_queue.qsize())
-                        self.get_logger().info("****************************** IDs to recognize: %s" % self.ids_to_recognize)
-
-            self.get_logger().info("end loop \n\n")
 
     def pub_timer_callback(self):
         foxglove_visualization(self)
