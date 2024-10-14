@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # import time
+import queue
 import numpy as np
 import gtsam
 
@@ -33,7 +34,8 @@ class SemanticTrackerNode(Node):
         super().__init__('semantic_tracker_node')
 
         self.sub_cb_group = MutuallyExclusiveCallbackGroup()
-        self.timer_cb_group = MutuallyExclusiveCallbackGroup()
+        self.pub_timer_cb_group = MutuallyExclusiveCallbackGroup()
+        self.update_timer_cb_group = MutuallyExclusiveCallbackGroup()
         self.client_cb_group = MutuallyExclusiveCallbackGroup()
 
         initialize_sensors(self)
@@ -46,13 +48,13 @@ class SemanticTrackerNode(Node):
             10, callback_group=self.sub_cb_group)
         self.subscription_tracks  # prevent unused variable warning
 
-        # Subscribe to audio sources
-        self.audio_src_sub = self.create_subscription(
-            SpeechAzSources,
-            'audio_az_sources',
-            self.speech_az_callback,
-            10, callback_group=self.sub_cb_group)
-        self.audio_src_sub  # prevent unused variable warning       
+        # # Subscribe to audio sources
+        # self.audio_src_sub = self.create_subscription(
+        #     SpeechAzSources,
+        #     'speech_az_sources',
+        #     self.speech_az_callback,
+        #     10, callback_group=self.sub_cb_group)
+        # self.audio_src_sub  # prevent unused variable warning       
 
         # Define pubs
         self.semantic_scene_pub = self.create_publisher(
@@ -65,16 +67,17 @@ class SemanticTrackerNode(Node):
             'hierarchical_commands',
             10)
         
-        # Create main timer
-        self.declare_parameter('loop_time_sec', rclpy.Parameter.Type.DOUBLE)
-        self.loop_time_sec = self.get_parameter('loop_time_sec').get_parameter_value().double_value
-        self.timer = self.create_timer(self.loop_time_sec, self.timer_callback, callback_group=self.timer_cb_group)
-        self.service_timeout = .25
+        # Create timers
+        self.declare_parameter('update_loop_time_sec', rclpy.Parameter.Type.DOUBLE)
+        self.declare_parameter('pub_loop_time_sec', rclpy.Parameter.Type.DOUBLE)
+        self.update_loop_time_sec = self.get_parameter('update_loop_time_sec').get_parameter_value().double_value
+        self.pub_loop_time_sec = self.get_parameter('pub_loop_time_sec').get_parameter_value().double_value
+        self.update_timer = self.create_timer(self.update_loop_time_sec, self.update_timer_callback, callback_group=self.update_timer_cb_group)
+        self.pub_timer = self.create_timer(self.pub_loop_time_sec, self.pub_timer_callback, callback_group=self.pub_timer_cb_group)
 
         # Create clip service client
         self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec', callback_group=self.client_cb_group)
-        while not self.clip_client.wait_for_service(timeout_sec=5.0):
-            self.get_logger().info('Clip object rec service not available, waiting again...')
+        self.clip_client.wait_for_service()
         self.clip_req = ObjectVisRec.Request()
 
         # Create reset & reconfigure servers
@@ -89,10 +92,14 @@ class SemanticTrackerNode(Node):
         self.mic_frame = self.get_parameter('mic_frame').get_parameter_value().string_value
         self.artag_frame = self.get_parameter('artag_frame').get_parameter_value().string_value
 
-        self.tf_buffer = tf2_ros.buffer.Buffer(Duration(seconds=0.5))
+        self.tf_buffer = tf2_ros.buffer.Buffer()
         self.tf_listener = tf2_ros.transform_listener.TransformListener(self.tf_buffer, self)
-        self.tf_buffer.can_transform(self.mic_frame,self.tracker_frame,Duration(seconds=10)) # Block until mic -> tracker transform available
-        self.tf_buffer.can_transform(self.artag_frame,self.tracker_frame,Duration(seconds=10)) # Block until artag -> tracker transform available
+        self.tf_buffer.can_transform(self.mic_frame,self.tracker_frame,Duration(seconds=1)) # Block until mic -> tracker transform available
+        self.tf_buffer.can_transform(self.artag_frame,self.tracker_frame,Duration(seconds=1)) # Block until artag -> tracker transform available
+
+        # # Angular match threshold for speech commanding TODO - move this to sensor
+        # self.declare_parameter('src_match_thresh_rad', rclpy.Parameter.Type.DOUBLE)
+        # self.src_match_thresh_rad = self.get_parameter('src_match_thresh_rad').get_parameter_value().double_value       
         
         # Generate object att/state variable dictionary
         load_object_params(self)
@@ -101,7 +108,10 @@ class SemanticTrackerNode(Node):
         self.semantic_objects = {}
         self.tracks_msg = Tracks3D()
         self.scene_out_msg = SceneUpdate()
-        self.visual_role_rec_futures = {}
+        # self.visual_role_rec_futures = {}
+        self.req_queue = queue.SimpleQueue()
+        self.ids_to_recognize = []
+        self.ready_to_send_vis_rec_req = True
 
     def reset_callback(self, _, resp):
 
@@ -110,6 +120,12 @@ class SemanticTrackerNode(Node):
         self.tracks_msg = Tracks3D()
         self.scene_out_msg = SceneUpdate()
         self.visual_role_rec_futures = {}
+
+        self.tf_buffer.clear()
+
+        self.req_queue = queue.SimpleQueue()
+        self.ids_to_recognize = []
+        self.ready_to_send_vis_rec_req = True
 
         return resp
     
@@ -126,63 +142,85 @@ class SemanticTrackerNode(Node):
 
         return resp
 
-    def recognize_role(self, id):
-        self.clip_req = ObjectVisRec.Request()
-        self.clip_req.object_id = id
-        self.clip_req.class_string = self.semantic_objects[id].class_string
-        self.clip_req.attributes_to_estimate = []
-        self.clip_req.states_to_estimate = ['role']
-        self.clip_req.estimate_comms = False
-        self.clip_req.image = self.semantic_objects[id].image
-        self.clip_req.stamp = self.semantic_objects[id].stamp
-        future = self.clip_client.call_async(self.clip_req)
+    def vis_rec_req(self, id, stamp):
+        clip_req = ObjectVisRec.Request()
+        clip_req.object_id = id
+        clip_req.class_string = self.semantic_objects[id].class_string
+        clip_req.attributes_to_estimate = []
+        clip_req.states_to_estimate = ['role']
+        clip_req.estimate_comms = False
+        clip_req.image = self.semantic_objects[id].image
+        clip_req.stamp = stamp.to_msg()
 
-        return future
+        return clip_req
 
-    def send_obj_clip_req(self, id, atts_to_est, states_to_est, est_comms):
-        self.clip_req = ObjectVisRec.Request()
-        self.clip_req.object_id = id
-        self.clip_req.class_string = self.semantic_objects[id].class_string
-        self.clip_req.attributes_to_estimate = atts_to_est
-        self.clip_req.states_to_estimate = states_to_est
-        self.clip_req.estimate_comms = est_comms
-        self.clip_req.image = self.semantic_objects[id].image
-        self.clip_req.stamp = self.semantic_objects[id].stamp
-        resp = self.clip_client.call(self.clip_req)
+    # def recognize_role(self, clip_req):
+    #     future = self.clip_client.call_async(clip_req)
 
-        for att_dist in resp.attributes:
-            att = att_dist.variable
-            self.semantic_objects[id].attributes[att].update(att_dist.probabilities, Time.from_msg(resp.stamp))
+    #     return future
 
-        for state_dist in resp.states:
-            state = state_dist.variable
-            self.semantic_objects[id].states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
+    # def send_obj_clip_req(self, id, atts_to_est, states_to_est, est_comms):
+    #     self.clip_req = ObjectVisRec.Request()
+    #     self.clip_req.object_id = id
+    #     self.clip_req.class_string = self.semantic_objects[id].class_string
+    #     self.clip_req.attributes_to_estimate = atts_to_est
+    #     self.clip_req.states_to_estimate = states_to_est
+    #     self.clip_req.estimate_comms = est_comms
+    #     self.clip_req.image = self.semantic_objects[id].image
+    #     self.clip_req.stamp = self.semantic_objects[id].stamp
+    #     resp = self.clip_client.call(self.clip_req)
 
-        if est_comms:
-            self.semantic_objects[id].update_gesture_comms(resp.comms, self)
+    #     for att_dist in resp.attributes:
+    #         att = att_dist.variable
+    #         self.semantic_objects[id].attributes[att].update(att_dist.probabilities, Time.from_msg(resp.stamp))
 
-        self.semantic_objects[id].image_available = False
+    #     for state_dist in resp.states:
+    #         state = state_dist.variable
+    #         self.semantic_objects[id].states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
 
-    def timer_callback(self):
+    #     if est_comms:
+    #         self.semantic_objects[id].update_gesture_comms(resp.comms, self)
+
+    #     self.semantic_objects[id].image_available = False
+
+    def update_timer_callback(self):
     
         if self.role_rec_method=='visual':
 
-            # Check futures
-            temp_futures = self.visual_role_rec_futures
-            self.visual_role_rec_futures = {}
+            # Check if objects need update
+            now_stamp = self.get_clock().now()
 
-            for id in temp_futures.keys():
-                stamp = temp_futures[id]['stamp']
-                future = temp_futures[id]['future']
+            # For each object, check if state is stale. If so, send state update request.
+            for id in self.semantic_objects.keys():
 
-                if id not in self.semantic_objects.keys():
-                    continue
+                obj = self.semantic_objects[id]
 
-                if future.done():
+                role_not_initialized = (obj.states['role'].last_updated is None)
+                if role_not_initialized:
+                    role_is_stale = True
+                else: # role was initialized
+                    time_since_update = (now_stamp - Time.from_msg(obj.states['role'].last_updated))
+                    sec_since_update = time_to_float(0.,time_since_update.nanoseconds)
+                    role_is_stale = (sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold'])
+                # future_was_sent = (id in self.visual_role_rec_futures.keys())
+                req_in_queue = (id in self.ids_to_recognize) 
+                needs_role_update = (role_not_initialized | role_is_stale) & (req_in_queue == False)
+
+                update_is_possible = obj.new_image_available
+
+                if (needs_role_update & update_is_possible):
+
+                    self.req_queue.put(self.vis_rec_req(id,now_stamp))
+                    self.ids_to_recognize.append(id)
+
+            # If future is done, update the underlying variable
+            if self.ready_to_send_vis_rec_req==False:
+
+                # Check if future is completed and update
+                if self.future.done():
 
                     # Get role likelihood function
-                    resp = future.result()
-                    self.get_logger().info("Got response: %s" % resp)
+                    resp = self.future.result()
 
                     for state in resp.states:
                         if state.variable=='role':
@@ -194,47 +232,26 @@ class SemanticTrackerNode(Node):
 
                     # Compute obs model, update state variable
                     role_var = self.semantic_objects[id].states['role']
-                    self.get_logger().info("PRIOR role var: %s" % role_var.probs)
                     role_obs_model = gtsam.DiscreteConditional([self.sensor_dict['clip_role_rec']['role_obs_symbol'],len(self.sensor_dict['clip_role_rec']['role_obs_labels'])],[[role_var.var_symbol,len(role_var.var_labels)]],self.sensor_dict['clip_role_rec']['role_obs_spec'])
                     role_likelihood = role_obs_model.likelihood(role_obs_idx)
 
-                    self.get_logger().info("role likelihood: %s" % role_likelihood)
+                    role_var.update(role_likelihood, resp.stamp)      
 
-                    role_var.update(role_likelihood, stamp)
-                    self.get_logger().info("POSTERIOR role var: %s" % role_var.probs)
+                    del self.ids_to_recognize[self.ids_to_recognize.index(resp.object_id)]
 
-                else:
-                    self.visual_role_rec_futures[id] = {}
-                    self.visual_role_rec_futures[id]['stamp'] = stamp
-                    self.visual_role_rec_futures[id]['future'] = future
+                    self.ready_to_send_vis_rec_req = True
 
-            # Check if objects need update
-            start_time = self.get_clock().now()
 
-            # For each object, check if state is stale. If so, send state update request.
-            for id in self.semantic_objects.keys():
+            if self.ready_to_send_vis_rec_req == True:
 
-                obj = self.semantic_objects[id]
+                if self.req_queue.empty() == False:
 
-                role_not_initialized = (obj.states['role'].last_updated is None)
-                if role_not_initialized:
-                    role_is_stale = True
-                else: # role was initialized
-                    time_since_update = (start_time - obj.states['role'].last_updated)
-                    sec_since_update = time_to_float(0.,time_since_update.nanoseconds)
-                    role_is_stale = (sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold'])
-                future_was_sent = (id in self.visual_role_rec_futures.keys())
-                needs_role_update = (role_not_initialized | role_is_stale) & (future_was_sent == False)
+                    clip_req = self.req_queue.get()
+                    self.future = self.clip_client.call_async(clip_req)
 
-                update_is_possible = obj.new_image_available
+                    self.ready_to_send_vis_rec_req = False
 
-                if (needs_role_update & update_is_possible):
-                    
-                    future = self.recognize_role(id)
-                    self.visual_role_rec_futures[id] = {}
-                    self.visual_role_rec_futures[id]['stamp'] = start_time
-                    self.visual_role_rec_futures[id]['future'] = future
-
+    def pub_timer_callback(self):
         foxglove_visualization(self)
         publish_hierarchical_commands(self)
 
@@ -265,39 +282,6 @@ class SemanticTrackerNode(Node):
 
         for key in semantic_objects_to_remove:
             self.semantic_objects.pop(key)
-
-    def speech_az_callback(self, msg):
-        if self.command_rec_method == 'verbal':
-
-            # If there are recognized speech sources
-            if msg.sources:
-
-                # Compute the assignment matrix
-                assignment_matrix = np.zeros((len(msg.sources),len(self.semantic_objects.keys())))
-
-                for ii, speech_src in enumerate(msg.sources):
-                    for jj, object_key in enumerate(self.semantic_objects.keys()):
-                        object = self.semantic_objects[object_key]
-
-                        semantic_object_az = compute_az_from_pos(self.tf_buffer,msg.header.frame_id,self.tracker_frame,object)
-                        delta_az = compute_delta_az(speech_src.azimuth, semantic_object_az)
-                        assignment_matrix[ii,jj] += delta_az
-
-                # Solve assignment matrix
-                assignments = solve_assignment_matrix('greedy', assignment_matrix, self.ang_match_threshold)
-
-                # Handle matches
-                for assignment in assignments:
-                    object_idx = assignment[1]
-                    object_key = self.semantic_objects.keys()[object_idx]
-                    speech_idx = assignment[0]
-
-                    self.semantic_objects[object_key].update_verbal_comms(msg.sources[speech_idx].transcript, msg.sources[speech_idx].confidence, self)
-
-                # Handle objects with no speech
-                for jj, object_key in enumerate(self.semantic_objects.keys()):
-                    if jj not in assignments[:,1]: # If track is unmatched, handle it as a missed detection
-                        self.semantic_objects[object_key].update_verbal_comms(msg.sources[speech_idx].transcript, msg.sources[speech_idx].confidence, self)
 
     def ar_callback(self, msg, sensor_name):
 
@@ -418,6 +402,56 @@ class SemanticTrackerNode(Node):
                 role_likelihood = role_obs_model.likelihood(role_obs_idx)
 
                 role_var.update(role_likelihood, msg.header.stamp)
+
+    def speech_az_callback(self, msg, sensor_name):
+        if self.command_rec_method == 'verbal':
+
+            # Compute the assignment matrix
+            assignment_matrix = np.zeros((len(msg.sources),len(self.semantic_objects.keys())))
+
+            for ii, speech_src in enumerate(msg.sources):
+                for jj, object_key in enumerate(self.semantic_objects.keys()):
+                    object = self.semantic_objects[object_key]
+
+                    semantic_object_az = compute_az_from_pos(self.tf_buffer,msg.header.frame_id,self.tracker_frame,object)
+                    delta_az = compute_delta_az(speech_src.azimuth, semantic_object_az)
+                    assignment_matrix[ii,jj] += delta_az
+
+            # Solve assignment matrix
+            comm_assignments = solve_assignment_matrix('greedy', assignment_matrix, self.sensor_dict[sensor_name]['match_threshold'])
+
+            # Handle comm matches
+            for assignment in comm_assignments:
+
+                object_idx = assignment[1]
+                object_key = list(self.semantic_objects.keys())[object_idx]
+                speech_idx = assignment[0]
+                comm_word = msg.sources[speech_idx].transcript
+
+                # Get comms symbol
+                comm_var = self.semantic_objects[object_key].comms
+                comm_obs_idx = self.sensor_dict[sensor_name]['comm_obs_labels'].index(comm_word)
+
+                comm_obs_model = gtsam.DiscreteConditional([self.sensor_dict[sensor_name]['comm_obs_symbol'],len(self.sensor_dict[sensor_name]['comm_obs_labels'])],[[comm_var.var_symbol,len(comm_var.var_labels)]],self.sensor_dict[sensor_name]['comm_obs_spec'])
+                comm_likelihood = comm_obs_model.likelihood(comm_obs_idx)
+
+                comm_var.update(comm_likelihood, msg.header.stamp)
+
+            # Handle objects with no speech
+            for jj, object_key in enumerate(self.semantic_objects.keys()):
+
+                if jj not in comm_assignments[:,1]: # If track is unmatched, handle it as a missed detection
+
+                    comm_word = ''
+
+                    # Get comms symbol
+                    comm_var = self.semantic_objects[object_key].comms
+                    comm_obs_idx = self.sensor_dict[sensor_name]['comm_obs_labels'].index(comm_word)
+
+                    comm_obs_model = gtsam.DiscreteConditional([self.sensor_dict[sensor_name]['comm_obs_symbol'],len(self.sensor_dict[sensor_name]['comm_obs_labels'])],[[comm_var.var_symbol,len(comm_var.var_labels)]],self.sensor_dict[sensor_name]['comm_obs_spec'])
+                    comm_likelihood = comm_obs_model.likelihood(comm_obs_idx)
+
+                    comm_var.update(comm_likelihood, msg.header.stamp)
 
 def main(args=None):
     rclpy.init(args=args)
