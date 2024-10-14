@@ -93,7 +93,7 @@ cd ~/sit_int_ws/src/situated_interaction/scripts/training
 python3 exp0b_compute_role_rec_models.py
 ```
 
-### Task 0c: Evaluate speech recognition parameters
+### Task 0c: Evaluate speech recognition parameters (~4 minutes per configuration)
 Run the playback/model computation script
 ```
 cd ~/sit_int_ws
@@ -138,6 +138,25 @@ source install/setup.bash
 colcon build --packages-select marmot mm_scene_rec ros_audition situated_interaction
 source install/setup.bash
 ros2 launch situated_interaction exp2a_record_role_results.launch.py
+```
+
+### 2b: Command recognition
+Launch the Docker container
+```
+cd ~/sit_int_ws/src/situated_interaction/docker
+docker compose up
+```
+
+Run the ROS nodes
+```
+mamba activate sit_int
+source /opt/ros/humble/setup.bash
+cd ~/sit_int_ws
+colcon build --packages-select ar_track_alvar_msgs audio_common_msgs situated_hri_interfaces tracking_msgs # build messages and interfaces
+source install/setup.bash
+colcon build --packages-select marmot mm_scene_rec ros_audition situated_interaction
+source install/setup.bash
+ros2 launch situated_interaction exp2b_record_cmd_results.launch.py
 ```
 
 ## Analyzing the data

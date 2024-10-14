@@ -276,8 +276,8 @@ semantic_fusion_node:
 ### EXPERIMENT MANAGER NODE
 /**:
   ros__parameters:
-    exp_configs: ['config/exp2_cfgs/exp2_ar_role_verbal_cmd_cssm.yaml',
-                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_music.yaml',
+    # exp_configs: ['config/exp2_cfgs/exp2_ar_role_verbal_cmd_cssm.yaml',
+    exp_configs: ['config/exp2_cfgs/exp2_ar_role_verbal_cmd_music.yaml',
                   'config/exp2_cfgs/exp2_ar_role_verbal_cmd_srpphat.yaml',
                   'config/exp2_cfgs/exp2_ar_role_verbal_cmd_tops.yaml',
                   'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves.yaml'] 

@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     config_name: artag_role_verbal_cmd_srpphat
-    ssl_algo: 'SRP-PHAT'
+    ssl_algo: 'SRP'
     
 ### MULTIMODAL PROCESSING - SEMANTIC FUSION NODE
 /semantic_fusion_node:
