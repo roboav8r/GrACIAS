@@ -39,6 +39,7 @@ install(PROGRAMS
   scripts/record_scene_results_node.py
   scripts/record_tracker_results_node.py
   scripts/record_hierarchical_cmd_results_node.py
+  scripts/role_exp_mgr.py
   scripts/hri_exp_mgr.py
   scripts/scene_exp_mgr.py
   DESTINATION lib/${PROJECT_NAME}

@@ -32,7 +32,7 @@ class CLIPVisRecServer(Node):
 
         # Generate object att/state variable dictionary
         self.create_obj_param_dict()
-        self.get_logger().info(f"PARAM DICT: {self.object_params}")
+        # self.get_logger().info(f"PARAM DICT: {self.object_params}")
 
     def create_obj_param_dict(self):
         self.object_params = {}
@@ -86,11 +86,19 @@ class CLIPVisRecServer(Node):
 
     def clip_rec_callback(self, req, resp):
 
+        # self.get_logger().info("Got req to identify %s %s" % (req.class_string, req.object_id))
+
+        resp.class_string = req.class_string
+        resp.object_id = req.object_id
+
         with torch.no_grad():
 
-            cv_image = self.bridge.imgmsg_to_cv2(req.image)
-            clip_image = self.preprocess(PILImage.fromarray(cv_image)).unsqueeze(0).to(self.device)
-            image_features = self.model.encode_image(clip_image)
+            self.cv_image_bgr = self.bridge.imgmsg_to_cv2(req.image,desired_encoding="bgr8")
+            self.cv_image_rgb = cv2.cvtColor(self.cv_image_bgr,cv2.COLOR_BGR2RGB)
+            self.pil_image = PILImage.fromarray(self.cv_image_rgb)
+            # pil_image.save('/home/jd/sit_int_ws/server_pil_img_%s.png' % req.object_id)
+            self.clip_image = self.preprocess(self.pil_image).unsqueeze(0).to(self.device)
+            image_features = self.model.encode_image(self.clip_image)
 
             # Iterate through attributes and compute probabilities
             for att in req.attributes_to_estimate:
@@ -98,7 +106,7 @@ class CLIPVisRecServer(Node):
                 att_dist.variable = att
                 att_dist.categories = self.object_params[req.class_string]['attributes'][att]['labels']
                 self.object_params[req.class_string]['attributes'][att]['text_features'] = self.model.encode_text(self.object_params[req.class_string]['attributes'][att]['text_tokens'])
-                logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['attributes'][att]['text_tokens'])
+                logits_per_image, _ = self.model(self.clip_image, self.object_params[req.class_string]['attributes'][att]['text_tokens'])
                 att_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
                 resp.attributes.append(att_dist)
 
@@ -108,7 +116,7 @@ class CLIPVisRecServer(Node):
                 state_dist.variable = state
                 state_dist.categories = self.object_params[req.class_string]['states'][state]['labels']
                 self.object_params[req.class_string]['states'][state]['text_features'] = self.model.encode_text(self.object_params[req.class_string]['states'][state]['text_tokens'])
-                logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['states'][state]['text_tokens'])
+                logits_per_image, _ = self.model(self.clip_image, self.object_params[req.class_string]['states'][state]['text_tokens'])
                 state_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
                 resp.states.append(state_dist)
 
@@ -117,13 +125,13 @@ class CLIPVisRecServer(Node):
                 comm_dist.variable = 'gesture_comms'
                 comm_dist.categories = self.object_params[req.class_string]['comms']['labels']
                 self.object_params[req.class_string]['attributes'][att]['text_features'] = self.model.encode_text(self.object_params[req.class_string]['attributes'][att]['text_tokens'])
-                logits_per_image, _ = self.model(clip_image, self.object_params[req.class_string]['comms']['text_tokens'])
+                logits_per_image, _ = self.model(self.clip_image, self.object_params[req.class_string]['comms']['text_tokens'])
                 comm_dist.probabilities = logits_per_image.softmax(dim=-1).cpu().numpy()[0].tolist()
                 resp.comms = comm_dist
             
             resp.stamp = req.stamp
 
-            cv2.imwrite('/home/jd/sit_int_ws/server_img.png',cv_image)
+            # cv2.imwrite('/home/jd/sit_int_ws/server_img_%s.png' % req.object_id,self.cv_image_bgr)
             return resp
 
 

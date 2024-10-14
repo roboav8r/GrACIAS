@@ -80,8 +80,8 @@ def generate_launch_description():
     ### EXPERIMENT NODES
     experiment_mgr_node = Node(
         package='situated_interaction',
-        executable='hri_exp_mgr.py',
-        name='hri_exp_mgr',
+        executable='role_exp_mgr.py',
+        name='role_exp_mgr',
         output='screen',
         parameters=[params]
     )

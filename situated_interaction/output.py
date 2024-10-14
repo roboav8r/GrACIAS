@@ -16,7 +16,7 @@ def foxglove_visualization(semantic_fusion_node):
         entity_msg.timestamp = semantic_fusion_node.tracks_msg.header.stamp
         entity_msg.id = str(obj.track_id)
         entity_msg.frame_locked = True
-        entity_msg.lifetime.nanosec = int(semantic_fusion_node.loop_time_sec*1000000000)
+        entity_msg.lifetime.nanosec = int(semantic_fusion_node.pub_loop_time_sec*1000000000)
 
         text = TextPrimitive()
         text.billboard = True

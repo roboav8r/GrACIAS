@@ -1,9 +1,13 @@
-# /**:
-#   ros__parameters:
-#     use_sim_time: true
-#     tracker_frame: 'philbart/base_link'
-#     mic_frame: 'philbart/base_link'
-#     artag_frame: 'oak_rgb_camera_optical_frame'
+/**:
+  ros__parameters:
+
+    config_name: artag_role_artag_cmd
+
+    use_sim_time: true
+    tracker_frame: 'philbart/base_link'
+    mic_frame: 'philbart/base_link'
+    microphone_frame_id: 'philbart/base_link'
+    artag_frame: 'oak_rgb_camera_optical_frame'
     
 
 ### UNIMODAL PROCESSING - VISION

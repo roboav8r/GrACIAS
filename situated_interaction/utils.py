@@ -75,7 +75,7 @@ def initialize_sensors(semantic_fusion_node):
             semantic_fusion_node.sensor_dict[sensor_name]['sub'] = semantic_fusion_node.create_subscription(AlvarMarkers, 
                                                                             semantic_fusion_node.sensor_dict[sensor_name]['topic'],
                                                                             eval("lambda msg: semantic_fusion_node.ar_callback(msg, \"" + sensor_name + "\")",locals()),
-                                                                            10, callback_group=semantic_fusion_node.sub_cb_group)
+                                                                            10, callback_group=semantic_fusion_node.update_var_cb_group)
 
             try_to_declare_parameter(semantic_fusion_node,'sensors.%s.match_threshold' % sensor_name, rclpy.Parameter.Type.DOUBLE)
             semantic_fusion_node.sensor_dict[sensor_name]['match_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.match_threshold' % sensor_name).get_parameter_value().double_value
@@ -133,7 +133,7 @@ def initialize_sensors(semantic_fusion_node):
             semantic_fusion_node.sensor_dict[sensor_name]['sub'] = semantic_fusion_node.create_subscription(SpeechAzSources, 
                                                                             semantic_fusion_node.sensor_dict[sensor_name]['topic'],
                                                                             eval("lambda msg: semantic_fusion_node.speech_az_callback(msg, \"" + sensor_name + "\")",locals()),
-                                                                            10, callback_group=semantic_fusion_node.sub_cb_group)
+                                                                            10, callback_group=semantic_fusion_node.update_var_cb_group)
 
             try_to_declare_parameter(semantic_fusion_node,'sensors.%s.match_threshold' % sensor_name, rclpy.Parameter.Type.DOUBLE)
             semantic_fusion_node.sensor_dict[sensor_name]['match_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.match_threshold' % sensor_name).get_parameter_value().double_value
