@@ -31,11 +31,14 @@ ros-noetic-rospy-tutorials=0.10.2-1* \
 RUN mkdir -p /ros1_ws/src 
 WORKDIR /ros1_ws/src 
 RUN git clone -b noetic-devel https://github.com/ros-perception/ar_track_alvar.git
-RUN git clone https://github.com/roboav8r/DR-SPAAM-Detector.git
-WORKDIR /ros1_ws/src/DR-SPAAM-Detector/dr_spaam
+RUN git clone https://github.com/roboav8r/2D_lidar_person_detection.git
+WORKDIR /ros1_ws/src/2D_lidar_person_detection/dr_spaam
 RUN python3 setup.py install
 WORKDIR /ros1_ws 
-RUN wget https://github.com/VisualComputingInstitute/DR-SPAAM-Detector/releases/download/v1.1/dr_spaam_e40.pth
+# RUN wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1gH_pdxUC8diIFUe3_Ky8QiVVCyiR3500' -O ckpt_jrdb_ann_dr_spaam_e20.pth
+# RUN wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1QuB9mwm8h46vIiynFsDKKxlEiUYC0quN' -O ckpt_jrdb_ann_drow3_e40.pth
+# RUN wget https://drive.google.com/drive/folders/1OI99VfUBkmRSijgmMYYku9Pc_nS3v8sj/ckpt_jrdb_ann_dr_spaam_e20.pth
+# RUN wget https://drive.google.com/drive/folders/1OI99VfUBkmRSijgmMYYku9Pc_nS3v8sj/ckpt_jrdb_ann_drow3_e40.pth
 RUN source /opt/ros/${ROS1_DISTRO}/setup.bash && \ 
 catkin_make
 
