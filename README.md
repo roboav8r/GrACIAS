@@ -124,7 +124,7 @@ ros2 launch situated_interaction exp1_record_scene_results.launch.py
 ### 2a: Role recognition
 Launch the Docker container
 ```
-cd ~/sit_int_ws/src/situated_interaction/docker
+cd ~/sit_int_ws/src/situated_interaction/experiments/docker
 docker compose up
 ```
 
@@ -143,7 +143,7 @@ ros2 launch situated_interaction exp2a_record_role_results.launch.py
 ### 2b: Command recognition
 Launch the Docker container
 ```
-cd ~/sit_int_ws/src/situated_interaction/docker
+cd ~/sit_int_ws/src/situated_interaction/experiments/docker
 docker compose up
 ```
 
