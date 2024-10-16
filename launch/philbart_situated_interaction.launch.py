@@ -27,7 +27,6 @@ def generate_launch_description():
         'philbart_tracker.yaml'
     )
 
-
     ### TF DATA
     tf_node = Node(package = "tf2_ros", 
                     executable = "static_transform_publisher",
@@ -37,6 +36,16 @@ def generate_launch_description():
 
 
     ### SENSORS
+    # LiDAR leg detection
+    leg_det_node = Node(
+        package='dr_spaam_ros',
+        executable='node.py',
+        name='dr_spaam_ros',
+        output='screen',
+        parameters=[config]
+    )
+    ld.add_action(leg_det_node)
+
     # Vision
     cam_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
@@ -84,7 +93,8 @@ def generate_launch_description():
         package='marmot',
         executable='depthai_img_preproc',
         name='depthai_img_preproc_node',
-        remappings=[('/depthai_detections','/oak/nn/spatial_detections')],
+        remappings=[('/depthai_detections','/oak/nn/spatial_detections'),
+                    ('/converted_detections','converted_vision_detections')],
         output='screen',
         parameters=[config])    
     ld.add_action(preproc_node)
@@ -94,6 +104,7 @@ def generate_launch_description():
         executable='lidar_2d_preproc',
         name='lidar_preproc_node',
         remappings=[('/pose_array_detections','/philbart/dr_spaam_detections'),
+                    ('/converted_detections','converted_lidar_detections'),
                     ('/scan','/philbart/scan'),
                     ('/point_cloud','/philbart/lidar_points')],
         output='screen',

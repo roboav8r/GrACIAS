@@ -32,10 +32,10 @@ git clone https://github.com/roboav8r/ar_track_alvar_msgs -b ros2
 git clone https://github.com/roboav8r/marmot -b devel
 git clone https://github.com/roboav8r/ros_audition -b devel
 git clone https://github.com/roboav8r/mm_scene_rec -b devel
+git clone https://github.com/roboav8r/2D_lidar_person_detection.git -b ros2
 git clone https://github.com/roboav8r/situated_interaction
 
 ```
-
 Create the virtual environment.
 ```
 sudo apt-get install libasound2-dev ffmpeg
@@ -168,6 +168,12 @@ source install/setup.bash
 jupyter-notebook
 ```
 
+## Running the live demo
+Launch the Docker container
+```
+cd ~/sit_int_ws/src/situated_interaction/docker/robot
+docker compose up
+```
 
 # Future Work
 

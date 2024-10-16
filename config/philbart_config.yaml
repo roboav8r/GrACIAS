@@ -5,6 +5,34 @@
     mic_frame: 'philbart/base_link'
     artag_frame: 'oak_rgb_camera_optical_frame'
 
+### UNIMODAL PROCESSING - LIDAR
+/dr_spaam_ros:
+  ros__parameters:
+  
+    weight_file: "ckpts/ckpt_jrdb_ann_drow3_e40.pth"
+    detector_model: "DROW3"  # DROW3 or DR-SPAAM
+    # weight_file: "ckpts/ckpt_jrdb_ann_dr_spaam_e20.pth"
+    # detector_model: "DR-SPAAM"  # DROW3 or DR-SPAAM
+    conf_thresh: 0.65
+    stride: 5  # use this to skip laser points
+    panoramic_scan: True  # Set to true if the scan covers 360 degree
+
+    publisher:
+        detections:
+            topic: philbart/dr_spaam_detections
+            queue_size: 1
+            latch: false
+
+        rviz:
+            topic: /dr_spaam_rviz
+            queue_size: 1
+            latch: false
+
+    subscriber:
+        scan:
+            topic: /philbart/scan
+            queue_size: 1
+
 ### UNIMODAL PROCESSING - VISION
 oak:
   ros__parameters:
@@ -29,12 +57,14 @@ depthai_img_preproc_node:
 
 lidar_preproc_node:
   ros__parameters:
-    detector_frame: 'todo_my_frame_that_i_need_to_add'
+    tracker_frame: 'philbart/scan_link'
     label: 'leg'
+    confidence: .65
 
 clip_scene_rec:
   ros__parameters:
     num_est_interval_samples: 15
+    update_interval: 1. # Update after 1 second elapses
     scene_labels: ['campus','courtyard','lab','lobby']
     scene_descriptions: ['a picture of a public outdoor area with high social activity',
                          'a picture of a private outdoor area with low social activity',
@@ -90,7 +120,7 @@ audio_acq_node:
   ros__parameters:
 
     # Signal acquisition
-    src: 'plughw:2,0'
+    src: 'plughw:1,0'
     codec: 'pcm_s16le'
 
 pra_node:
@@ -108,15 +138,20 @@ directional_speech_rec_node:
 
     # Speech activity detection & recognition
     n_silent_frames: 2
-    trigger_level: 3.0
     trigger_time: 0.25
     search_time: 0.25
     allowed_gap: 0.25
     pre_trigger_time: 0.25
     min_voice_samples: 31200
     src_match_thresh_rad: .175 # .5 = ~28.6 degrees # .175 rad = ~10 degrees
+
     lexicon_package: 'ros_audition'
-    lexicon_file: 'config/rocog_lexicon.txt'
+    lexicon_file: 'config/rocog_lexicon_full_phrases.txt'
+    trigger_level: 5.0
+    am_bundle: 'WAV2VEC2_ASR_LARGE_960H'
+    lm_weight: 0.
+    word_score: 0.
+    sil_score: 1.
 
 audio_scene_rec:
   ros__parameters:
@@ -184,9 +219,14 @@ audio_scene_rec:
 semantic_fusion_node:
   ros__parameters:
 
-    loop_time_sec: 0.5
+    x_label_offset: .0 # meters
+    y_label_offset: -.75 # meters
+    z_label_offset: .75 # meters
 
-    role_rec_method: 'artag'
+    update_loop_time_sec: 0.1
+    pub_loop_time_sec: 1.
+    
+    role_rec_method: 'visual'
     command_rec_method: 'artag'
 
     sensor_names: ['artag','clip_role_rec']
