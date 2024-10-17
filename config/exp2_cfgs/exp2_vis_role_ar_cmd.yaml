@@ -1,0 +1,6 @@
+### MULTIMODAL PROCESSING - SEMANTIC FUSION NODE
+/semantic_fusion_node:
+  ros__parameters:
+
+    role_rec_method: 'visual'
+    command_rec_method: 'artag'

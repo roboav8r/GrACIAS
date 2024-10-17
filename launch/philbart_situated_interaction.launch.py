@@ -27,7 +27,6 @@ def generate_launch_description():
         'philbart_tracker.yaml'
     )
 
-
     ### TF DATA
     tf_node = Node(package = "tf2_ros", 
                     executable = "static_transform_publisher",
@@ -37,6 +36,16 @@ def generate_launch_description():
 
 
     ### SENSORS
+    # LiDAR leg detection
+    leg_det_node = Node(
+        package='dr_spaam_ros',
+        executable='node.py',
+        name='dr_spaam_ros',
+        output='screen',
+        parameters=[config]
+    )
+    ld.add_action(leg_det_node)
+
     # Vision
     cam_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
@@ -60,30 +69,6 @@ def generate_launch_description():
     )
     ld.add_action(acq_node)
 
-    # # LiDAR to laserscan node
-    # lidar_to_scan = Node(
-    #         package='pointcloud_to_laserscan', executable='pointcloud_to_laserscan_node',
-    #         remappings=[('cloud_in', 'philbart/lidar_points'),
-    #                     ('scan', 'philbart/scan')],
-    #         parameters=[{
-    #             'target_frame': 'cloud',
-    #             'transform_tolerance': 0.01,
-    #             'min_height': 0.0,
-    #             'max_height': 1.0,
-    #             'angle_min': -1.5708,  # -M_PI/2
-    #             'angle_max': 1.5708,  # M_PI/2
-    #             'angle_increment': 0.0087,  # M_PI/360.0
-    #             'scan_time': 0.3333,
-    #             'range_min': 0.45,
-    #             'range_max': 4.0,
-    #             'use_inf': True,
-    #             'inf_epsilon': 1.0
-    #         }],
-    #         name='pointcloud_to_laserscan'
-    #     )
-    # ld.add_action(lidar_to_scan)
-
-
     ### VISION PROCESSING
     # Scene recognition
     clip_rec_node = Node(package = "mm_scene_rec", 
@@ -106,18 +91,22 @@ def generate_launch_description():
     # Detection preprocessing for tracker
     preproc_node = Node(
         package='marmot',
-        executable='depthai_preproc',
-        name='depthai_preproc_node',
-        remappings=[('/depthai_detections','/oak/nn/spatial_detections')],
+        executable='depthai_img_preproc',
+        name='depthai_img_preproc_node',
+        remappings=[('/depthai_detections','/oak/nn/spatial_detections'),
+                    ('/converted_detections','converted_vision_detections')],
         output='screen',
         parameters=[config])    
     ld.add_action(preproc_node)
     
     preproc_node = Node(
         package='marmot',
-        executable='pose_array_preproc',
-        name='depthai_preproc_node',
-        remappings=[('/pose_array_detections','/philbart/dr_spaam_detections')],
+        executable='lidar_2d_preproc',
+        name='lidar_preproc_node',
+        remappings=[('/pose_array_detections','/philbart/dr_spaam_detections'),
+                    ('/converted_detections','converted_lidar_detections'),
+                    ('/scan','/philbart/scan'),
+                    ('/point_cloud','/philbart/lidar_points')],
         output='screen',
         parameters=[config])    
     ld.add_action(preproc_node)
@@ -177,8 +166,9 @@ def generate_launch_description():
     semantic_tracking_node = Node(
         package='situated_interaction',
         executable='semantic_tracking_node.py',
-        name='semantic_tracking_node',
+        name='semantic_fusion_node',
         output='screen',
+        remappings=[('/tracks','/tbd_tracker_node/tracks')],
         parameters=[config]
     )
     ld.add_action(semantic_tracking_node)
