@@ -19,6 +19,7 @@ dependencies:
 - typing
 - mkl
 - pip:
+    - numpy==1.25.2
     - pyquaternion==0.9.9
     - nuscenes-devkit==1.1.11
     - empy==3.3.4

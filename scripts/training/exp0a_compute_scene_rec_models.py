@@ -93,7 +93,7 @@ for root, dirs, files in os.walk(filepath):
             del reader
 
 # Save audio model and times to output
-with open("../../results/exp0_obs_models/audio_scene_inference_times.json","w") as outfile:
+with open("../../results/exp0_obs_models/scene_recognition/audio_scene_inference_times.json","w") as outfile:
     outfile.write(json.dumps(cpjku_inference_times))
 
 # Save pandas df to csv
@@ -101,17 +101,17 @@ scene_labels = ['campus','courtyard','lab','lobby']
 audio_obs_labels = ['airport', 'bus', 'metro', 'metro_station', 'park', 'public_square', 'shopping_mall', 'street_pedestrian', 'street_traffic', 'tram']
 
 audio_model_df = pd.DataFrame(cpjku_audio_scene_model,columns=audio_obs_labels,index=scene_labels)
-audio_model_df.to_csv("../../results/exp0_obs_models/cpjku_audio_scene_obs_model_raw.csv")
+audio_model_df.to_csv("../../results/exp0_obs_models/scene_recognition/cpjku_audio_scene_obs_model_raw.csv")
 
 # Smooth the model
 smoothed_audio_model = cpjku_audio_scene_model + 1
 smoothed_audio_model_df = pd.DataFrame(smoothed_audio_model,columns=audio_obs_labels,index=scene_labels)
-smoothed_audio_model_df.to_csv("../../results/exp0_obs_models/cpjku_audio_scene_obs_model_smoothed.csv")
+smoothed_audio_model_df.to_csv("../../results/exp0_obs_models/scene_recognition/cpjku_audio_scene_obs_model_smoothed.csv")
 
 # Normalize the smoothed model
 normalized_audio_model = smoothed_audio_model / smoothed_audio_model.sum(axis=1)[:,np.newaxis]
 normalized_audio_model_df = pd.DataFrame(normalized_audio_model,columns=audio_obs_labels,index=scene_labels)
-normalized_audio_model_df.to_csv("../../results/exp0_obs_models/cpjku_audio_scene_obs_model_normalized.csv")
+normalized_audio_model_df.to_csv("../../results/exp0_obs_models/scene_recognition/cpjku_audio_scene_obs_model_normalized.csv")
 
 
 ### COMPUTE CLIP VISUAL RECOGNITION MODEL
@@ -124,7 +124,10 @@ clip_models = ['RN50','ViT-B/32','ViT-L/14'] # available: ['RN50', 'RN101','RN50
 
 # text descriptions
 scene_descriptions = {'basic_description': ['a college campus','an outdoor courtyard','a lab', 'a lobby'],
-                     'social_in_out_desc': ['a picture of a public outdoor college campus with high social activity','a picture of a private outdoor courtyard with low social activity','a picture of a private indoor laboratory with low social activity','a picture of a public indoor lobby with high social activity']}
+                     'social_in_out_desc': ['a picture of a public outdoor area with high social activity',
+                                            'a picture of a private outdoor area with low social activity',
+                                            'a picture of a private indoor area with low social activity',
+                                            'a picture of a public indoor area with high social activity']}
 
 clip_scene_results = dict()
 
@@ -210,7 +213,7 @@ for key in clip_scene_results.keys():
     key_path = key.replace("/","")
     
     # Save times to json file
-    with open("../../results/exp0_obs_models/" + key_path + "_inference_times.json","w") as outfile:
+    with open("../../results/exp0_obs_models/scene_recognition/" + key_path + "_inference_times.json","w") as outfile:
         outfile.write(json.dumps(clip_scene_results[key]['times']))
 
     # Save models to csv files
@@ -218,19 +221,19 @@ for key in clip_scene_results.keys():
     clip_obs_labels = ['campus_est','courtyard_est','lab_est','lobby_est']
 
     clip_model_df = pd.DataFrame(clip_scene_results[key]['model'],columns=clip_obs_labels,index=scene_labels)
-    clip_model_df.to_csv("../../results/exp0_obs_models/" + key_path + "_scene_obs_model_raw.csv")
+    clip_model_df.to_csv("../../results/exp0_obs_models/scene_recognition/" + key_path + "_scene_obs_model_raw.csv")
     
     # Smooth the model
     smoothed_clip_model = clip_model_df + 1
     smoothed_clip_model_df = pd.DataFrame(smoothed_clip_model,columns=clip_obs_labels,index=scene_labels)
-    smoothed_clip_model_df.to_csv("../../results/exp0_obs_models/" + key_path + "_scene_obs_model_smoothed.csv")
+    smoothed_clip_model_df.to_csv("../../results/exp0_obs_models/scene_recognition/" + key_path + "_scene_obs_model_smoothed.csv")
     
     # Normalize the smoothed model
     norm_vector = np.expand_dims(smoothed_clip_model.sum(axis=1),axis=1)
     
     normalized_clip_model = smoothed_clip_model / norm_vector
     normalized_clip_model_df = pd.DataFrame(normalized_clip_model,columns=clip_obs_labels,index=scene_labels)
-    normalized_clip_model_df.to_csv("../../results/exp0_obs_models/" + key_path + "_scene_obs_model_normalized.csv")
+    normalized_clip_model_df.to_csv("../../results/exp0_obs_models/scene_recognition/" + key_path + "_scene_obs_model_normalized.csv")
 
 
 # Cleanup

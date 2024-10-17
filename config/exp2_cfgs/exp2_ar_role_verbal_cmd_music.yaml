@@ -1,0 +1,14 @@
+/**:
+  ros__parameters:
+    config_name: artag_role_verbal_cmd_music
+    ssl_algo: 'MUSIC'
+    
+### MULTIMODAL PROCESSING - SEMANTIC FUSION NODE
+/semantic_fusion_node:
+  ros__parameters:
+
+    update_loop_time_sec: 0.1
+    pub_loop_time_sec: 1.
+
+    role_rec_method: 'artag'
+    command_rec_method: 'verbal'

@@ -1,0 +1,230 @@
+/**:
+  ros__parameters:
+
+    config_name: artag_role_artag_cmd
+
+    use_sim_time: true
+    tracker_frame: 'philbart/base_link'
+    mic_frame: 'philbart/base_link'
+    microphone_frame_id: 'philbart/base_link'
+    artag_frame: 'oak_rgb_camera_optical_frame'
+    
+
+### UNIMODAL PROCESSING - VISION
+oak:
+  ros__parameters:
+    camera:
+      i_enable_imu: true
+      i_enable_ir: true
+      i_nn_type: spatial
+      i_pipeline_type: RGBD
+    stereo:
+      i_subpixel: true
+    nn:
+      i_nn_config_path: depthai_ros_driver/yolo
+      i_disable_resize: true
+    rgb:
+      i_preview_size: 416
+
+depthai_img_preproc_node:
+  ros__parameters:
+    nn_img_size: 416
+    detector_frame: 'oak_rgb_camera_optical_frame'
+    labels: ["person", "bicycle","car","motorbike","aeroplane","bus","train","truck","boat","traffic light","fire hydrant","stop sign","parking meter","bench","bird","cat","dog","horse","sheep","cow","elephant","bear","zebra","giraffe","backpack","umbrella","handbag","tie","suitcase","frisbee","skis","snowboard","sports ball","kite","baseball bat","baseball glove","skateboard","surfboard","tennis racket","bottle","wine glass","cup","fork","knife","spoon","bowl","banana","apple","sandwich","orange","broccoli","carrot","hot dog","pizza","donut","cake","chair","sofa","pottedplant","bed","diningtable","toilet","tvmonitor","laptop","mouse","remote","keyboard","cell phone","microwave","oven","toaster","sink","refrigerator","book","clock","vase","scissors","teddy bear","hair drier","toothbrush"]
+
+clip_scene_rec:
+  ros__parameters:
+    num_est_interval_samples: 15
+    update_interval: 1. # Update after 1 second elapses
+    scene_labels: ['campus','courtyard','lab','lobby']
+    scene_descriptions: ['a picture of a public outdoor area with high social activity',
+                         'a picture of a private outdoor area with low social activity',
+                         'a picture of a private indoor area with low social activity',
+                         'a picture of a public indoor area with high social activity']
+    clip_model: 'ViT-L/14'
+
+clip_vis_rec_server:
+  ros__parameters:
+    clip_model: 'ViT-L/14'
+    object_classes: ['person']
+
+    person:
+      attributes:
+        variables: ['']
+
+      states:
+        variables: ['role']
+        role:
+          labels: ['pedestrian','teammate','supervisor']
+          descriptions: ['person','person with orange shirt and orange hat','person with orange shirt and orange hat and yellow vest']
+      
+      comms:
+        labels: ['']
+        gesture_descriptions: ['']
+        probs: []
+        # p(command_detected|command_issued)
+        gesture_sensor_model_coeffs: []        
+        verbal_sensor_model_coeffs: []
+
+### UNIMODAL PROCESSING - AUDITION
+audio_acq_node:
+  ros__parameters:
+    n_channels: 16
+    src: 'plughw:1,0'
+    sample_rate: 44100
+    hop_size: 44100
+    frame_size: 44100 # publish 1 second every second
+    microphone_frame_id: 'philbart/base_link'
+
+audio_scene_rec:
+  ros__parameters:
+    n_channels: 16
+    sample_rate: 441000
+    downsample_rate: 32000
+    frame_size: 44100
+    scene_size: 44100
+    scene_index: [0]
+    labels: ['airport', 'bus', 'metro', 'metro_station', 'park', 'public_square', 'shopping_mall', 'street_pedestrian', 'street_traffic', 'tram']
+    scene_est_interval: 1.0
+    wandb_id: 'fjycgepm'
+
+    # Model path params
+    project_name: DCASE23_Task1
+    wandb_id: 'c0a7nzin'
+
+    # Mel pre-processing parameters
+    resample_rate: 32000
+    window_size: 3072
+    hop_size: 500
+    n_fft: 4096
+    n_mels: 256
+    freqm: 48
+    timem: 0
+    fmin: 0
+    fmax: 0
+    fmin_aug_range: 1
+    fmax_aug_range: 1000
+
+    # Model parameters
+    n_classes: 10
+    in_channels: 1
+    base_channels: 32
+    channels_multiplier: 2.3
+    expansion_rate: 3
+
+
+### MULTIMODAL PROCESSING - SCENE RECOGNITION
+/bayes_fused_scene_est:
+  ros__parameters:
+
+    scene_labels: ['campus','courtyard','lab','lobby']
+    scene_prior: [.25,.25,.25,.25]
+
+    sensor_names: ['clip','dcase23']
+
+    clip:
+      obs_labels: ['campus','courtyard','lab','lobby']
+      sensor_model_coeffs: [35272., 3382., 1., 1.,
+                            154., 42755., 1., 1.,
+                            1., 54., 41930., 211.,
+                            1., 15., 4906., 36521.]
+      topic: 'clip_scene_category'
+
+    dcase23:
+      obs_labels: ['airport', 'bus', 'metro', 'metro_station','park','public_square','shopping_mall','street_pedestrian','street_traffic','tram']
+      sensor_model_coeffs: [13., 19., 49., 14., 206., 7., 1., 1., 37., 1941.,
+                            6., 274., 9., 11., 767., 3., 2., 2., 19., 1382.,
+                            16., 157., 2111., 43., 80., 2., 1., 1., 65., 31.,
+                            479., 57., 191., 468., 974., 1., 68., 18., 21., 175.]
+      topic: 'audio_scene_category'
+
+
+### MULTIMODAL PROCESSING - SEMANTIC FUSION NODE
+semantic_fusion_node:
+  ros__parameters:
+
+    x_label_offset: .0 # meters
+    y_label_offset: -.75 # meters
+    z_label_offset: .75 # meters
+
+    update_loop_time_sec: 0.1
+    pub_loop_time_sec: 1.
+    
+    role_rec_method: 'artag'
+    command_rec_method: 'artag'
+
+    sensor_names: ['artag','clip_role_rec']
+    sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
+    sensors:
+      artag:
+        type: 'artag'
+        topic: 'ar_pose_marker'
+
+        update_method: 'count' # time, count, or confidence
+        update_threshold: 4 # Update every 3 messages received
+
+        match_threshold: 0.5
+
+        # How to interpret each AR tag id
+        ar_tag_ids: [1,2,3,4,5,6,8,9,10,11,12]
+        ar_tag_types: ['command','command','command','command','command','command','command','role','role','role','command']
+        ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','move-in-reverse','pedestrian','teammate','supervisor','advance']
+
+        # GTSAM fusion variables
+        role_obs_labels: ['pedestrian','teammate','supervisor']
+        role_obs_model_coeffs: [1., 0., 0.,
+                                0., 1., 0.,
+                                0., 0., 1.]
+        comm_obs_labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        comm_obs_model_coeffs: [1., 0., 0., 0., 0., 0., 0., 0.,
+                                0., 1., 0., 0., 0., 0., 0., 0.,
+                                0., 0., 1., 0., 0., 0., 0., 0.,
+                                0., 0., 0., 1., 0., 0., 0., 0.,
+                                0., 0., 0., 0., 1., 0., 0., 0.,
+                                0., 0., 0., 0., 0., 1., 0., 0.,
+                                0., 0., 0., 0., 0., 0., 1., 0.,
+                                0., 0., 0., 0., 0., 0., 0., 1.]
+      clip_role_rec:
+        type: 'vision'
+        topic: ''
+
+        update_method: 'time'
+        update_threshold: .9 # 
+
+        # GTSAM fusion variables
+        # TODO - update with real data
+        role_obs_labels: ['pedestrian','teammate','supervisor']
+        role_obs_model_coeffs: [.721171, .278790, .000040,
+                                .033467, .966514, .000019,
+                                .001246, .011736, .987018]
+
+    objects_of_interest: ['person']
+
+    person:
+      attributes:
+        variables: ['']
+
+      states:
+        variables: ['role']
+        role:
+          symbol: 'r' # Letter to uniquely identify the variable in GTSAM.
+          labels: ['pedestrian','teammate','supervisor']
+          probs: [1., 1., 1.]
+          upper_prob_limit: .90
+          lower_prob_limit: .01
+      
+      comms: 
+        symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
+        labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        probs: [10., 1., 1., 1., 1., 1., 1., 1.]  
+        upper_prob_limit: .90
+        lower_prob_limit: .01
+
+### EXPERIMENT MANAGER NODE
+/**:
+  ros__parameters:
+    exp_configs: ['config/exp2_cfgs/exp2_vis_role_ar_cmd.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml']
+    # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_dev'
+    mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
+    result_dir: 'sit_int_ws/src/situated_interaction/results/exp2_hierarchical_cmd/role_rec'

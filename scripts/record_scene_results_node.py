@@ -20,8 +20,8 @@ class RecSceneResultsNode(Node):
         self.declare_parameter('config_name', rclpy.Parameter.Type.STRING)    
         self.scene_config_name =  self.get_parameter('config_name').get_parameter_value().string_value
 
-        self.audio_scene_est_sub = self.create_subscription(CategoricalDistribution, 'audio_scene_category', lambda msg: self.scene_est_count_callback(msg, 'audio'), 10)
-        self.clip_scene_est_sub = self.create_subscription(CategoricalDistribution, 'clip_scene_category', lambda msg: self.scene_est_count_callback(msg, 'clip'), 10)
+        # self.audio_scene_est_sub = self.create_subscription(CategoricalDistribution, 'audio_scene_category', lambda msg: self.scene_est_count_callback(msg, 'audio'), 10)
+        # self.clip_scene_est_sub = self.create_subscription(CategoricalDistribution, 'clip_scene_category', lambda msg: self.scene_est_count_callback(msg, 'clip'), 10)
 
         self.audio_scene_sub = self.create_subscription(CategoricalDistribution, 'bayes_audio_scene_est/fused_scene_category', lambda msg: self.scene_callback(msg, 'audio'), 10)
         self.clip_scene_sub = self.create_subscription(CategoricalDistribution, 'bayes_clip_scene_est/fused_scene_category', lambda msg: self.scene_callback(msg, 'clip'), 10)
@@ -29,25 +29,25 @@ class RecSceneResultsNode(Node):
 
         self.record_epoch_srv = self.create_service(RecordEpoch, '~/record_epoch', self.record_epoch)
         self.stop_record_srv = self.create_service(Empty, '~/stop_recording', self.stop_recording)
+        self.reconfigure_srv = self.create_service(Empty, '~/reconfigure', self.reconfigure)
 
-        self.results_columns = ['scene','role','cmd_mode','cmd','iteration','scene_estimation_mode','n_audio_updates','n_visual_updates','scene_est','scene_conf']
+        self.results_columns = ['scene','role','cmd_mode','cmd','scene_estimation_mode','n_updates','scene_est','scene_conf']
         self.results_df = pd.DataFrame(columns = self.results_columns)
     
         self.scene_est_count_dict = {'audio': 0, 'clip': 0, 'fused': 0}
 
-    def scene_est_count_callback(self, _, scene_mode):
-        # Increment update count
-        self.scene_est_count_dict[scene_mode] += 1
-
+    # def scene_est_count_callback(self, _, scene_mode):
+    #     # Increment update count
+    #     self.scene_est_count_dict[scene_mode] += 1
 
     def scene_callback(self, msg, scene_mode):
-        # self.get_logger().info("From mode %s got msg: %s" % (scene_mode, msg))
-        
+
+        self.scene_est_count_dict[scene_mode] += 1
+
         # Add experiment result to dataframe
-        result_df = pd.DataFrame([[self.scene, self.role, self.cmd_mode, self.cmd, self.iteration, scene_mode, self.scene_est_count_dict['audio'], self.scene_est_count_dict['clip'], msg.categories[np.argmax(msg.probabilities)],msg.probabilities[np.argmax(msg.probabilities)]]], columns=self.results_columns)
+        result_df = pd.DataFrame([[self.scene, self.role, self.cmd_mode, self.cmd, scene_mode, self.scene_est_count_dict[scene_mode], msg.categories[np.argmax(msg.probabilities)],msg.probabilities[np.argmax(msg.probabilities)]]], columns=self.results_columns)
 
         self.results_df = pd.concat([self.results_df, result_df],axis=0, ignore_index=True)
-
 
     def record_epoch(self, req, resp):
 
@@ -56,14 +56,13 @@ class RecSceneResultsNode(Node):
         self.role = req.role
         self.cmd_mode = req.cmd_mode
         self.cmd = req.cmd
-        self.iteration = req.iteration
 
         self.epoch_start_time = req.epoch_start_time
 
         # Reset estimate counts
         self.scene_est_count_dict = {'audio': 0, 'clip': 0, 'fused': 0}
 
-        self.get_logger().info("Recording epoch: %s/%s/%s/%s/%s" % (self.scene, self.role, self.cmd_mode, self.cmd, self.iteration))
+        self.get_logger().info("Recording epoch: %s/%s/%s/%s" % (self.scene, self.role, self.cmd_mode, self.cmd))
 
         return resp
 
@@ -71,9 +70,14 @@ class RecSceneResultsNode(Node):
 
         self.results_df.to_csv("src/situated_interaction/results/exp1a_scene_recognition/scene_results_%s.csv" % self.scene_config_name, columns = self.results_columns)
 
+        # Clear dataframe
+        self.results_df = pd.DataFrame(columns = self.results_columns)
+
         return resp
 
-
+    def reconfigure(self, _, resp):
+        self.scene_config_name =  self.get_parameter('config_name').get_parameter_value().string_value
+        return resp
 
 def main(args=None):
     rclpy.init(args=args)

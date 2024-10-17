@@ -1,0 +1,5 @@
+,campus_est,courtyard_est,lab_est,lobby_est,,
+campus_actual,38627,24,1,0,,"'social_in_out_desc': ['a picture of a public outdoor college campus with high social activity', 'a picture of a private outdoor courtyard with low social activity', 'a picture of a private indoor laboratory with low social activity', 'a picture of a public indoor lobby with high social activity']}"
+courtyard_actual,40972,1140,795,0,,
+lab_actual,0,0,42190,2,,
+lobby_actual,0,0,4765,36674,,

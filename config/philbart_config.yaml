@@ -1,3 +1,38 @@
+/**:
+  ros__parameters:
+    use_sim_time: false
+    tracker_frame: 'philbart/base_link'
+    mic_frame: 'philbart/base_link'
+    artag_frame: 'oak_rgb_camera_optical_frame'
+
+### UNIMODAL PROCESSING - LIDAR
+/dr_spaam_ros:
+  ros__parameters:
+  
+    weight_file: "ckpts/ckpt_jrdb_ann_drow3_e40.pth"
+    detector_model: "DROW3"  # DROW3 or DR-SPAAM
+    # weight_file: "ckpts/ckpt_jrdb_ann_dr_spaam_e20.pth"
+    # detector_model: "DR-SPAAM"  # DROW3 or DR-SPAAM
+    conf_thresh: 0.65
+    stride: 5  # use this to skip laser points
+    panoramic_scan: True  # Set to true if the scan covers 360 degree
+
+    publisher:
+        detections:
+            topic: philbart/dr_spaam_detections
+            queue_size: 1
+            latch: false
+
+        rviz:
+            topic: /dr_spaam_rviz
+            queue_size: 1
+            latch: false
+
+    subscriber:
+        scan:
+            topic: /philbart/scan
+            queue_size: 1
+
 ### UNIMODAL PROCESSING - VISION
 oak:
   ros__parameters:
@@ -14,15 +49,22 @@ oak:
     rgb:
       i_preview_size: 416
 
-depthai_preproc_node:
+depthai_img_preproc_node:
   ros__parameters:
+    nn_img_size: 416
     detector_frame: 'oak-d-base-frame'
-    tracker_frame: 'philbart/base_link'
     labels: ["person", "bicycle","car","motorbike","aeroplane","bus","train","truck","boat","traffic light","fire hydrant","stop sign","parking meter","bench","bird","cat","dog","horse","sheep","cow","elephant","bear","zebra","giraffe","backpack","umbrella","handbag","tie","suitcase","frisbee","skis","snowboard","sports ball","kite","baseball bat","baseball glove","skateboard","surfboard","tennis racket","bottle","wine glass","cup","fork","knife","spoon","bowl","banana","apple","sandwich","orange","broccoli","carrot","hot dog","pizza","donut","cake","chair","sofa","pottedplant","bed","diningtable","toilet","tvmonitor","laptop","mouse","remote","keyboard","cell phone","microwave","oven","toaster","sink","refrigerator","book","clock","vase","scissors","teddy bear","hair drier","toothbrush"]
+
+lidar_preproc_node:
+  ros__parameters:
+    tracker_frame: 'philbart/scan_link'
+    label: 'leg'
+    confidence: .65
 
 clip_scene_rec:
   ros__parameters:
     num_est_interval_samples: 15
+    update_interval: 1. # Update after 1 second elapses
     scene_labels: ['campus','courtyard','lab','lobby']
     scene_descriptions: ['a picture of a public outdoor area with high social activity',
                          'a picture of a private outdoor area with low social activity',
@@ -33,7 +75,27 @@ clip_scene_rec:
 clip_vis_rec_server:
   ros__parameters:
     clip_model: 'ViT-L/14'
+    object_classes: ['person']
+    person:
+      attributes:
+        variables: ['']
 
+      states:
+        variables: ['role']
+        role:
+          labels: ['pedestrian','teammate','supervisor']
+          descriptions: ['a picture of a person', 
+                        'a picture of a person wearing a university of texas robotics shirt and orange texas hat', 
+                        'a picture of a person wearing a university of texas robotics shirt and orange texas hat and a yellow safety vest']
+
+      comms:
+        labels: ['']
+        gesture_descriptions: ['']
+        transcripts: ['']
+        probs: [1.]
+        # p(command_detected|command_issued)
+        gesture_sensor_model_coeffs: [0.]        
+        verbal_sensor_model_coeffs: [0.]
 
 ### UNIMODAL PROCESSING - AUDITION
 /**:
@@ -76,15 +138,20 @@ directional_speech_rec_node:
 
     # Speech activity detection & recognition
     n_silent_frames: 2
-    trigger_level: 3.0
     trigger_time: 0.25
     search_time: 0.25
     allowed_gap: 0.25
     pre_trigger_time: 0.25
     min_voice_samples: 31200
     src_match_thresh_rad: .175 # .5 = ~28.6 degrees # .175 rad = ~10 degrees
+
     lexicon_package: 'ros_audition'
-    lexicon_file: 'config/rocog_lexicon.txt'
+    lexicon_file: 'config/rocog_lexicon_full_phrases.txt'
+    trigger_level: 5.0
+    am_bundle: 'WAV2VEC2_ASR_LARGE_960H'
+    lm_weight: 0.
+    word_score: 0.
+    sil_score: 1.
 
 audio_scene_rec:
   ros__parameters:
@@ -142,28 +209,73 @@ audio_scene_rec:
 
     dcase23:
       obs_labels: ['airport', 'bus', 'metro', 'metro_station','park','public_square','shopping_mall','street_pedestrian','street_traffic','tram']
-      sensor_model_coeffs: [8., 17., 49., 22., 191., 7., 1., 1., 44., 1948.,
-                            4., 305., 5., 8., 765., 1., 1., 2., 22., 1362.,
-                            22., 156., 2125., 33., 79., 2., 1., 2., 66., 21.,
-                            457., 57., 205., 481., 977., 2., 70., 17., 20., 166.]
+      sensor_model_coeffs: [13., 19., 49., 14., 206., 7., 1., 1., 37., 1941.,
+                            6., 274., 9., 11., 767., 3., 2., 2., 19., 1382.,
+                            16., 157., 2111., 43., 80., 2., 1., 1., 65., 31.,
+                            479., 57., 191., 468., 974., 1., 68., 18., 21., 175.]
       topic: 'audio_scene_category'
 
 ### MULTIMODAL PROCESSING - SEMANTIC FUSION NODE
-semantic_tracking_node:
+semantic_fusion_node:
   ros__parameters:
 
-    tracker_frame: 'philbart/base_link'
-    mic_frame: 'philbart/base_link'
-    artag_frame: 'oak_rgb_camera_optical_frame'
+    x_label_offset: .0 # meters
+    y_label_offset: -.75 # meters
+    z_label_offset: .75 # meters
 
-    loop_time_sec: 0.5
+    update_loop_time_sec: 0.1
+    pub_loop_time_sec: 1.
+    
+    role_rec_method: 'visual'
+    command_rec_method: 'artag'
+
+    sensor_names: ['artag','clip_role_rec']
+    sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
+    sensors:
+      artag:
+        type: 'artag'
+        topic: 'ar_pose_marker'
+
+        update_method: 'count' # time, count, or confidence
+        update_threshold: 4 # Update every 3 messages received
+
+        match_threshold: 0.5
+
+        # How to interpret each AR tag id
+        ar_tag_ids: [1,2,3,4,5,6,8,9,10,11,12]
+        ar_tag_types: ['command','command','command','command','command','command','command','role','role','role','command']
+        ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','move-in-reverse','pedestrian','teammate','supervisor','advance']
+
+        # GTSAM fusion variables
+        role_obs_labels: ['pedestrian','teammate','supervisor']
+        role_obs_model_coeffs: [1., 1., 1.,
+                                1., 0., 0.,
+                                0., 1., 0.,
+                                0., 0., 1.]
+        comm_obs_labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        comm_obs_model_coeffs: [1., 0., 0., 0., 0., 0., 0., 0.,
+                                0., 1., 0., 0., 0., 0., 0., 0.,
+                                0., 0., 1., 0., 0., 0., 0., 0.,
+                                0., 0., 0., 1., 0., 0., 0., 0.,
+                                0., 0., 0., 0., 1., 0., 0., 0.,
+                                0., 0., 0., 0., 0., 1., 0., 0.,
+                                0., 0., 0., 0., 0., 0., 1., 0.,
+                                0., 0., 0., 0., 0., 0., 0., 1.]
+      clip_role_rec:
+        type: 'vision'
+        topic: ''
+
+        update_method: '' # 
+
+        # GTSAM fusion variables
+        # TODO - update with real data
+        role_obs_labels: ['pedestrian','teammate','supervisor']
+        role_obs_model_coeffs: [1., 1., 1.,
+                                1., 0., 0.,
+                                0., 1., 0.,
+                                0., 0., 1.]
+
     objects_of_interest: ['person']
-    object_classes: ['person']
-
-    upper_prob_limit: .90
-    lower_prob_limit: .01
-
-    ang_match_threshold: .524 # ! 30 degrees
 
     person:
       attributes:
@@ -172,53 +284,16 @@ semantic_tracking_node:
       states:
         variables: ['role']
         role:
-          labels: ['unknown','pedestrian','robot-teammate','robot-supervisor']
-          descriptions: ['', 
-                         'a picture of a person', 
-                         'a picture of a person wearing a university of texas robotics shirt and orange texas hat', 
-                         'a picture of a person wearing a university of texas robotics shirt and orange texas hat and a yellow safety vest']
+          symbol: 'r' # Letter to uniquely identify the variable in GTSAM.
+          labels: ['unknown','pedestrian','teammate','supervisor']
           probs: [10., 1., 1., 1.]
-          sensor_model_coeffs: [.55, .15, .15, .15,
-                                .1, .7, .1, .1,
-                                .1, .1, .7, .1,
-                                .1, .1, .1, .7]
-          update_method: 'time'
-          update_threshold: .5
+          upper_prob_limit: .90
+          lower_prob_limit: .01
       
-      comms:
-        labels: ['none','other','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
-
-        ar_tag_ids: [1,2,3,4,5,6,7,8,9,10,11,12]
-        ar_tag_types: ['command','command','command','command','command','command','command','command','role','role','role','command']
-        ar_tag_words: ['follow-me','advance','halt','rally','attention','move-forward','','move-in-reverse','pedestrian','teammate','supervisor','advance']
-
-        gesture_descriptions: ['a picture of a person',
-                       '',
-                       'a picture of a person with right arm extended forward',
-                       'a picture of a person waving their right arm above their head',
-                       'a picture of a person with holding their right arm in front of them, palm facing away from the camera',
-                       'a picture of a person with holding their right hand up, palm facing the camera',
-                       'a picture of a person with holding both arms in front of them, both palms facing away from the camera',
-                       'a picture of a person with holding both arms in front of them, both palms facing toward the camera',
-                       'a picture of a person with right arm extended above their head at an angle']
-        transcripts: ['','*','advance','attention','follow me','halt','move forward','move in reverse','rally']
-        probs: [10., 1., 1., 1., 1., 1., 1., 1., 1.]
-        # p(command_detected|command_issued)
-        gesture_sensor_model_coeffs: [.84, .02, .02, .02, .02, .02, .02, .02, .02,
-                              .03, .9, .01, .01, .01, .01, .01, .01, .01,
-                              .03, .01, .9, .01, .01, .01, .01, .01, .01,
-                              .03, .1, .01, .81, .01, .01, .01, .01, .01,
-                              .03, .01, .01, .01, .9, .01, .01, .01, .01,
-                              .03, .01, .01, .01, .01, .9, .01, .01, .01,
-                              .03, .01, .01, .01, .01, .01, .9, .01, .01,
-                              .03, .01, .01, .01, .01, .01, .01, .9, .01,
-                              .03, .01, .01, .01, .01, .01, .01, .01, .9]        
-        verbal_sensor_model_coeffs: [.84, .02, .02, .02, .02, .02, .02, .02, .02,
-                              .03, .9, .01, .01, .01, .01, .01, .01, .01,
-                              .03, .01, .9, .01, .01, .01, .01, .01, .01,
-                              .03, .1, .01, .81, .01, .01, .01, .01, .01,
-                              .03, .01, .01, .01, .9, .01, .01, .01, .01,
-                              .03, .01, .01, .01, .01, .9, .01, .01, .01,
-                              .03, .01, .01, .01, .01, .01, .9, .01, .01,
-                              .03, .01, .01, .01, .01, .01, .01, .9, .01,
-                              .03, .01, .01, .01, .01, .01, .01, .01, .9]
+      comms: 
+        symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
+        labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        probs: [10., 1., 1., 1., 1., 1., 1., 1.]  
+        upper_prob_limit: .90
+        lower_prob_limit: .01
+       
