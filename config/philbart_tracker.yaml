@@ -1460,7 +1460,7 @@ tbd_tracker_node:
 
     detectors:
       #Declare names of detectors upfront
-      detector_names: ['oakd','lidar_2d']
+      detector_names: ['oakd'] #,'lidar_2d']
 
       # For each named detector, give detector model information
       oakd:

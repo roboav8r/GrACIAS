@@ -248,8 +248,7 @@ semantic_fusion_node:
 
         # GTSAM fusion variables
         role_obs_labels: ['pedestrian','teammate','supervisor']
-        role_obs_model_coeffs: [1., 1., 1.,
-                                1., 0., 0.,
+        role_obs_model_coeffs: [1., 0., 0.,
                                 0., 1., 0.,
                                 0., 0., 1.]
         comm_obs_labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
@@ -265,15 +264,14 @@ semantic_fusion_node:
         type: 'vision'
         topic: ''
 
-        update_method: '' # 
+        update_method: 'time'
+        update_threshold: .9 # 
 
         # GTSAM fusion variables
-        # TODO - update with real data
         role_obs_labels: ['pedestrian','teammate','supervisor']
-        role_obs_model_coeffs: [1., 1., 1.,
-                                1., 0., 0.,
-                                0., 1., 0.,
-                                0., 0., 1.]
+        role_obs_model_coeffs: [.721171, .278790, .000040,
+                                .033467, .966514, .000019,
+                                .001246, .011736, .987018]
 
     objects_of_interest: ['person']
 
@@ -285,15 +283,15 @@ semantic_fusion_node:
         variables: ['role']
         role:
           symbol: 'r' # Letter to uniquely identify the variable in GTSAM.
-          labels: ['unknown','pedestrian','teammate','supervisor']
-          probs: [10., 1., 1., 1.]
+          labels: ['pedestrian','teammate','supervisor']
+          probs: [1., 1., 1.]
           upper_prob_limit: .90
           lower_prob_limit: .01
       
       comms: 
         symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
         labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
-        probs: [10., 1., 1., 1., 1., 1., 1., 1.]  
+        probs: [99., 1., 1., 1., 1., 1., 1., 1.]  
         upper_prob_limit: .90
         lower_prob_limit: .01
        

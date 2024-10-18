@@ -269,7 +269,7 @@ semantic_fusion_node:
       comms: 
         symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
         labels: ['none','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
-        probs: [10., 1., 1., 1., 1., 1., 1., 1.]  
+        probs: [99., 1., 1., 1., 1., 1., 1., 1.]  
         upper_prob_limit: .90
         lower_prob_limit: .01
 

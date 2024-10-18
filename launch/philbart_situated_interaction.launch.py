@@ -89,17 +89,18 @@ def generate_launch_description():
     ld.add_action(clip_obj_rec_server)
 
     # Detection preprocessing for tracker
-    preproc_node = Node(
+    depthai_preproc_node = Node(
         package='marmot',
         executable='depthai_img_preproc',
         name='depthai_img_preproc_node',
-        remappings=[('/depthai_detections','/oak/nn/spatial_detections'),
-                    ('/converted_detections','converted_vision_detections')],
+        remappings=[('/converted_detections','/converted_vision_detections'),
+                    ('/depthai_detections','/oak/nn/spatial_detections'),
+                    ('/depthai_img','/oak/rgb/image_raw')],
         output='screen',
         parameters=[config])    
-    ld.add_action(preproc_node)
+    ld.add_action(depthai_preproc_node)
     
-    preproc_node = Node(
+    lidar_preproc_node = Node(
         package='marmot',
         executable='lidar_2d_preproc',
         name='lidar_preproc_node',
@@ -109,7 +110,7 @@ def generate_launch_description():
                     ('/point_cloud','/philbart/lidar_points')],
         output='screen',
         parameters=[config])    
-    ld.add_action(preproc_node)
+    ld.add_action(lidar_preproc_node)
 
     ### AUDITION PROCESSING
     # Scene recognition
@@ -157,7 +158,7 @@ def generate_launch_description():
         executable='tbd_node.py',
         name='tbd_tracker_node',
         output='screen',
-        remappings=[('/detections','/converted_detections')],
+        # remappings=[('/detections','/converted_detections')],
         parameters=[tracker_config]
     )
     ld.add_action(trk_node)
@@ -172,7 +173,6 @@ def generate_launch_description():
         parameters=[config]
     )
     ld.add_action(semantic_tracking_node)
-
 
     ### OUTPUT / VISUALIZATION
     # Foxglove bridge for visualization
