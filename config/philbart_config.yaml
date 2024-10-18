@@ -9,10 +9,10 @@
 /dr_spaam_ros:
   ros__parameters:
   
-    weight_file: "ckpts/ckpt_jrdb_ann_drow3_e40.pth"
-    detector_model: "DROW3"  # DROW3 or DR-SPAAM
-    # weight_file: "ckpts/ckpt_jrdb_ann_dr_spaam_e20.pth"
-    # detector_model: "DR-SPAAM"  # DROW3 or DR-SPAAM
+    # weight_file: "ckpts/ckpt_jrdb_ann_drow3_e40.pth"
+    # detector_model: "DROW3"  # DROW3 or DR-SPAAM
+    weight_file: "ckpts/ckpt_jrdb_ann_dr_spaam_e20.pth"
+    detector_model: "DR-SPAAM"  # DROW3 or DR-SPAAM
     conf_thresh: 0.65
     stride: 5  # use this to skip laser points
     panoramic_scan: True  # Set to true if the scan covers 360 degree
@@ -147,11 +147,11 @@ directional_speech_rec_node:
 
     lexicon_package: 'ros_audition'
     lexicon_file: 'config/rocog_lexicon_full_phrases.txt'
-    trigger_level: 5.0
+    trigger_level: 3.0
     am_bundle: 'WAV2VEC2_ASR_LARGE_960H'
-    lm_weight: 0.
+    lm_weight: 1.
     word_score: 0.
-    sil_score: 1.
+    sil_score: 0.
 
 audio_scene_rec:
   ros__parameters:
@@ -226,10 +226,10 @@ semantic_fusion_node:
     update_loop_time_sec: 0.1
     pub_loop_time_sec: 1.
     
-    role_rec_method: 'visual'
-    command_rec_method: 'artag'
+    role_rec_methods: ['visual']
+    command_rec_methods: ['artag','verbal']
 
-    sensor_names: ['artag','clip_role_rec']
+    sensor_names: ['artag','clip_role_rec','verbal_cmd']
     sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
     sensors:
       artag:
@@ -272,6 +272,26 @@ semantic_fusion_node:
         role_obs_model_coeffs: [.721171, .278790, .000040,
                                 .033467, .966514, .000019,
                                 .001246, .011736, .987018]
+
+      verbal_cmd:
+        type: 'verbal'
+        topic: 'speech_az_sources'
+
+        update_method: 'count' # time, count, or confidence
+        update_threshold: 1 # Update every 3 messages received
+
+        match_threshold: 0.175
+
+        # GTSAM fusion variables
+        comm_obs_labels: ['','advance','attention','follow-me','halt','move-forward','move-in-reverse','rally']
+        comm_obs_model_coeffs: [1., 0., 0., 0., 0., 0., 0., 0.,
+                                0., 1., 0., 0., 0., 0., 0., 0.,
+                                0., 0., 1., 0., 0., 0., 0., 0.,
+                                0., 0., 0., 1., 0., 0., 0., 0.,
+                                0., 0., 0., 0., 1., 0., 0., 0.,
+                                0., 0., 0., 0., 0., 1., 0., 0.,
+                                0., 0., 0., 0., 0., 0., 1., 0.,
+                                0., 0., 0., 0., 0., 0., 0., 1.]
 
     objects_of_interest: ['person']
 
