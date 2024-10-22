@@ -58,7 +58,7 @@ depthai_img_preproc_node:
 lidar_preproc_node:
   ros__parameters:
     tracker_frame: 'philbart/scan_link'
-    label: 'leg'
+    label: 'person'
     confidence: .65
 
 clip_scene_rec:
