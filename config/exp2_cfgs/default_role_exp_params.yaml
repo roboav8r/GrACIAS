@@ -223,8 +223,7 @@ semantic_fusion_node:
 ### EXPERIMENT MANAGER NODE
 /**:
   ros__parameters:
-    exp_configs: ['config/exp2_cfgs/exp2_vis_role_ar_cmd.yaml',
-                  'config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml']
-    # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_dev'
+    exp_configs: ['config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml',
+                  'config/exp2_cfgs/exp2_vis_role_ar_cmd.yaml']
     mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
     result_dir: 'sit_int_ws/src/situated_interaction/results/exp2_hierarchical_cmd/role_rec'
