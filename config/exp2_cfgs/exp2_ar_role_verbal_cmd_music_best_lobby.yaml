@@ -1,0 +1,23 @@
+/**:
+  ros__parameters:
+    config_name: artag_role_verbal_cmd_music
+    ssl_algo: 'MUSIC'
+
+    # Best lobby audio params from 24 Oct mini speech eval set
+    lexicon_package: 'ros_audition'
+    lexicon_file: 'config/rocog_lexicon_full_phrases.txt'
+    trigger_level: 5.
+    am_bundle: 'WAV2VEC2_ASR_LARGE_960H'
+    lm_weight: 0.
+    word_score: -1.
+    sil_score: 1.
+    
+### MULTIMODAL PROCESSING - SEMANTIC FUSION NODE
+/semantic_fusion_node:
+  ros__parameters:
+
+    update_loop_time_sec: 0.1
+    pub_loop_time_sec: 1.
+
+    role_rec_methods: ['artag']
+    command_rec_methods: ['verbal']

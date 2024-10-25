@@ -1,0 +1,7 @@
+advance	        a d v a n c e |
+attention	    a t t e n t i o n |
+follow-me	    f o l l o w | m e |
+halt	        h a l t |
+move-forward	m o v e | f o r w a r d |
+move-in-reverse m o v e | i n | r e v e r s e |
+rally	        r a l l y |

@@ -37,13 +37,14 @@
     min_voice_samples: 31200
     src_match_thresh_rad: .175 # .5 = ~28.6 degrees # .175 rad = ~10 degrees
 
+    # Best overall audio params from 24 Oct mini speech eval set
     lexicon_package: 'ros_audition'
     lexicon_file: 'config/rocog_lexicon_full_phrases.txt'
-    trigger_level: 5.0
+    trigger_level: 5.
     am_bundle: 'WAV2VEC2_ASR_LARGE_960H'
-    lm_weight: 0.
-    word_score: 0.
-    sil_score: 1.
+    lm_weight: 1.
+    word_score: 1.
+    sil_score: 0.
 
 
 ### UNIMODAL PROCESSING - VISION
@@ -180,11 +181,15 @@ audio_scene_rec:
 semantic_fusion_node:
   ros__parameters:
 
+    x_label_offset: .0 # meters
+    y_label_offset: -.75 # meters
+    z_label_offset: .75 # meters
+
     update_loop_time_sec: 0.1
     pub_loop_time_sec: 1.
     
-    role_rec_method: 'artag'
-    command_rec_method: 'artag'
+    role_rec_methods: ['artag']
+    command_rec_methods: ['artag']
 
     sensor_names: ['artag','clip_role_rec','verbal_cmd']
     sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
@@ -277,7 +282,11 @@ semantic_fusion_node:
 /**:
   ros__parameters:
     # exp_configs: ['config/exp2_cfgs/exp2_ar_role_verbal_cmd_cssm.yaml', # singular matrix error
-    exp_configs: ['config/exp2_cfgs/exp2_ar_role_verbal_cmd_music.yaml',
+    exp_configs: ['config/exp2_cfgs/exp2_ar_role_verbal_cmd_music_best_overall.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_music_best_campus.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_music_best_courtyard.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_music_best_lab.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_music_best_lobby.yaml',
                   'config/exp2_cfgs/exp2_ar_role_verbal_cmd_srpphat.yaml',
                   'config/exp2_cfgs/exp2_ar_role_verbal_cmd_tops.yaml',
                   'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves.yaml'] 
