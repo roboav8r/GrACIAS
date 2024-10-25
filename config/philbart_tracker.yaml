@@ -49,7 +49,7 @@ tbd_tracker_node:
                 create_method: 'conf'
                 delete_method: 'conf'
                 active_thresh: .5
-                detect_thresh: .21
+                detect_thresh: .75
                 score_decay: .001
                 delete_thresh: .3
                 score_update_function: 'parallel_add'
@@ -75,6 +75,6 @@ tbd_tracker_node:
                 detect_thresh: .5
                 delete_thresh: .3
                 score_update_function: 'parallel_add'
-                score_decay: .001
+                score_decay: .05
                 sim_metric: 'dist_3d'
                 match_thresh: 1.0
