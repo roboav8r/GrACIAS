@@ -45,6 +45,7 @@ class HRIExpManager(Node):
         self.reset_semantic_tracker_client = self.create_client(Empty, 'semantic_fusion_node/reset')
         self.reconf_semantic_tracker_client = self.create_client(Empty, 'semantic_fusion_node/reconfigure')
         self.reconf_beamformer_client = self.create_client(Empty, 'pra_node/reconfigure')
+        self.reconf_speech_rec_client = self.create_client(Empty, 'speech_rec_node/reconfigure')
         self.get_tracker_params_client = self.create_client(GetParameters, 'semantic_fusion_node/get_parameters')
 
         self.start_recording_client = self.create_client(RecordEpoch, 'record_hierarchical_cmd_results_node/record_epoch')
@@ -60,11 +61,12 @@ class HRIExpManager(Node):
             exp_path = os.path.join(self.package_dir,exp)
             self.exp_name = os.path.splitext(os.path.split(exp_path)[-1])[0]
             self.get_logger().info("Loading tracker experiment configuration: %s" % (self.exp_name))
-            while (('semantic_fusion_node' not in self.get_node_names()) or ('pra_node' not in self.get_node_names())):
+            while (('semantic_fusion_node' not in self.get_node_names()) or ('pra_node' not in self.get_node_names()) or ('speech_rec_node' not in self.get_node_names())):
                 self.get_logger().info("Waiting on experiment nodes to start.")
                 time.sleep(1.)
             subprocess.run(["ros2", "param", "load", "/semantic_fusion_node", os.path.join(self.package_dir,exp_path)])
             subprocess.run(["ros2", "param", "load", "/pra_node", os.path.join(self.package_dir,exp_path)])
+            subprocess.run(["ros2", "param", "load", "/speech_rec_node", os.path.join(self.package_dir,exp_path)])
             
             # Reconfigure semantic node and beamformer node
             self.future = self.reconf_semantic_tracker_client.call_async(self.empty_req)
@@ -81,16 +83,24 @@ class HRIExpManager(Node):
                 self.future = self.reconf_beamformer_client.call_async(self.empty_req)
                 rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
 
+            self.future = self.reconf_speech_rec_client.call_async(self.empty_req)
+            rclpy.spin_until_future_complete(self, self.future)
+            # rclpy.spin_until_future_complete(self, self.future, timeout_sec=5)
+            # while self.future.done() is False:
+            #     self.get_logger().info("Could not reconfigure speech rec node, retrying")
+            #     self.future = self.reconf_speech_rec_client.call_async(self.empty_req)
+            #     rclpy.spin_until_future_complete(self, self.future,timeout_sec=5)
+
             # Get command recognition method from semantic node
             param_request = GetParameters.Request()
-            param_request.names = ['role_rec_method','command_rec_method']
+            param_request.names = ['role_rec_methods','command_rec_methods']
             self.future = self.get_tracker_params_client.call_async(param_request)
             rclpy.spin_until_future_complete(self, self.future)
 
             # handle response
             response = self.future.result()
-            role_rec_method = response.values[0].string_value
-            cmd_rec_method = response.values[1].string_value
+            role_rec_method = response.values[0].string_array_value[0]
+            cmd_rec_method = response.values[1].string_array_value[0]
 
             ### Play mcap files as if live
             last_root = None

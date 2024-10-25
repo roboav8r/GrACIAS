@@ -80,16 +80,7 @@ bf.far_field_weights(source_angle)
 
 # Compute voice activity detector object
 torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Speech recognition objects
-# cmd_transcripts = {'advance': 'advance',
-#                    'attention': 'attention',
-#                    'follow-me': 'follow me',
-#                    'halt': 'halt',
-#                    'move-forward': "move forward",
-#                    'move-in-reverse': "move in reverse",
-#                    'rally': 'rally'}
-                   
+                  
 lm_files = download_pretrained_files("librispeech-4-gram")
 
 
