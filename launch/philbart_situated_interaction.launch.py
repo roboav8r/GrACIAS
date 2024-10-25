@@ -34,8 +34,24 @@ def generate_launch_description():
     )
     ld.add_action(tf_node)
 
+    tf_node = Node(package = "tf2_ros", 
+                    executable = "static_transform_publisher",
+                    arguments = [".525", "0", ".49", "0", "0", "0", "philbart/base_link", "philbart/front_laser"]
+    )
+    ld.add_action(tf_node)
+
 
     ### SENSORS
+    # 2D LiDAR node
+    lidar_2d_node = Node(
+        package='urg_node',
+        executable='urg_node_driver',
+        name='urg_node',
+        output='screen',
+        parameters=[config]
+    )
+    ld.add_action(lidar_2d_node)
+
     # LiDAR leg detection
     leg_det_node = Node(
         package='dr_spaam_ros',

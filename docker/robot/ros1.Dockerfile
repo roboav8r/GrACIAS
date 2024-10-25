@@ -35,17 +35,8 @@ RUN git clone https://github.com/roboav8r/2D_lidar_person_detection.git
 WORKDIR /ros1_ws/src/2D_lidar_person_detection/dr_spaam
 RUN python3 setup.py install
 WORKDIR /ros1_ws 
-# RUN wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1gH_pdxUC8diIFUe3_Ky8QiVVCyiR3500' -O ckpt_jrdb_ann_dr_spaam_e20.pth
-# RUN wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1QuB9mwm8h46vIiynFsDKKxlEiUYC0quN' -O ckpt_jrdb_ann_drow3_e40.pth
-# RUN wget https://drive.google.com/drive/folders/1OI99VfUBkmRSijgmMYYku9Pc_nS3v8sj/ckpt_jrdb_ann_dr_spaam_e20.pth
-# RUN wget https://drive.google.com/drive/folders/1OI99VfUBkmRSijgmMYYku9Pc_nS3v8sj/ckpt_jrdb_ann_drow3_e40.pth
 RUN source /opt/ros/${ROS1_DISTRO}/setup.bash && \ 
 catkin_make
-
-# dr-spaam detector requirements
-RUN pip install networkx==2.8.8 
-RUN pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
-RUN pip install scipy
 
 COPY ./ros1_ar_entrypoint.sh /
 COPY ./ros1_pcl_to_scan_entrypoint.sh /

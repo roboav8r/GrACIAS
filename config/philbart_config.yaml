@@ -6,6 +6,25 @@
     artag_frame: 'oak_rgb_camera_optical_frame'
 
 ### UNIMODAL PROCESSING - LIDAR
+/urg_node:
+  ros__parameters:
+    angle_max: 2.35
+    angle_min: -2.35
+    ip_port: 10940
+    serial_port: "/dev/ttyACM0"
+    serial_baud: 115200
+    laser_frame_id: "philbart/front_laser"
+    calibrate_time: false
+    default_user_latency: 0.0
+    diagnostics_tolerance: 0.05
+    diagnostics_window_time: 5.0
+    error_limit: 4
+    get_detailed_status: false
+    publish_intensity: false
+    publish_multiecho: false
+    cluster: 1
+    skip: 0
+
 /dr_spaam_ros:
   ros__parameters:
   
@@ -13,9 +32,9 @@
     # detector_model: "DROW3"  # DROW3 or DR-SPAAM
     weight_file: "ckpts/ckpt_jrdb_ann_dr_spaam_e20.pth"
     detector_model: "DR-SPAAM"  # DROW3 or DR-SPAAM
-    conf_thresh: 0.65
-    stride: 5  # use this to skip laser points
-    panoramic_scan: True  # Set to true if the scan covers 360 degree
+    conf_thresh: 0.9
+    stride: 1  # use this to skip laser points
+    panoramic_scan: False  # Set to true if the scan covers 360 degree
 
     publisher:
         detections:
@@ -30,7 +49,7 @@
 
     subscriber:
         scan:
-            topic: /philbart/scan
+            topic: /scan
             queue_size: 1
 
 ### UNIMODAL PROCESSING - VISION
@@ -59,7 +78,7 @@ lidar_preproc_node:
   ros__parameters:
     tracker_frame: 'philbart/scan_link'
     label: 'person'
-    confidence: .65
+    confidence: .2
 
 clip_scene_rec:
   ros__parameters:
