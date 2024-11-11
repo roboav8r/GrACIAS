@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
-    config_name: artag_role_verbal_cmd_music_best_courtyard
-    ssl_algo: 'MUSIC'
+    config_name: artag_role_verbal_cmd_waves_best_courtyard
+    ssl_algo: 'WAVES'
 
     # Best courtyard audio params from 11 Nov eval results
     lexicon_package: 'ros_audition'

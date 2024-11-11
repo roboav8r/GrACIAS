@@ -287,12 +287,22 @@ semantic_fusion_node:
                   'config/exp2_cfgs/exp2_ar_role_verbal_cmd_music_best_courtyard.yaml',
                   'config/exp2_cfgs/exp2_ar_role_verbal_cmd_music_best_lab.yaml',
                   'config/exp2_cfgs/exp2_ar_role_verbal_cmd_music_best_lobby.yaml',
-                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_srpphat.yaml',
-                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_tops.yaml',
-                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves.yaml'] 
-    
-    #,
-                  # 'config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml']
-    mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_speech_dev'
-    # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_srpphat_best_overall.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_srpphat_best_campus.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_srpphat_best_courtyard.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_srpphat_best_lab.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_srpphat_best_lobby.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_tops_best_overall.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_tops_best_campus.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_tops_best_courtyard.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_tops_best_lab.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_tops_best_lobby.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves_best_overall.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves_best_campus.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves_best_courtyard.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves_best_lab.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves_best_lobby.yaml',
+                  'config/exp2_cfgs/exp2_ar_role_ar_cmd.yaml']
+    # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_speech_dev'
+    mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
     result_dir: 'sit_int_ws/src/situated_interaction/results/exp2_hierarchical_cmd/cmd_rec'
