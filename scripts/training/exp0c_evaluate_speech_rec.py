@@ -19,7 +19,8 @@ from torchaudio.models.decoder import download_pretrained_files, ctc_decoder
 
 
 # params
-filepath = '../../bags/e1_speech_dev'
+# filepath = '../../bags/e1_speech_dev'
+filepath = '../../bags/e1_est_tuning'
 actual_scene_labels = ['campus','courtyard','lab','lobby']
 
 # sampling/acquisition
@@ -62,15 +63,9 @@ lexicon_file = 'config/rocog_lexicon_full_phrases.txt'
 # Tunable parameters
 vad_trigger_levels = [3., 5., 7.]
 am_bundles = ['WAV2VEC2_ASR_LARGE_960H']
-lm_weights = [-1., 0., 1.]
-word_scores = [-1., 0., 1.]
-sil_scores = [-1., 0., 1.]
-
-# vad_trigger_levels = [5.]
-# am_bundles = ['WAV2VEC2_ASR_LARGE_960H']
-# lm_weights = [0.]
-# word_scores = [1.]
-# sil_scores = [-1.]
+lm_weights = [-3, -1., 0., 1., 3.]
+word_scores = [-3, -1., 0., 1., 3.]
+sil_scores = [-3, -1., 0., 1., 3.]
 
 
 # Create beamformer object, compute beam weights
