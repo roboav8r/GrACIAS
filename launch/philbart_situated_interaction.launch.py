@@ -36,7 +36,7 @@ def generate_launch_description():
 
     tf_node = Node(package = "tf2_ros", 
                     executable = "static_transform_publisher",
-                    arguments = [".525", "0", ".49", "0", "0", "0", "philbart/base_link", "philbart/front_laser"]
+                    arguments = [".53", "0", ".48", "0", "0", "0", "philbart/base_link", "philbart/front_laser"]
     )
     ld.add_action(tf_node)
 
