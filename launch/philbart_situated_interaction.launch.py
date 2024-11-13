@@ -190,6 +190,17 @@ def generate_launch_description():
     )
     ld.add_action(semantic_tracking_node)
 
+    # Hierarchical commanding
+    action_engine_node = Node(
+        package='situated_interaction',
+        executable='action_engine_node.py',
+        name='action_engine_node',
+        output='screen',
+        # remappings=[('/tracks','/tbd_tracker_node/tracks')],
+        parameters=[config]
+    )
+    ld.add_action(action_engine_node)
+
     ### OUTPUT / VISUALIZATION
     # Foxglove bridge for visualization
     viz_node = IncludeLaunchDescription(

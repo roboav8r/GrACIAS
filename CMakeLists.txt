@@ -40,6 +40,7 @@ install(PROGRAMS
   scripts/role_exp_mgr.py
   scripts/cmd_exp_mgr.py
   scripts/scene_exp_mgr.py
+  scripts/action_engine_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
