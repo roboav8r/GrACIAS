@@ -39,11 +39,13 @@ class CommandProcessor(Node):
 
         # Behavior parameters
         self.drive_speed = 0.1 # meters/sec
-        self.follow_distance = 2.0 # meters
+        self.follow_x_offset = -1. # meters
 
         # Initialize state
         self.current_command = "halt"
         self.follow_id = None
+        self.target_pose = Pose()
+        self.agent_poses = {}
 
     # TODO
     # def build_route_base_frame(self):
@@ -53,8 +55,13 @@ class CommandProcessor(Node):
 
     def command_callback(self, msg):
         self.last_command_header = msg.header
+        self.agent_poses = {}
 
         for command in msg.commands:  # Assuming msg.commands is a list of HierarchicalCommand
+
+            # Save locations of agents
+            self.agent_poses[command.object_id] = command.pose
+
             if command.comms == 'halt':
                 self.current_command = "halt"
                 # self.publish_halt()
@@ -67,9 +74,9 @@ class CommandProcessor(Node):
                 self.current_command = "move-in-reverse"
                 # self.publish_move_backward()
 
-            # elif command.comms == 'follow-me' and command.attribute == 'supervisor':
-            #     target_pose = self.get_target_pose(command.pose)
-            #     self.publish_follow_pose(target_pose)
+            elif command.comms == 'follow-me' and command.states[0].value == 'supervisor':
+                self.current_command = "follow"
+                self.follow_id = command.object_id
 
             # elif command.comms == 'advance' and command.attribute == 'supervisor':
             #     waypoint_pose = self.get_next_waypoint(command.pose)
@@ -85,6 +92,18 @@ class CommandProcessor(Node):
 
         elif self.current_command == 'move-in-reverse':
             self.publish_move_backward()
+
+        elif self.current_command == 'follow':
+
+            # Target position known = compute follow pose & send 
+            if self.follow_id in self.agent_poses.keys():
+                self.compute_follow_target_pose(self.follow_id)
+                self.publish_follow_pose(self.target_pose)
+            
+            # Don't know where target is = stop
+            else:
+                self.current_command = "halt"
+                self.publish_halt()
 
     def publish_halt(self):
         twist = Twist()
@@ -117,10 +136,12 @@ class CommandProcessor(Node):
         self.waypoint_pose_publisher.publish(pose_stamped)
         self.get_logger().info('Published advance command')
 
-    def get_target_pose(self, current_pose):
-        # Define logic for calculating target pose
-        # Placeholder: returns the provided current_pose as target pose
-        return current_pose
+    def compute_follow_target_pose(self, target_id):
+
+        agent_pose = self.agent_poses[target_id]
+        agent_pose_with_offset = agent_pose
+        agent_pose_with_offset.position.x -= self.follow_x_offset
+        self.target_pose = agent_pose_with_offset
 
     def get_next_waypoint(self, current_pose):
         # Define logic for calculating next waypoint pose
