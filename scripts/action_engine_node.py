@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import copy
+
 import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
@@ -126,6 +128,7 @@ class CommandProcessor(Node):
         pose_stamped = PoseStamped()
         pose_stamped.pose = pose
         pose_stamped.header.stamp = self.get_clock().now().to_msg()
+        pose_stamped.header.frame_id = self.last_command_header.frame_id
         self.follow_pose_publisher.publish(pose_stamped)
         self.get_logger().info('Published follow-me command')
 
@@ -139,8 +142,8 @@ class CommandProcessor(Node):
     def compute_follow_target_pose(self, target_id):
 
         agent_pose = self.agent_poses[target_id]
-        agent_pose_with_offset = agent_pose
-        agent_pose_with_offset.position.x -= self.follow_x_offset
+        agent_pose_with_offset = copy.deepcopy(agent_pose)
+        agent_pose_with_offset.position.x += self.follow_x_offset
         self.target_pose = agent_pose_with_offset
 
     def get_next_waypoint(self, current_pose):
