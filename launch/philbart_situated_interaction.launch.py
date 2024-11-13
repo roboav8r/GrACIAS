@@ -196,7 +196,7 @@ def generate_launch_description():
         executable='action_engine_node.py',
         name='action_engine_node',
         output='screen',
-        # remappings=[('/tracks','/tbd_tracker_node/tracks')],
+        remappings=[('/cmd_vel','/philbart/hololens/cmd_vel')],
         parameters=[config]
     )
     ld.add_action(action_engine_node)

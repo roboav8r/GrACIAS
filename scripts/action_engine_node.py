@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
@@ -57,12 +59,12 @@ class CommandProcessor(Node):
                 self.current_command = "halt"
                 # self.publish_halt()
 
-            elif command.comms == 'move-forward' and command.attribute == 'supervisor':
+            elif command.comms == 'move-forward' and command.states[0].value == 'supervisor':
                 self.current_command = "move-forward"
                 # self.publish_move_forward()
 
-            elif command.comms == 'move-backward' and command.attribute == 'supervisor':
-                self.current_command = "move-backward"
+            elif command.comms == 'move-in-reverse' and command.states[0].value == 'supervisor':
+                self.current_command = "move-in-reverse"
                 # self.publish_move_backward()
 
             # elif command.comms == 'follow-me' and command.attribute == 'supervisor':
@@ -81,7 +83,7 @@ class CommandProcessor(Node):
         elif self.current_command == 'move-forward':
             self.publish_move_forward()
 
-        elif self.current_command == 'move-backward':
+        elif self.current_command == 'move-in-reverse':
             self.publish_move_backward()
 
     def publish_halt(self):
