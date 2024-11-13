@@ -13,8 +13,8 @@ services:
       dockerfile: bridge.Dockerfile
 
     environment:
-      - ROS_MASTER_URI=http://192.168.131.1:11311
-      - ROS_IP=192.168.131.113
+      - ROS_MASTER_URI=http://localhost:11311
+      - ROS_IP=localhost
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
@@ -30,10 +30,10 @@ services:
     entrypoint: /philbart_bridge_entrypoint.sh
 
   # Launch ar_track_alvar in ros1 environment
-  ar_srv:
+  ros1_srv:
 
     image: ros1_img
-    container_name: ros1_ar_cont
+    container_name: ros1_cont
     
     build:
       # set the build context to the directory containing build files
@@ -43,11 +43,8 @@ services:
     environment:
       - MARKER_SIZE=15.2
       - AR_CAM_TOPIC=/oak/rgb/image_raw
-      - AR_INFO_TOPIC=/oak/stereo/camera_info
+      - AR_INFO_TOPIC=/oak/rgb/camera_info
       - OUTPUT_FRAME=oak_rgb_camera_optical_frame
-
-      - ROS_MASTER_URI=http://192.168.131.1:11311
-      - ROS_IP=192.168.131.113
 
     security_opt:
     # this is set bc of errors with RViz being denied dbus comm w/ host
@@ -74,8 +71,6 @@ services:
       dockerfile: ros1.Dockerfile
 
     environment:
-      - ROS_MASTER_URI=http://192.168.131.1:11311
-      - ROS_IP=192.168.131.113
       - PCL_TOPIC=/philbart/lidar_points
       - SCAN_TOPIC=/philbart/scan
 
@@ -104,8 +99,6 @@ services:
       dockerfile: ros1.Dockerfile
 
     environment:
-      - ROS_MASTER_URI=http://192.168.131.1:11311
-      - ROS_IP=192.168.131.113
       - SCAN_TOPIC=/philbart/scan
 
     security_opt:
