@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-import copy
+# import copy
+
+import numpy as np
 
 import rclpy
 from rclpy.node import Node
@@ -9,6 +11,8 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from geometry_msgs.msg import Twist, PoseStamped
 from situated_hri_interfaces.msg import HierarchicalCommands
 from geometry_msgs.msg import Pose, PoseStamped
+
+from tf_transformations import quaternion_from_euler
 
 
 class CommandProcessor(Node):
@@ -62,7 +66,7 @@ class CommandProcessor(Node):
         for command in msg.commands:  # Assuming msg.commands is a list of HierarchicalCommand
 
             # Save locations of agents
-            self.agent_poses[command.object_id] = command.pose
+            self.agent_poses[command.object_id] = command.pose # geometry_msgs/Pose
 
             if command.comms == 'halt':
                 self.current_command = "halt"
@@ -142,9 +146,20 @@ class CommandProcessor(Node):
     def compute_follow_target_pose(self, target_id):
 
         agent_pose = self.agent_poses[target_id]
-        agent_pose_with_offset = copy.deepcopy(agent_pose)
-        agent_pose_with_offset.position.x += self.follow_x_offset
-        self.target_pose = agent_pose_with_offset
+
+        # New way = pose pointed directly at agent, with offset
+        range_to_agent = np.linalg.norm([agent_pose.position.x, agent_pose.position.y])
+        range_to_target = range_to_agent - self.follow_x_offset
+        yaw_angle_to_agent = np.arctan2(agent_pose.position.y, agent_pose.position.x)
+        self.target_pose = Pose()
+        self.target_pose.position.x = agent_pose.position.x*(range_to_target)/range_to_agent
+        self.target_pose.position.y = agent_pose.position.y*(range_to_target)/range_to_agent
+        self.target_pose.orientation = quaternion_from_euler(0.,0.,yaw_angle_to_agent)
+
+        # Old method = x offset behind agent
+        # agent_pose_with_offset = copy.deepcopy(agent_pose)
+        # agent_pose_with_offset.position.x += self.follow_x_offset
+        # self.target_pose = agent_pose_with_offset
 
     def get_next_waypoint(self, current_pose):
         # Define logic for calculating next waypoint pose
