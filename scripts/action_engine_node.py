@@ -91,7 +91,7 @@ class CommandProcessor(Node):
                     self.current_command = "follow"
 
                 self.follow_id = command.object_id
-                self.compute_follow_target()
+                self.compute_follow_target(self.follow_id)
 
                 # Update target pose with current stamp and publish
                 self.publish_follow_pose(self.target_pose, self.target_frame_name)
@@ -184,17 +184,17 @@ class CommandProcessor(Node):
         # Publish transform instead
         self.follow_transform = TransformStamped()
         self.follow_transform.header.stamp = self.get_clock().now().to_msg()
-        self.follow_transform.header.frame_id = agent_pose.header.frame_id
+        self.follow_transform.header.frame_id = self.last_command_header.frame_id
         self.follow_transform.child_frame_id = self.target_frame_name
 
-        self.follow_transform.translation.x = agent_pose.position.x
-        self.follow_transform.translation.y = agent_pose.position.y
-        self.follow_transform.translation.z = 0
+        self.follow_transform.transform.translation.x = agent_pose.position.x
+        self.follow_transform.transform.translation.y = agent_pose.position.y
+        self.follow_transform.transform.translation.z = 0.
 
-        self.follow_transform.rotation.x = quat[0]
-        self.follow_transform.rotation.y = quat[1]
-        self.follow_transform.rotation.z = quat[2]
-        self.follow_transform.rotation.w = quat[3]
+        self.follow_transform.transform.rotation.x = quat[0]
+        self.follow_transform.transform.rotation.y = quat[1]
+        self.follow_transform.transform.rotation.z = quat[2]
+        self.follow_transform.transform.rotation.w = quat[3]
         
     def get_next_waypoint(self, current_pose):
         # Define logic for calculating next waypoint pose
