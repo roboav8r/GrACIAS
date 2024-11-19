@@ -9,12 +9,12 @@ from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from std_msgs.msg import Empty
-from geometry_msgs.msg import Twist, PoseStamped
+from geometry_msgs.msg import Twist, PoseStamped, TransformStamped
 from situated_hri_interfaces.msg import HierarchicalCommands
 from geometry_msgs.msg import Pose, PoseStamped
 
 from tf_transformations import quaternion_from_euler
-
+from tf2_ros import TransformBroadcaster
 
 class CommandProcessor(Node):
     def __init__(self):
@@ -44,6 +44,7 @@ class CommandProcessor(Node):
         self.follow_pose_publisher = self.create_publisher(PoseStamped, '/follow_pose', 10)
         self.cancel_follow_publisher = self.create_publisher(Empty, '/cancel_follow', 10)
         self.waypoint_pose_publisher = self.create_publisher(PoseStamped, '/waypoint_pose', 10)
+        self.transform_broadcaster = TransformBroadcaster(self)
 
         # Behavior parameters
         self.drive_speed = 0.1 # meters/sec
@@ -53,6 +54,9 @@ class CommandProcessor(Node):
         self.current_command = "halt"
         self.follow_id = None
         self.target_pose = Pose()
+        self.target_pose.position.x += self.follow_x_offset
+        self.follow_transform = TransformStamped()
+        self.target_frame_name = "follow_target_frame"
         self.agent_poses = {}
 
     # TODO
@@ -83,8 +87,14 @@ class CommandProcessor(Node):
                 # self.publish_move_backward()
 
             elif command.comms == 'follow-me' and command.states[0].value == 'supervisor':
-                self.current_command = "follow"
+                if self.current_command != "follow":
+                    self.current_command = "follow"
+
                 self.follow_id = command.object_id
+                self.compute_follow_target()
+
+                # Update target pose with current stamp and publish
+                self.publish_follow_pose(self.target_pose, self.target_frame_name)
 
             # elif command.comms == 'advance' and command.attribute == 'supervisor':
             #     waypoint_pose = self.get_next_waypoint(command.pose)
@@ -105,9 +115,10 @@ class CommandProcessor(Node):
 
             # Target position known = compute follow pose & send 
             if self.follow_id in self.agent_poses.keys():
-                self.compute_follow_target_pose(self.follow_id)
-                self.publish_follow_pose(self.target_pose)
-            
+                self.compute_follow_target(self.follow_id)
+                # self.publish_follow_pose(self.target_pose)
+                self.publish_target_tf()
+
             # Don't know where target is = stop
             else:
                 self.current_command = "halt"
@@ -134,13 +145,16 @@ class CommandProcessor(Node):
         self.cmd_vel_publisher.publish(twist)
         self.get_logger().info('Published move-backward command')
 
-    def publish_follow_pose(self, pose):
+    def publish_follow_pose(self, pose, frame_id):
         pose_stamped = PoseStamped()
         pose_stamped.pose = pose
         pose_stamped.header.stamp = self.get_clock().now().to_msg()
-        pose_stamped.header.frame_id = self.last_command_header.frame_id
+        pose_stamped.header.frame_id = frame_id
         self.follow_pose_publisher.publish(pose_stamped)
         self.get_logger().info('Published follow-me command')
+
+    def publish_target_tf(self):
+        self.transform_broadcaster.sendTransform(self.follow_transform)
 
     def publish_waypoint_pose(self, pose):
         pose_stamped = PoseStamped()
@@ -149,24 +163,39 @@ class CommandProcessor(Node):
         self.waypoint_pose_publisher.publish(pose_stamped)
         self.get_logger().info('Published advance command')
 
-    def compute_follow_target_pose(self, target_id):
+    def compute_follow_target(self, target_id):
 
         agent_pose = self.agent_poses[target_id]
 
         # New way = pose pointed directly at agent, with offset
-        range_to_agent = np.linalg.norm([agent_pose.position.x, agent_pose.position.y])
-        range_to_target = range_to_agent + self.follow_x_offset
+        # range_to_agent = np.linalg.norm([agent_pose.position.x, agent_pose.position.y])
+        # range_to_target = range_to_agent + self.follow_x_offset
         yaw_angle_to_agent = np.arctan2(agent_pose.position.y, agent_pose.position.x)
-        self.target_pose = Pose()
-        self.target_pose.position.x = agent_pose.position.x*(range_to_target)/range_to_agent
-        self.target_pose.position.y = agent_pose.position.y*(range_to_target)/range_to_agent
+        # self.target_pose = Pose()
+        # self.target_pose.position.x = agent_pose.position.x*(range_to_target)/range_to_agent
+        # self.target_pose.position.y = agent_pose.position.y*(range_to_target)/range_to_agent
 
         quat = quaternion_from_euler(0.,0.,yaw_angle_to_agent)
-        self.target_pose.orientation.w = quat[3]
-        self.target_pose.orientation.x = quat[0]
-        self.target_pose.orientation.y = quat[1]
-        self.target_pose.orientation.z = quat[2]
+        # self.target_pose.orientation.w = quat[3]
+        # self.target_pose.orientation.x = quat[0]
+        # self.target_pose.orientation.y = quat[1]
+        # self.target_pose.orientation.z = quat[2]
 
+        # Publish transform instead
+        self.follow_transform = TransformStamped()
+        self.follow_transform.header.stamp = self.get_clock().now().to_msg()
+        self.follow_transform.header.frame_id = agent_pose.header.frame_id
+        self.follow_transform.child_frame_id = self.target_frame_name
+
+        self.follow_transform.translation.x = agent_pose.position.x
+        self.follow_transform.translation.y = agent_pose.position.y
+        self.follow_transform.translation.z = 0
+
+        self.follow_transform.rotation.x = quat[0]
+        self.follow_transform.rotation.y = quat[1]
+        self.follow_transform.rotation.z = quat[2]
+        self.follow_transform.rotation.w = quat[3]
+        
     def get_next_waypoint(self, current_pose):
         # Define logic for calculating next waypoint pose
         # Placeholder: returns the provided current_pose as next waypoint pose
