@@ -42,6 +42,7 @@ class CommandProcessor(Node):
 
         self.cmd_vel_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
         self.follow_pose_publisher = self.create_publisher(PoseStamped, '/follow_pose', 10)
+        self.cancel_follow_publisher = self.create_publisher(Empty, '/cancel_follow', 10)
         self.waypoint_pose_publisher = self.create_publisher(PoseStamped, '/waypoint_pose', 10)
 
         # Behavior parameters
@@ -113,8 +114,12 @@ class CommandProcessor(Node):
                 self.publish_halt()
 
     def publish_halt(self):
-        twist = Twist()
-        self.cmd_vel_publisher.publish(twist)
+        twist_msg = Twist()
+        self.cmd_vel_publisher.publish(twist_msg)
+
+        empty_msg = Empty()
+        self.cancel_follow_publisher.publish(empty_msg)
+
         self.get_logger().info('Published halt command')
 
     def publish_move_forward(self):
