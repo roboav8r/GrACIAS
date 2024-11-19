@@ -196,7 +196,9 @@ def generate_launch_description():
         executable='action_engine_node.py',
         name='action_engine_node',
         output='screen',
-        remappings=[('/cmd_vel','/philbart/hololens/cmd_vel')],
+        remappings=[('/cmd_vel','/philbart/hololens/cmd_vel'),
+                    ('/follow_pose','/philbart/persistent_follow/goal_pose'),
+                    ('/cancel_follow','/philbart/persistent_follow/cancel')],
         parameters=[config]
     )
     ld.add_action(action_engine_node)

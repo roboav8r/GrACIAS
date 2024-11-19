@@ -8,6 +8,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
+from std_msgs.msg import Empty
 from geometry_msgs.msg import Twist, PoseStamped
 from situated_hri_interfaces.msg import HierarchicalCommands
 from geometry_msgs.msg import Pose, PoseStamped
