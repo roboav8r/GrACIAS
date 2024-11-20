@@ -175,6 +175,12 @@ cd ~/sit_int_ws/src/situated_interaction/docker/robot
 docker compose up
 ```
 
+[Optional] Record trial data
+```
+cd ~/sit_int_ws/src/situated_interaction
+./scripts/record_trial_data.sh my_trial_name
+```
+
 # Future Work
 
 ## Debugging

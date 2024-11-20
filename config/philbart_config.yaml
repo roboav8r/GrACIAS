@@ -216,6 +216,8 @@ audio_scene_rec:
   ros__parameters:
 
     loop_time_sec: 1.
+    min_prob: .01
+    max_prob: .99
 
     scene_labels: ['campus','courtyard','lab','lobby']
     scene_prior: [.25,.25,.25,.25]
