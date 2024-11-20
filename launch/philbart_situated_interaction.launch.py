@@ -162,8 +162,8 @@ def generate_launch_description():
     ### MULTIMODAL PROCESSING
     # Scene recognition
     scene_rec_node = Node(package = "mm_scene_rec", 
-                    executable = "bayes_scene_est.py",
-                    name = "bayes_fused_scene_est",
+                    executable = "multimodal_bayes_scene_est.py",
+                    name = "fused_scene_est",
                     parameters=[config]
     )
     ld.add_action(scene_rec_node)

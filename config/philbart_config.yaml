@@ -212,8 +212,10 @@ audio_scene_rec:
 
 
 ### MULTIMODAL PROCESSING - SCENE RECOGNITION
-/bayes_fused_scene_est:
+/fused_scene_est:
   ros__parameters:
+
+    loop_time_sec: 1.
 
     scene_labels: ['campus','courtyard','lab','lobby']
     scene_prior: [.25,.25,.25,.25]
