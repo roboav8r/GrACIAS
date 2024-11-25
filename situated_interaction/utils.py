@@ -32,12 +32,12 @@ def delete_sensors(semantic_fusion_node):
 
 def initialize_sensors(semantic_fusion_node):
     semantic_fusion_node.sensor_dict = {}
-    try_to_declare_parameter(semantic_fusion_node,'role_rec_method', rclpy.Parameter.Type.STRING)
-    try_to_declare_parameter(semantic_fusion_node,'command_rec_method', rclpy.Parameter.Type.STRING)
+    try_to_declare_parameter(semantic_fusion_node,'role_rec_methods', rclpy.Parameter.Type.STRING_ARRAY)
+    try_to_declare_parameter(semantic_fusion_node,'command_rec_methods', rclpy.Parameter.Type.STRING_ARRAY)
     try_to_declare_parameter(semantic_fusion_node,'sensor_names', rclpy.Parameter.Type.STRING_ARRAY)
     try_to_declare_parameter(semantic_fusion_node,'sensor_symbol', rclpy.Parameter.Type.STRING)
-    semantic_fusion_node.role_rec_method = semantic_fusion_node.get_parameter('role_rec_method').get_parameter_value().string_value
-    semantic_fusion_node.command_rec_method = semantic_fusion_node.get_parameter('command_rec_method').get_parameter_value().string_value
+    semantic_fusion_node.role_rec_methods = semantic_fusion_node.get_parameter('role_rec_methods').get_parameter_value().string_array_value
+    semantic_fusion_node.command_rec_methods = semantic_fusion_node.get_parameter('command_rec_methods').get_parameter_value().string_array_value
     semantic_fusion_node.sensor_names = semantic_fusion_node.get_parameter('sensor_names').get_parameter_value().string_array_value
     semantic_fusion_node.sensor_dict['symbol'] = semantic_fusion_node.get_parameter('sensor_symbol').get_parameter_value().string_value
 

@@ -25,7 +25,7 @@ def generate_launch_description():
     tracker_params = os.path.join(
         get_package_share_directory('situated_interaction'),
         'config',
-        'philbart_tracker.yaml'
+        'experiment_tracker.yaml'
     )
 
     # Static TF nodes
@@ -67,7 +67,7 @@ def generate_launch_description():
     speech_node = Node(
         package='ros_audition',
         executable='doa_speech_rec_node.py',
-        name='directional_speech_rec_node',
+        name='speech_rec_node',
         output='screen',
         parameters=[params]
     )
@@ -100,8 +100,8 @@ def generate_launch_description():
     ### EXPERIMENT NODES
     experiment_mgr_node = Node(
         package='situated_interaction',
-        executable='hri_exp_mgr.py',
-        name='hri_exp_mgr',
+        executable='cmd_exp_mgr.py',
+        name='cmd_exp_mgr',
         output='screen',
         parameters=[params]
     )

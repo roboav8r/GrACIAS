@@ -181,7 +181,7 @@ class SemanticTrackerNode(Node):
 
     def update_timer_callback(self):
     
-        if self.role_rec_method=='visual':
+        if 'visual' in self.role_rec_methods:
 
             # Check future status and update variable if needed
             if self.ready_to_send_vis_rec_req==False:
@@ -326,7 +326,7 @@ class SemanticTrackerNode(Node):
                     role_markers[marker.id]['marker'] = marker
 
         # Initialize, populate, and solve comm assignment matrix
-        if self.command_rec_method == 'artag':
+        if 'artag' in self.command_rec_methods:
             comm_assignment_matrix = np.zeros((len(comm_markers.keys()),len(self.semantic_objects.keys())))
             for marker_idx, marker_key in enumerate(comm_markers.keys()):
 
@@ -374,7 +374,7 @@ class SemanticTrackerNode(Node):
 
                     comm_var.update(comm_likelihood, msg.header.stamp)
 
-        if self.role_rec_method == 'artag':
+        if 'artag' in self.role_rec_methods:
             # Initialize, populate, and solve role assignment matrix
             role_assignment_matrix = np.zeros((len(role_markers.keys()),len(self.semantic_objects.keys())))
             for marker_idx, marker_key in enumerate(role_markers.keys()):
@@ -408,7 +408,7 @@ class SemanticTrackerNode(Node):
                 role_var.update(role_likelihood, msg.header.stamp)
 
     def speech_az_callback(self, msg, sensor_name):
-        if self.command_rec_method == 'verbal':
+        if 'verbal' in self.command_rec_methods:
 
             # Compute the assignment matrix
             assignment_matrix = np.zeros((len(msg.sources),len(self.semantic_objects.keys())))
@@ -431,6 +431,9 @@ class SemanticTrackerNode(Node):
                 object_key = list(self.semantic_objects.keys())[object_idx]
                 speech_idx = assignment[0]
                 comm_word = msg.sources[speech_idx].transcript
+
+                if comm_word not in self.sensor_dict[sensor_name]['comm_obs_labels']:
+                    continue
 
                 # Get comms symbol
                 comm_var = self.semantic_objects[object_key].comms

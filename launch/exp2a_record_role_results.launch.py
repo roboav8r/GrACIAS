@@ -40,7 +40,9 @@ def generate_launch_description():
         package='marmot',
         executable='depthai_img_preproc',
         name='depthai_img_preproc_node',
-        remappings=[('/converted_detections','/converted_vision_detections'),('/depthai_detections','/oak/nn/spatial_detections'),('/depthai_img','/oak/rgb/image_raw')],
+        remappings=[('/converted_detections','/converted_vision_detections'),
+                    ('/depthai_detections','/oak/nn/spatial_detections'),
+                    ('/depthai_img','/oak/rgb/image_raw')],
         parameters=[params])    
     ld.add_action(oakd_preproc_node)
 
@@ -61,7 +63,7 @@ def generate_launch_description():
         executable='tbd_node.py',
         name='tbd_tracker_node',
         output='screen',
-        remappings=[('/converted_detections','/converted_vision_detections')],
+        # remappings=[('/converted_detections','/converted_vision_detections')],
         parameters=[tracker_params]
     )
     ld.add_action(oakd_trk_node)
