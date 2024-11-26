@@ -9,13 +9,13 @@ from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
 from std_msgs.msg import Empty, Bool
-from geometry_msgs.msg import Twist, PoseStamped, TransformStamped
 from situated_hri_interfaces.msg import HierarchicalCommands
-from geometry_msgs.msg import Pose, PoseStamped, Quaternion
+from geometry_msgs.msg import Pose, Quaternion, Twist, TransformStamped, PoseStamped
 from nav_msgs.msg import Path
+import tf2_geometry_msgs
 
 from tf_transformations import quaternion_from_euler
-from tf2_ros import Buffer, TransformListener, TransformException
+from tf2_ros import Buffer, TransformBroadcaster, TransformListener, TransformException, LookupException
 
 class CommandProcessor(Node):
     def __init__(self):
@@ -57,8 +57,8 @@ class CommandProcessor(Node):
         self.waypoint_path_publisher = self.create_publisher(Path, '/philbart/waypoint_manager/waypoint_plan', 10)
         self.cancel_waypoint_nav_publisher = self.create_publisher(Empty, '/philbart/waypoint_manager/cancel', 10)
         self.pause_waypoint_nav_publisher = self.create_publisher(Bool, '/philbart/waypoint_manager/todo_pause', 10)
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.tf_buffer = Buffer(rclpy.duration.Duration(seconds=5.))
+        self.tf_listener = TransformListener(self.tf_buffer, self, spin_thread=True) # 
         
         # Behavior parameters
         self.drive_speed = 0.1 # meters/sec
@@ -75,12 +75,34 @@ class CommandProcessor(Node):
         self.paused_msg = Bool()
         self.paused_msg.data = True
 
+        can_transform = False
+        while can_transform == False:
+            self.get_logger().info("Waiting for transform to become available")
+            try:
+                can_transform = self.tf_buffer.can_transform(
+                    self.path_target_frame,
+                    self.path_source_frame,
+                    rclpy.time.Time(),
+                    rclpy.duration.Duration(seconds=5.)
+                )
+            except LookupException as ex:
+                self.get_logger().error(f'Could not find transform: {ex}')
+
+        # self.get_logger().info("Can transform: %s" % can_transform)
+        # tf_stamped = self.tf_buffer.lookup_transform(
+        #     self.path_target_frame,
+        #     self.path_source_frame,
+        #     rclpy.time.Time() - rclpy.duration.Duration(seconds=0.),
+        #     rclpy.duration.Duration(seconds=10.)
+        # )
+
         self.generate_path()
         self.pause_waypoint_nav_publisher.publish(self.paused_msg)
         self.waypoint_path_publisher.publish(self.nav_path)
 
     
     def generate_path(self):
+        self.get_logger().info("Generating path")
         path = Path()
         path.header.frame_id = self.path_target_frame
         path.header.stamp = self.get_clock().now().to_msg()
@@ -97,7 +119,7 @@ class CommandProcessor(Node):
                 pose_stamped.pose.orientation = Quaternion(w=1.0, x=0.0, y=0.0, z=0.0)
 
                 # Transform PoseStamped to target frame
-                transformed_pose = self.tf_buffer.transform(pose_stamped, self.target_frame)
+                transformed_pose = self.tf_buffer.transform(pose_stamped, self.path_target_frame, rclpy.duration.Duration(seconds=1.0))
                 path.poses.append(transformed_pose)
 
             except TransformException as ex:
@@ -137,7 +159,7 @@ class CommandProcessor(Node):
                 # Update target pose with current stamp and publish
                 self.publish_follow_pose(self.target_pose, self.target_frame_name)
 
-            elif command.comms == 'advance' and command.attribute == 'supervisor':
+            elif command.comms == 'advance' and command.states[0].value == 'supervisor':
                 self.current_command = "advance"
 
     def timer_callback(self):
