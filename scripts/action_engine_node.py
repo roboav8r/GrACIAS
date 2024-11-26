@@ -49,6 +49,8 @@ class CommandProcessor(Node):
         # Behavior parameters
         self.drive_speed = 0.1 # meters/sec
         self.follow_x_offset = -1. # meters
+        self.waypoint_x_values = [2.0, 2.5, 4.5, 5.0, 7.0] # 3x 2m stretches with 2x 0.5m stretches
+        # TODO - self.create_waypoint_list(self.waypoint_x_values)
 
         # Initialize state
         self.current_command = "halt"
