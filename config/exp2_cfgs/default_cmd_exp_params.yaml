@@ -306,6 +306,6 @@ semantic_fusion_node:
     #               'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves_best_lab.yaml',
     #               'config/exp2_cfgs/exp2_ar_role_verbal_cmd_waves_best_lobby.yaml']
     # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_speech_dev_mini'
-    mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_speech_dev'
-    # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
+    # mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_speech_dev'
+    mcap_dir: 'sit_int_ws/src/situated_interaction/bags/e1_est_tuning'
     result_dir: 'sit_int_ws/src/situated_interaction/results/exp2_hierarchical_cmd/cmd_rec'
