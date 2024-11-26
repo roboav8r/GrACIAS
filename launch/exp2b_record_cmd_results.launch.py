@@ -73,6 +73,15 @@ def generate_launch_description():
     )
     ld.add_action(speech_node)
 
+    # Gesture keypoint extraction
+    gesture_kp_node = Node(package = "gesture_recognition_ros2", 
+                    executable = "gesture_keypoint_node.py",
+                    name = "gesture_keypoint_node",
+                    remappings=[('/image_topic','/oak/rgb/image_raw')],
+                    parameters=[params]
+    )
+    ld.add_action(gesture_kp_node)
+
     ### MULTIMODAL PROCESSING
     
     # Tracker node

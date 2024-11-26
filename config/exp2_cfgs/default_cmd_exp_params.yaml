@@ -106,6 +106,18 @@ clip_vis_rec_server:
         gesture_sensor_model_coeffs: []        
         verbal_sensor_model_coeffs: []
 
+# gesture recognition
+gesture_keypoint_node:
+  ros__parameters:
+    model_name: 'yolo11n-pose' # YOLO11n-pose, YOLO11s-pose, YOLO11m-pose, YOLO11l-pose, YOLO11x-pose
+    keypoints_per_frame: 17
+    keypoint_dimension: 3
+    # keypoint_buffer_length: 40
+    # target_frames_per_second: 16.0
+    # buffer_publish_rate: 10.
+    # visualize_keypoints: True
+
+
 ### UNIMODAL PROCESSING - AUDITION
 audio_acq_node:
   ros__parameters:
