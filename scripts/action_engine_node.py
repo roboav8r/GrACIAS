@@ -8,13 +8,14 @@ import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Bool
 from geometry_msgs.msg import Twist, PoseStamped, TransformStamped
 from situated_hri_interfaces.msg import HierarchicalCommands
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import Pose, PoseStamped, Quaternion
+from nav_msgs.msg import Path
 
 from tf_transformations import quaternion_from_euler
-from tf2_ros import TransformBroadcaster
+from tf2_ros import Buffer, TransformListener, TransformException
 
 class CommandProcessor(Node):
     def __init__(self):
@@ -43,9 +44,22 @@ class CommandProcessor(Node):
         self.cmd_vel_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
         self.follow_pose_publisher = self.create_publisher(PoseStamped, '/follow_pose', 10)
         self.cancel_follow_publisher = self.create_publisher(Empty, '/cancel_follow', 10)
-        self.waypoint_pose_publisher = self.create_publisher(PoseStamped, '/waypoint_pose', 10)
         self.transform_broadcaster = TransformBroadcaster(self)
 
+        # Waypoint navigation members
+        self.declare_parameter('path_x_positions', [1.5, 2.0., 3.5, 4.0, 5.5])
+        self.declare_parameter('path_source_frame', 'philbart/base_link')
+        self.declare_parameter('path_target_frame', 'philbart/map')
+        self.path_x_positions = self.get_parameter('path_x_positions').get_parameter_value().double_array_value
+        self.path_source_frame = self.get_parameter('path_source_frame').get_parameter_value().string_value
+        self.path_target_frame = self.get_parameter('path_target_frame').get_parameter_value().string_value
+        
+        self.waypoint_path_publisher = self.create_publisher(Path, '/philbart/waypoint_manager/waypoint_plan', 10)
+        self.cancel_waypoint_nav_publisher = self.create_publisher(Empty, '/philbart/waypoint_manager/cancel', 10)
+        self.pause_waypoint_nav_publisher = self.create_publisher(Bool, '/philbart/waypoint_manager/todo_pause', 10)
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+        
         # Behavior parameters
         self.drive_speed = 0.1 # meters/sec
         self.follow_x_offset = -1. # meters
@@ -60,12 +74,39 @@ class CommandProcessor(Node):
         self.follow_transform = TransformStamped()
         self.target_frame_name = "follow_target_frame"
         self.agent_poses = {}
+        self.paused_msg = Bool()
+        self.paused_msg.data = True
 
-    # TODO
-    # def build_route_base_frame(self):
+        self.generate_path()
+        self.pause_waypoint_nav_publisher.publish(self.paused_msg)
+        self.waypoint_path_publisher.publish(self.nav_path)
 
-    # TODO
-    # def build_route_map_frame(self):
+    
+    def generate_path(self):
+        path = Path()
+        path.header.frame_id = self.path_target_frame
+        path.header.stamp = self.get_clock().now().to_msg()
+
+        for x in self.path_x_positions:
+            try:
+                # Create PoseStamped in source frame
+                pose_stamped = PoseStamped()
+                pose_stamped.header.frame_id = self.path_source_frame
+                pose_stamped.header.stamp = self.get_clock().now().to_msg()
+                pose_stamped.pose.position.x = x
+                pose_stamped.pose.position.y = 0.0
+                pose_stamped.pose.position.z = 0.0
+                pose_stamped.pose.orientation = Quaternion(w=1.0, x=0.0, y=0.0, z=0.0)
+
+                # Transform PoseStamped to target frame
+                transformed_pose = self.tf_buffer.transform(pose_stamped, self.target_frame)
+                path.poses.append(transformed_pose)
+
+            except TransformException as ex:
+                self.get_logger().error(f"Transform error: {ex}")
+                return
+
+        self.nav_path = path
 
     def command_callback(self, msg):
         self.last_command_header = msg.header
@@ -98,14 +139,17 @@ class CommandProcessor(Node):
                 # Update target pose with current stamp and publish
                 self.publish_follow_pose(self.target_pose, self.target_frame_name)
 
-            # elif command.comms == 'advance' and command.attribute == 'supervisor':
-            #     waypoint_pose = self.get_next_waypoint(command.pose)
-            #     self.publish_waypoint_pose(waypoint_pose)
+            elif command.comms == 'advance' and command.attribute == 'supervisor':
+                self.current_command = "advance"
 
     def timer_callback(self):
         # Check current command state, and publish appropriately
         if self.current_command == 'halt':
             self.publish_halt()
+
+            # Pause navigation
+            self.paused_msg.data = True
+            self.pause_waypoint_nav_publisher.publish(self.paused_msg)
 
         elif self.current_command == 'move-forward':
             self.publish_move_forward()
@@ -125,6 +169,10 @@ class CommandProcessor(Node):
             else:
                 self.current_command = "halt"
                 self.publish_halt()
+                
+        elif self.current_command == "advance":
+            self.paused_msg.data = False
+            self.pause_waypoint_nav_publisher.publish(self.paused_msg)
 
     def publish_halt(self):
         twist_msg = Twist()
