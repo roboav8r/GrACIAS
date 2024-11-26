@@ -47,7 +47,7 @@ class CommandProcessor(Node):
         self.transform_broadcaster = TransformBroadcaster(self)
 
         # Waypoint navigation members
-        self.declare_parameter('path_x_positions', [1.5, 2.0., 3.5, 4.0, 5.5])
+        self.declare_parameter('path_x_positions', [2.0, 2.5, 4.5, 5.0, 7.0])
         self.declare_parameter('path_source_frame', 'philbart/base_link')
         self.declare_parameter('path_target_frame', 'philbart/map')
         self.path_x_positions = self.get_parameter('path_x_positions').get_parameter_value().double_array_value
@@ -63,8 +63,6 @@ class CommandProcessor(Node):
         # Behavior parameters
         self.drive_speed = 0.1 # meters/sec
         self.follow_x_offset = -1. # meters
-        self.waypoint_x_values = [2.0, 2.5, 4.5, 5.0, 7.0] # 3x 2m stretches with 2x 0.5m stretches
-        # TODO - self.create_waypoint_list(self.waypoint_x_values)
 
         # Initialize state
         self.current_command = "halt"
