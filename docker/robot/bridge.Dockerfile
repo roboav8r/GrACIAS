@@ -18,6 +18,7 @@ ros-noetic-cmake-modules \
 ros-noetic-cv-bridge \
 ros-noetic-dynamic-reconfigure \
 ros-noetic-image-transport \
+ros-noetic-nav-msgs \
 ros-noetic-pcl-conversions \
 ros-noetic-pcl-ros \
 ros-noetic-resource-retriever \
@@ -29,6 +30,7 @@ ros-noetic-rospy-tutorials=0.10.2-1* \
 # install ros2 debian packages 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 ros-galactic-tf2-msgs \
+ros-galactic-nav-msgs \
 ros-galactic-rviz-common \
 qtbase5-dev \
 ros-galactic-rviz-default-plugins \
