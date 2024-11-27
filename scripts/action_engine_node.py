@@ -61,8 +61,8 @@ class CommandProcessor(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self, spin_thread=True) # 
         
         # Behavior parameters
-        self.drive_speed = 0.1 # meters/sec
-        self.follow_x_offset = -1. # meters
+        self.drive_speed = 0.2 # meters/sec
+        self.follow_x_offset = -0.5 # meters
 
         # Initialize state
         self.current_command = "halt"
@@ -74,8 +74,9 @@ class CommandProcessor(Node):
         self.agent_poses = {}
         self.paused_msg = Bool()
         self.paused_msg.data = True
-
+        self.nav_path_sent = False
         can_transform = False
+
         while can_transform == False:
             self.get_logger().info("Waiting for transform to become available")
             try:
@@ -160,6 +161,12 @@ class CommandProcessor(Node):
                 self.publish_follow_pose(self.target_pose, self.target_frame_name)
 
             elif command.comms == 'advance' and command.states[0].value == 'supervisor':
+                self.get_logger().info("Advancing")
+                if self.nav_path_sent is False:
+                    self.get_logger().info("Sending path %s" % self.nav_path)
+                    self.waypoint_path_publisher.publish(self.nav_path)
+                    self.nav_path_sent = True
+
                 self.current_command = "advance"
 
     def timer_callback(self):
@@ -168,8 +175,7 @@ class CommandProcessor(Node):
             self.publish_halt()
 
             # Pause navigation
-            self.paused_msg.data = True
-            self.pause_waypoint_nav_publisher.publish(self.paused_msg)
+            self.pause_nav()
 
         elif self.current_command == 'move-forward':
             self.publish_move_forward()
@@ -189,10 +195,20 @@ class CommandProcessor(Node):
             else:
                 self.current_command = "halt"
                 self.publish_halt()
+                self.pause_nav()
                 
         elif self.current_command == "advance":
-            self.paused_msg.data = False
-            self.pause_waypoint_nav_publisher.publish(self.paused_msg)
+            self.unpause_nav()
+            self.get_logger().info("Advancing on path %s" % self.nav_path)
+            self.get_logger().info("Nav pause status: %s" % self.paused_msg.data)
+
+    def unpause_nav(self):
+        self.paused_msg.data = False
+        self.pause_waypoint_nav_publisher.publish(self.paused_msg)
+
+    def pause_nav(self):
+        self.paused_msg.data = True
+        self.pause_waypoint_nav_publisher.publish(self.paused_msg)
 
     def publish_halt(self):
         twist_msg = Twist()
@@ -226,12 +242,12 @@ class CommandProcessor(Node):
     def publish_target_tf(self):
         self.transform_broadcaster.sendTransform(self.follow_transform)
 
-    def publish_waypoint_pose(self, pose):
-        pose_stamped = PoseStamped()
-        pose_stamped.pose = pose
-        pose_stamped.header.stamp = self.get_clock().now().to_msg()
-        self.waypoint_pose_publisher.publish(pose_stamped)
-        self.get_logger().info('Published advance command')
+    # def publish_waypoint_pose(self, pose):
+    #     pose_stamped = PoseStamped()
+    #     pose_stamped.pose = pose
+    #     pose_stamped.header.stamp = self.get_clock().now().to_msg()
+    #     self.waypoint_pose_publisher.publish(pose_stamped)
+    #     self.get_logger().info('Published advance command')
 
     def compute_follow_target(self, target_id):
 
@@ -266,10 +282,10 @@ class CommandProcessor(Node):
         self.follow_transform.transform.rotation.z = quat[2]
         self.follow_transform.transform.rotation.w = quat[3]
         
-    def get_next_waypoint(self, current_pose):
-        # Define logic for calculating next waypoint pose
-        # Placeholder: returns the provided current_pose as next waypoint pose
-        return current_pose
+    # def get_next_waypoint(self, current_pose):
+    #     # Define logic for calculating next waypoint pose
+    #     # Placeholder: returns the provided current_pose as next waypoint pose
+    #     return current_pose
 
 
 def main(args=None):
