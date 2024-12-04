@@ -47,7 +47,7 @@ class CommandProcessor(Node):
         self.transform_broadcaster = TransformBroadcaster(self)
 
         # Waypoint navigation members
-        self.declare_parameter('path_x_positions', [2.0, 2.5, 4.5, 5.0, 7.0])
+        self.declare_parameter('path_x_positions', [2.0, 2.5, 4.5, 5.0])
         self.declare_parameter('path_source_frame', 'philbart/base_link')
         self.declare_parameter('path_target_frame', 'philbart/map')
         self.path_x_positions = self.get_parameter('path_x_positions').get_parameter_value().double_array_value
@@ -61,8 +61,8 @@ class CommandProcessor(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self, spin_thread=True) # 
         
         # Behavior parameters
-        self.drive_speed = 0.2 # meters/sec
-        self.follow_x_offset = -0.5 # meters
+        self.drive_speed = 0.1 # meters/sec
+        self.follow_x_offset = -1. # meters
 
         # Initialize state
         self.current_command = "halt"
@@ -75,27 +75,27 @@ class CommandProcessor(Node):
         self.paused_msg = Bool()
         self.paused_msg.data = True
         self.nav_path_sent = False
-        can_transform = False
+        # can_transform = False
 
-        while can_transform == False:
-            self.get_logger().info("Waiting for transform to become available")
-            try:
-                can_transform = self.tf_buffer.can_transform(
-                    self.path_target_frame,
-                    self.path_source_frame,
-                    rclpy.time.Time(),
-                    rclpy.duration.Duration(seconds=5.)
-                )
-            except LookupException as ex:
-                self.get_logger().error(f'Could not find transform: {ex}')
+        # while can_transform == False:
+        #     self.get_logger().info("Waiting for transform to become available")
+        #     try:
+        #         can_transform = self.tf_buffer.can_transform(
+        #             self.path_target_frame,
+        #             self.path_source_frame,
+        #             rclpy.time.Time(),
+        #             rclpy.duration.Duration(seconds=5.)
+        #         )
+        #     except LookupException as ex:
+        #         self.get_logger().error(f'Could not find transform: {ex}')
 
         # self.get_logger().info("Can transform: %s" % can_transform)
-        # tf_stamped = self.tf_buffer.lookup_transform(
-        #     self.path_target_frame,
-        #     self.path_source_frame,
-        #     rclpy.time.Time() - rclpy.duration.Duration(seconds=0.),
-        #     rclpy.duration.Duration(seconds=10.)
-        # )
+        tf_stamped = self.tf_buffer.lookup_transform(
+            self.path_target_frame,
+            self.path_source_frame,
+            rclpy.time.Time() - rclpy.duration.Duration(seconds=0.),
+            rclpy.duration.Duration(seconds=10.)
+        )
 
         self.generate_path()
         self.pause_waypoint_nav_publisher.publish(self.paused_msg)

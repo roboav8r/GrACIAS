@@ -249,7 +249,7 @@ semantic_fusion_node:
     z_label_offset: .75 # meters
 
     update_loop_time_sec: 0.1
-    pub_loop_time_sec: 1.
+    pub_loop_time_sec: 0.2
     
     role_rec_methods: ['visual']
     command_rec_methods: ['artag','verbal']
