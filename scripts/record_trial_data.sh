@@ -13,6 +13,7 @@ ros2 bag record -s mcap -o bags/$1 \
 /oak/stereo/camera_info \
 /philbart/dr_spaam_detections \
 /philbart/hololens/cmd_vel \
+/philbart/waypoint_manager/waypoint_plan \
 /scan \
 /semantic_scene \
 /speech_az_sources \
