@@ -84,7 +84,7 @@ lidar_preproc_node:
 
 clip_scene_rec:
   ros__parameters:
-    num_est_interval_samples: 15
+    # num_est_interval_samples: 15
     update_interval: 1. # Update after 1 second elapses
     scene_labels: ['campus','courtyard','lab','lobby']
     scene_descriptions: ['a picture of a public outdoor area with high social activity',
@@ -249,7 +249,7 @@ semantic_fusion_node:
     z_label_offset: .75 # meters
 
     update_loop_time_sec: 0.1
-    pub_loop_time_sec: 0.2
+    pub_loop_time_sec: 0.25
     
     role_rec_methods: ['visual']
     command_rec_methods: ['artag','verbal']
@@ -262,7 +262,7 @@ semantic_fusion_node:
         topic: 'ar_pose_marker'
 
         update_method: 'count' # time, count, or confidence
-        update_threshold: 4 # Update every 3 messages received
+        update_threshold: 1 # 4 # Update every 3 messages received
 
         match_threshold: 0.5
 
@@ -290,7 +290,7 @@ semantic_fusion_node:
         topic: ''
 
         update_method: 'time'
-        update_threshold: .9 # 
+        update_threshold: .95 # 
 
         # GTSAM fusion variables
         role_obs_labels: ['pedestrian','teammate','supervisor']
