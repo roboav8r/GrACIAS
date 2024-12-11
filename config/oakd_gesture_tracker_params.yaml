@@ -1,0 +1,66 @@
+/**:
+  ros__parameters:
+    tracker:
+      frame_id: 'map'
+      mismatch_penalty: 100.
+      assignment_algo: 'greedy'
+      yaw_corr: False
+      publishers:
+          names: ['track_pub', scene_pub]
+          track_pub: # Publisher name
+            pub_topic: 'tracks'
+            msg_type: 'Tracks3D'
+            function: 'publish_tracks'
+            queue_size: 10
+          scene_pub: # Publisher name
+            pub_topic: 'scenes'
+            msg_type: 'SceneUpdate'
+            function: 'publish_scene'
+            queue_size: 10
+
+    object_properties: 
+      object_classes: ["person"]
+      person:
+          model_type: 'cvcy_obj'
+          yaw_proc_var: [1.]
+          size_proc_var: [1., 1., 1.]
+          vel_proc_var: [1., .5, .5]
+          length: 0.25
+          width: 0.25
+          height: 0.5
+          create_method: 'conf'
+          delete_method: 'conf'
+          active_thresh: .25
+          delete_thresh: .15
+          detect_thresh: .15
+          score_update_function: 'parallel_add'
+          score_decay: .001
+          sim_metric: 'dist_3d'
+          match_thresh: 2.0
+
+    detectors:
+      #Declare names of detectors upfront
+      detector_names: ['oakd']
+
+      # For each named detector, give detector model information
+      oakd:
+        topic: 'converted_visual_detections'
+        msg_type: 'Detections3D'
+        detector_type: 'pos_3d'
+        detection_classes: ["person", "bicycle","car","motorbike","aeroplane","bus","train","truck","boat","traffic light","fire hydrant","stop sign","parking meter","bench","bird","cat","dog","horse","sheep","cow","elephant","bear","zebra","giraffe","backpack","umbrella","handbag","tie","suitcase","frisbee","skis","snowboard","sports ball","kite","baseball bat","baseball glove","skateboard","surfboard","tennis racket","bottle","wine glass","cup","fork","knife","spoon","bowl","banana","apple","sandwich","orange","broccoli","carrot","hot dog","pizza","donut","cake","chair","sofa","pottedplant","bed","diningtable","toilet","tvmonitor","laptop","mouse","remote","keyboard","cell phone","microwave","oven","toaster","sink","refrigerator","book","clock","vase","scissors","teddy bear","hair drier","toothbrush"]
+        detection_classes_ignore: ["bicycle","car","motorbike","aeroplane","bus","train","truck","boat","traffic light","fire hydrant","stop sign","parking meter","bench","bird","cat","dog","horse","sheep","cow","elephant","bear","zebra","giraffe","backpack","umbrella","handbag","tie","suitcase","frisbee","skis","snowboard","sports ball","kite","baseball bat","baseball glove","skateboard","surfboard","tennis racket","bottle","wine glass","cup","fork","knife","spoon","bowl","banana","apple","sandwich","orange","broccoli","carrot","hot dog","pizza","donut","cake","chair","sofa","pottedplant","bed","diningtable","toilet","tvmonitor","laptop","mouse","remote","keyboard","cell phone","microwave","oven","toaster","sink","refrigerator","book","clock","vase","scissors","teddy bear","hair drier","toothbrush"]
+        detection_properties:
+            person:
+                pos_obs_var: [1., 1., 1.]
+                yaw_obs_var: [1.]
+                size_obs_var: [1., 1., 1.]
+                object_class: 'person'
+                sim_metric: 'dist_3d'
+                match_thresh: 2.0
+                score_update_function: 'parallel_add'
+                create_method: 'conf'
+                delete_method: 'conf'
+                active_thresh: .75
+                delete_thresh: .15
+                detect_thresh: .15
+                score_decay: .01
