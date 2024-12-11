@@ -21,3 +21,93 @@ depthai_img_preproc_node:
     x_correction_factor: 1.0
     y_correction_factor: 1.0
     labels: ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"]
+
+clip_vis_rec_server:
+  ros__parameters:
+    clip_model: 'ViT-L/14'
+    object_classes: ['person']
+    person:
+      attributes:
+        variables: ['']
+
+      states:
+        variables: ['role']
+        role:
+          labels: ['pedestrian','teammate','supervisor']
+          descriptions: ['a picture of a person', 
+                        'a picture of a person wearing a university of texas robotics shirt and orange texas hat', 
+                        'a picture of a person wearing a university of texas robotics shirt and orange texas hat and a yellow safety vest']
+
+      comms:
+        labels: ['none']
+        gesture_descriptions: ['']
+        transcripts: ['']
+        probs: [1.]
+        # p(command_detected|command_issued)
+        gesture_sensor_model_coeffs: [0.]        
+        verbal_sensor_model_coeffs: [0.]
+
+semantic_fusion_node:
+  ros__parameters:
+    tracker_frame: 'map'
+    mic_frame: 'map'
+    artag_frame: 'oak_rgb_camera_optical_frame'
+
+    x_label_offset: .0 # meters
+    y_label_offset: -.75 # meters
+    z_label_offset: .75 # meters
+
+    update_loop_time_sec: 0.1
+    pub_loop_time_sec: .25
+    
+    role_rec_methods: ['visual']
+    command_rec_methods: ['']
+
+    sensor_names: ['clip_role_rec']
+    sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
+    sensors:
+
+      clip_role_rec:
+        type: 'vision'
+        topic: ''
+
+        update_method: 'time'
+        update_threshold: .9 # 
+
+        # GTSAM fusion variables
+        role_obs_labels: ['pedestrian','teammate','supervisor']
+        role_obs_model_coeffs: [.721171, .278790, .000040,
+                                .033467, .966514, .000019,
+                                .001246, .011736, .987018]
+
+    objects_of_interest: ['person']
+
+    person:
+      attributes:
+        variables: ['']
+
+      states:
+        variables: ['role']
+        role:
+          symbol: 'r' # Letter to uniquely identify the variable in GTSAM.
+          labels: ['pedestrian','teammate','supervisor']
+          probs: [1., 1., 1.]
+          upper_prob_limit: .999
+          lower_prob_limit: .001
+      
+      comms: 
+        symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
+        labels: ['none']
+        probs: [1.]  
+        upper_prob_limit: .999
+        lower_prob_limit: .001
+       
+gesture_keypoint_node:
+  ros__parameters:
+    model_name: 'yolo11m-pose' # YOLO11n-pose, YOLO11s-pose, YOLO11m-pose, YOLO11l-pose, YOLO11x-pose
+    keypoints_per_frame: 17
+    keypoint_dimension: 3
+    # keypoint_buffer_length: 24
+    # target_frames_per_second: 16.0
+    # buffer_publish_rate: 10.
+    # visualize_keypoints: True

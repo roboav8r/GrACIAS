@@ -65,31 +65,38 @@ def generate_launch_description():
         executable='tbd_node.py',
         name='tbd_tracker_node',
         output='screen',
-        # remappings=[('/detections','/converted_visual_detections')],
         parameters=[tracker_params]
     )
     ld.add_action(trk_node)
 
-    # Gesture recognition node
+    # Object recognition
+    clip_obj_rec_server = Node(package = "situated_interaction", 
+                    executable = "clip_vis_rec_server.py",
+                    name = "clip_vis_rec_server",
+                    parameters=[params]
+    )
+    ld.add_action(clip_obj_rec_server)
 
-    # # Object recognition
-    # clip_obj_rec_server = Node(package = "situated_interaction", 
-    #                 executable = "clip_vis_rec_server.py",
-    #                 name = "clip_vis_rec_server",
-    #                 # remappings=[('/clip_scene_image','/oak/rgb/image_raw')],
-    #                 parameters=[semantic_tracking_params]
-    # )
-    # ld.add_action(clip_obj_rec_server)
+    # interaction manager node
+    semantic_tracking_node = Node(
+        package='situated_interaction',
+        executable='semantic_tracking_node.py',
+        name='semantic_fusion_node',
+        output='screen',
+        remappings=[('/tracks','/tbd_tracker_node/tracks')],
+        parameters=[params]
+    )
+    ld.add_action(semantic_tracking_node)
 
-    # # interaction manager node
-    # semantic_tracking_node = Node(
-    #     package='situated_interaction',
-    #     executable='semantic_tracking_node.py',
-    #     name='semantic_tracking_node',
-    #     output='screen',
-    #     parameters=[semantic_tracking_params]
-    # )
-    # ld.add_action(semantic_tracking_node)
+    # TODO - Gesture recognition nodes 
+    gesture_keypoint_node = Node(package = "gesture_recognition_ros2", 
+                    executable = "gesture_keypoint_node.py",
+                    name = "gesture_keypoint_node",
+                    remappings=[('/image_topic','/oak/rgb/image_raw')],
+                    parameters=[params]
+    )
+    ld.add_action(gesture_keypoint_node)
+
 
     # Foxglove bridge for visualization
     viz_node = IncludeLaunchDescription(
