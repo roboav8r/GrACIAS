@@ -42,11 +42,17 @@ class GestureRecServer(Node):
         self.model.to(self.torch_device)
 
     def gesture_rec_callback(self, req, resp):
-        # TODO - reshape to 1, 24, 51
 
-        # TODO - .to(torch.float32)
+        input_tensor = torch.Tensor(req.keypoint_data)
+        input_tensor.reshape(1, self.window_length, self.model_input_dim)
+        input_tensor.to(torch.float32)
+        output_tensor = self.model(input_tensor)
 
-        # TODO - y_pred = model(X_val[0].unsqueeze(0))
+        resp.stamp = req.stamp
+        resp.object_id = req.object_id
+        resp.comms.variable = "gesture"
+        resp.comms.categories = self.command_list
+        resp.comms.probabilities = output_tensor.tolist()
 
 def main(args=None):
     rclpy.init(args=args)

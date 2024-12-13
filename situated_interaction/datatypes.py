@@ -60,6 +60,8 @@ class SemanticObject():
             self.image = None
         
         self.vis_rec_complete = False
+        self.gesture_rec_complete = False        
+        self.last_gesture_update = None
         
         # Initialize discrete attributes and states
         self.attributes = {}

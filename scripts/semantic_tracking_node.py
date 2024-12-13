@@ -25,7 +25,8 @@ from ros_audition.msg import SpeechAzSources
 from foxglove_msgs.msg import SceneUpdate
 
 from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, CategoricalDistribution, HierarchicalCommands
-from situated_hri_interfaces.srv import ObjectVisRec
+from situated_hri_interfaces.srv import ObjectVisRec, GestureRec
+
 
 from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_unit_vec_from_pos, compute_delta_az, compute_delta_pos, solve_assignment_matrix, compute_delta_vec
 from situated_interaction.datatypes import DiscreteVariable, SemanticObject
@@ -93,6 +94,11 @@ class SemanticTrackerNode(Node):
         self.clip_client = self.create_client(ObjectVisRec, 'clip_object_rec', callback_group=self.client_cb_group)
         self.clip_client.wait_for_service()
         self.clip_req = ObjectVisRec.Request()
+
+        # Create gesture service client
+        self.gesture_client = self.create_client(GestureRec, 'clip_object_rec', callback_group=self.client_cb_group)
+        self.gesture_client.wait_for_service()
+        self.gesture_req = GestureRec.Request()
 
         # Create reset & reconfigure servers
         self.reset_srv = self.create_service(Empty, '~/reset', self.reset_callback)
@@ -257,16 +263,16 @@ class SemanticTrackerNode(Node):
 
                         self.ready_to_send_role_rec_req = False
 
-        # if 'gesture' in self.command_rec_methods:
+        if 'gesture' in self.command_rec_methods:
 
-        #     # Check future status and update variable if needed
-        #     if self.ready_to_send_gesture_rec_req==False:
+            # Check future status and update variable if needed
+            if self.ready_to_send_gesture_rec_req==False:
 
-        #         # Check if future is completed and update
-        #         if self.gesture_future.done():
+                # Check if future is completed and update
+                if self.gesture_future.done():
 
-        #             # Get role likelihood function
-        #             resp = self.gesture_future.result()
+                    # Get role likelihood function
+                    resp = self.gesture_future.result()
 
         #             ### CHECK IF THE OBJECT IS BEING TRACKED AND CAN BE UPDATED
         #             if resp.object_id in self.semantic_objects.keys():
@@ -288,18 +294,17 @@ class SemanticTrackerNode(Node):
                     
         #             self.ready_to_send_gesture_rec_req = True
 
+            if self.ready_to_send_gesture_rec_req == True:
 
-        #     if self.ready_to_send_gesture_rec_req == True:
+                # Check if objects need update
+                now_stamp = self.get_clock().now()
 
-        #         # Check if objects need update
-        #         now_stamp = self.get_clock().now()
+                # For each object, check if state is stale. If so, send state update request.
+                for id in self.semantic_objects.keys():
 
-        #         # For each object, check if state is stale. If so, send state update request.
-        #         for id in self.semantic_objects.keys():
+                    obj = self.semantic_objects[id]
 
-        #             obj = self.semantic_objects[id]
-
-        #             # TODO - check if gesture needs updated
+        #             # TODO come back here - check if gesture needs updated
 
         #             # ### CHECK IF OBJECT NEEDS AN UPDATE
         #             # role_not_initialized = (obj.states['role'].last_updated is None)
