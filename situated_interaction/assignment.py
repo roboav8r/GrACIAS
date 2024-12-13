@@ -51,6 +51,24 @@ def compute_az_from_pos(tf_buffer,target_frame,source_frame,object):
     az_in_target_frame = np.arctan2(pos_in_target_frame.point.y,pos_in_target_frame.point.x)
     return az_in_target_frame
 
+def compute_unit_vec_from_pos(tf_buffer,target_frame,source_frame,object):
+    # Target frame = what you want to have, usually microphone array
+    # Source frame = what you do have, e.g. object pos in tracker frame
+
+    # Compute position in target frame
+    source_target_tf = tf_buffer.lookup_transform(target_frame,source_frame,Duration(seconds=.1))
+    pos_in_source_frame = PointStamped()
+    pos_in_source_frame.point.x = object.pos_x
+    pos_in_source_frame.point.y = object.pos_y
+    pos_in_source_frame.point.z = object.pos_z
+    pos_in_target_frame = do_transform_point(pos_in_source_frame,source_target_tf)
+
+    # Compute and return azimuth in target frame
+    normalized_unit_vec = np.array([pos_in_target_frame.point.x, pos_in_target_frame.point.y, pos_in_target_frame.point.z])
+    normalized_unit_vec /= np.linalg.norm(normalized_unit_vec)
+    
+    return normalized_unit_vec
+
 def compute_delta_az(az_1, az_2):
     delta_az = az_1 - az_2
 
@@ -70,6 +88,10 @@ def compute_pos_match(tracker, pos):
 def compute_delta_pos(pos_1, pos_2):
     # Euclidean distance between positions
     return np.linalg.norm(pos_1 - pos_2)
+
+def compute_delta_vec(vec_1, vec_2):
+    delta_vec = np.arccos(np.dot(vec_1,vec_2))
+    return delta_vec
 
 def hungarian_assignment(cost_matrix):
     row_idx, col_idx = linear_sum_assignment(cost_matrix)

@@ -7,6 +7,7 @@ import rclpy
 
 from ar_track_alvar_msgs.msg import AlvarMarkers
 
+from gesture_recognition_ros2.msg import KeypointsWithBBox
 from ros_audition.msg import SpeechAzSources
 
 def process_sensor_update(sensor_params):
@@ -149,6 +150,19 @@ def initialize_sensors(semantic_fusion_node):
             semantic_fusion_node.sensor_dict[sensor_name]['comm_obs_spec'] = pmf_to_spec(semantic_fusion_node.sensor_dict[sensor_name]['comm_obs_model_array'])
             observer_idx += 1
 
+        elif semantic_fusion_node.sensor_dict[sensor_name]['type']=='gesture':
+
+            # Create subscriber
+            semantic_fusion_node.sensor_dict[sensor_name]['sub'] = semantic_fusion_node.create_subscription(KeypointsWithBBox, 
+                                                                            semantic_fusion_node.sensor_dict[sensor_name]['topic'],
+                                                                            eval("lambda msg: semantic_fusion_node.gesture_kp_callback(msg, \"" + sensor_name + "\")",locals()),
+                                                                            10, callback_group=semantic_fusion_node.update_var_cb_group)
+
+            try_to_declare_parameter(semantic_fusion_node,'sensors.%s.match_threshold' % sensor_name, rclpy.Parameter.Type.DOUBLE)
+            semantic_fusion_node.sensor_dict[sensor_name]['match_threshold'] = semantic_fusion_node.get_parameter('sensors.%s.match_threshold' % sensor_name).get_parameter_value().double_value
+
+            observer_idx += 1
+
         else:
             semantic_fusion_node.get_logger().info("Invalid sensor type %s" % semantic_fusion_node.sensor_dict[sensor_name]['type'])
 
@@ -161,6 +175,12 @@ def load_object_params(semantic_fusion_node):
     for obj in semantic_fusion_node.objects_of_interest:
 
         semantic_fusion_node.object_params[obj] = {}
+
+        if obj == 'person':
+            try_to_declare_parameter(semantic_fusion_node,'person.window_length', rclpy.Parameter.Type.INTEGER)
+            try_to_declare_parameter(semantic_fusion_node,'person.model_input_dim', rclpy.Parameter.Type.INTEGER)
+            semantic_fusion_node.object_params[obj]['window_length'] = semantic_fusion_node.get_parameter('person.window_length').get_parameter_value().integer_value
+            semantic_fusion_node.object_params[obj]['model_input_dim'] = semantic_fusion_node.get_parameter('person.model_input_dim').get_parameter_value().integer_value
 
         # Object attribute parameters
         semantic_fusion_node.object_params[obj]['attributes'] = {}

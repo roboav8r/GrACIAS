@@ -52,6 +52,7 @@ semantic_fusion_node:
     tracker_frame: 'map'
     mic_frame: 'map'
     artag_frame: 'oak_rgb_camera_optical_frame'
+    gesture_kp_frame: 'oak_rgb_camera_optical_frame'
 
     x_label_offset: .0 # meters
     y_label_offset: -.75 # meters
@@ -61,9 +62,9 @@ semantic_fusion_node:
     pub_loop_time_sec: .25
     
     role_rec_methods: ['visual']
-    command_rec_methods: ['']
+    command_rec_methods: ['gesture']
 
-    sensor_names: ['clip_role_rec']
+    sensor_names: ['clip_role_rec','lstm_gesture_rec']
     sensor_symbol: 'z' # Letter to uniquely identify the variable in GTSAM.
     sensors:
 
@@ -80,8 +81,22 @@ semantic_fusion_node:
                                 .033467, .966514, .000019,
                                 .001246, .011736, .987018]
 
-    objects_of_interest: ['person']
+      lstm_gesture_rec:
+        type: 'gesture'
+        topic: '/pose_keypoints'
 
+        update_method: 'time'
+        update_threshold: .5 # 
+
+        match_threshold: .5 # radians. ~30 degrees
+
+        # # GTSAM fusion variables
+        # role_obs_labels: ['pedestrian','teammate','supervisor']
+        # role_obs_model_coeffs: [.721171, .278790, .000040,
+        #                         .033467, .966514, .000019,
+        #                         .001246, .011736, .987018]      
+
+    objects_of_interest: ['person']
     person:
       attributes:
         variables: ['']
@@ -101,6 +116,10 @@ semantic_fusion_node:
         probs: [1.]  
         upper_prob_limit: .999
         lower_prob_limit: .001
+
+      # Specific to person
+      window_length: 24
+      model_input_dim: 51
        
 gesture_keypoint_node:
   ros__parameters:

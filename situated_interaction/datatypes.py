@@ -2,6 +2,7 @@
 
 import gtsam
 import numpy as np
+import torch
 
 from rclpy.time import Time
 
@@ -71,6 +72,10 @@ class SemanticObject():
             self.states[state] = DiscreteVariable(state, 'state',
                                             Time.from_msg(self.stamp), params['states'][state]['labels'], params['states'][state]['symbol'], 
                                             self.track_id, params['states'][state]['probs'], params['states'][state]['upper_prob_limit'], params['states'][state]['lower_prob_limit'])
+
+
+        # Initialize keypoint buffer
+        self.keypoint_buffer = torch.zeros(1, params['window_length'], params['model_input_dim'])
 
         # Initialize communication
         self.comms = DiscreteVariable('comms', 'comms',

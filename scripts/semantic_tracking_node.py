@@ -3,6 +3,7 @@
 # import time
 import queue
 import numpy as np
+import torch
 import gtsam
 
 import rclpy
@@ -11,6 +12,9 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallb
 from rclpy.node import Node
 from rclpy.time import Time, Duration
 import tf2_ros
+
+from sensor_msgs.msg import CameraInfo
+from image_geometry import PinholeCameraModel
 
 from std_srvs.srv import Empty
 from geometry_msgs.msg import PointStamped
@@ -23,7 +27,7 @@ from foxglove_msgs.msg import SceneUpdate
 from situated_hri_interfaces.msg import Auth, Comm, Comms, Identity, CategoricalDistribution, HierarchicalCommands
 from situated_hri_interfaces.srv import ObjectVisRec
 
-from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_delta_az, compute_delta_pos, solve_assignment_matrix
+from situated_interaction.assignment import compute_az_match, compute_pos_match, compute_az_from_pos, compute_unit_vec_from_pos, compute_delta_az, compute_delta_pos, solve_assignment_matrix, compute_delta_vec
 from situated_interaction.datatypes import DiscreteVariable, SemanticObject
 from situated_interaction.output import foxglove_visualization, publish_hierarchical_commands
 from situated_interaction.utils import pmf_to_spec, normalize_vector, load_object_params, initialize_sensors, process_sensor_update, delete_sensors, time_to_float
@@ -47,6 +51,24 @@ class SemanticTrackerNode(Node):
             self.tracks_callback,
             10, callback_group=self.update_var_cb_group)
         self.subscription_tracks  # prevent unused variable warning
+
+        self.subscription_tracks = self.create_subscription(
+            Tracks3D,
+            'tracks',
+            self.tracks_callback,
+            10, callback_group=self.update_var_cb_group)
+        self.subscription_tracks  # prevent unused variable warning
+
+        # 2D-3D camera projection model for gesture keypoint matchind
+        self.subscription_camera_info = self.create_subscription(
+            CameraInfo,
+            '/oak/rgb/camera_info',
+            self.camera_info_callback,
+            10)
+        self.subscription_camera_info  # prevent unused variable warning
+        
+        self.camera_model = PinholeCameraModel()
+        self.camera_info_received = False
 
         # Define pubs
         self.semantic_scene_pub = self.create_publisher(
@@ -80,9 +102,11 @@ class SemanticTrackerNode(Node):
         self.declare_parameter('tracker_frame', rclpy.Parameter.Type.STRING)
         self.declare_parameter('mic_frame', rclpy.Parameter.Type.STRING)
         self.declare_parameter('artag_frame', rclpy.Parameter.Type.STRING)
+        self.declare_parameter('gesture_kp_frame', rclpy.Parameter.Type.STRING)
         self.tracker_frame = self.get_parameter('tracker_frame').get_parameter_value().string_value
         self.mic_frame = self.get_parameter('mic_frame').get_parameter_value().string_value
         self.artag_frame = self.get_parameter('artag_frame').get_parameter_value().string_value
+        self.gesture_kp_frame = self.get_parameter('gesture_kp_frame').get_parameter_value().string_value
 
         self.tf_buffer = tf2_ros.buffer.Buffer()
         self.tf_listener = tf2_ros.transform_listener.TransformListener(self.tf_buffer, self)
@@ -104,10 +128,13 @@ class SemanticTrackerNode(Node):
         self.semantic_objects = {}
         self.tracks_msg = Tracks3D()
         self.scene_out_msg = SceneUpdate()
-        # self.visual_role_rec_futures = {}
-        self.req_queue = queue.SimpleQueue()
-        self.ids_to_recognize = []
-        self.ready_to_send_vis_rec_req = True
+        self.role_req_queue = queue.SimpleQueue()
+        self.gesture_req_queue = queue.SimpleQueue()
+
+        self.role_ids_to_recognize = []
+        self.gesture_ids_to_recognize = []
+        self.ready_to_send_role_rec_req = True
+        self.ready_to_send_gesture_rec_req = True
 
     def reset_callback(self, _, resp):
 
@@ -115,13 +142,16 @@ class SemanticTrackerNode(Node):
         self.semantic_objects = {}
         self.tracks_msg = Tracks3D()
         self.scene_out_msg = SceneUpdate()
-        self.visual_role_rec_futures = {}
+
 
         self.tf_buffer.clear()
 
-        self.req_queue = queue.SimpleQueue()
-        self.ids_to_recognize = []
-        self.ready_to_send_vis_rec_req = True
+        self.role_req_queue = queue.SimpleQueue()
+        self.gesture_req_queue = queue.SimpleQueue()
+        self.role_ids_to_recognize = []
+        self.gesture_ids_to_recognize = []
+        self.ready_to_send_role_rec_req = True
+        self.ready_to_send_gesture_rec_req = True
 
         return resp
     
@@ -137,6 +167,10 @@ class SemanticTrackerNode(Node):
         load_object_params(self)
 
         return resp
+    
+    def camera_info_callback(self, camera_info_msg):
+        self.camera_model.fromCameraInfo(camera_info_msg)
+        self.camera_info_received = True
 
     def vis_rec_req(self, id, stamp):
         clip_req = ObjectVisRec.Request()
@@ -150,47 +184,18 @@ class SemanticTrackerNode(Node):
 
         return clip_req
 
-    # def recognize_role(self, clip_req):
-    #     future = self.clip_client.call_async(clip_req)
-
-    #     return future
-
-    # def send_obj_clip_req(self, id, atts_to_est, states_to_est, est_comms):
-    #     self.clip_req = ObjectVisRec.Request()
-    #     self.clip_req.object_id = id
-    #     self.clip_req.class_string = self.semantic_objects[id].class_string
-    #     self.clip_req.attributes_to_estimate = atts_to_est
-    #     self.clip_req.states_to_estimate = states_to_est
-    #     self.clip_req.estimate_comms = est_comms
-    #     self.clip_req.image = self.semantic_objects[id].image
-    #     self.clip_req.stamp = self.semantic_objects[id].stamp
-    #     resp = self.clip_client.call(self.clip_req)
-
-    #     for att_dist in resp.attributes:
-    #         att = att_dist.variable
-    #         self.semantic_objects[id].attributes[att].update(att_dist.probabilities, Time.from_msg(resp.stamp))
-
-    #     for state_dist in resp.states:
-    #         state = state_dist.variable
-    #         self.semantic_objects[id].states[state].update(state_dist.probabilities, Time.from_msg(resp.stamp))
-
-    #     if est_comms:
-    #         self.semantic_objects[id].update_gesture_comms(resp.comms, self)
-
-    #     self.semantic_objects[id].image_available = False
-
     def update_timer_callback(self):
     
         if 'visual' in self.role_rec_methods:
 
             # Check future status and update variable if needed
-            if self.ready_to_send_vis_rec_req==False:
+            if self.ready_to_send_role_rec_req==False:
 
                 # Check if future is completed and update
-                if self.future.done():
+                if self.role_future.done():
 
                     # Get role likelihood function
-                    resp = self.future.result()
+                    resp = self.role_future.result()
 
                     ### CHECK IF THE OBJECT IS BEING TRACKED AND CAN BE UPDATED
                     if resp.object_id in self.semantic_objects.keys():
@@ -210,12 +215,9 @@ class SemanticTrackerNode(Node):
 
                         # del self.ids_to_recognize[self.ids_to_recognize.index(resp.object_id)]
 
-                    
-                    self.ready_to_send_vis_rec_req = True
+                    self.ready_to_send_role_rec_req = True
 
-
-            if self.ready_to_send_vis_rec_req == True:
-
+            if self.ready_to_send_role_rec_req == True:
 
                 # Check if objects need update
                 now_stamp = self.get_clock().now()
@@ -236,24 +238,97 @@ class SemanticTrackerNode(Node):
                         role_is_stale = (sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold'])
 
                     ### CHECK IF UPDATE REQUEST HAS ALREADY BEEN SENT
-                    req_in_queue = (id in self.ids_to_recognize) 
+                    req_in_queue = (id in self.role_ids_to_recognize) 
                     needs_role_update = (role_not_initialized | role_is_stale) & (req_in_queue == False)
 
                     update_is_possible = obj.new_image_available
 
                     if (needs_role_update & update_is_possible):
-                        self.req_queue.put(self.vis_rec_req(id,now_stamp))
-                        self.ids_to_recognize.append(id)
+                        self.role_req_queue.put(self.vis_rec_req(id,now_stamp))
+                        self.role_ids_to_recognize.append(id)
                 
 
                     ### SEND REQUESTS
-                    if self.req_queue.empty() == False:
+                    if self.role_req_queue.empty() == False:
 
-                        del self.ids_to_recognize[self.ids_to_recognize.index(id)]
-                        clip_req = self.req_queue.get()
-                        self.future = self.clip_client.call_async(clip_req)
+                        del self.role_ids_to_recognize[self.role_ids_to_recognize.index(id)]
+                        clip_req = self.role_req_queue.get()
+                        self.role_future = self.clip_client.call_async(clip_req)
 
-                        self.ready_to_send_vis_rec_req = False
+                        self.ready_to_send_role_rec_req = False
+
+        # if 'gesture' in self.command_rec_methods:
+
+        #     # Check future status and update variable if needed
+        #     if self.ready_to_send_gesture_rec_req==False:
+
+        #         # Check if future is completed and update
+        #         if self.gesture_future.done():
+
+        #             # Get role likelihood function
+        #             resp = self.gesture_future.result()
+
+        #             ### CHECK IF THE OBJECT IS BEING TRACKED AND CAN BE UPDATED
+        #             if resp.object_id in self.semantic_objects.keys():
+
+        #                 # TODO - update comms with gesture likelihoods from response 
+
+        #                 for state in resp.states:
+        #                     if state.variable=='role':
+        #                         role_probs = state.probabilities
+
+        #                 role_obs_idx = np.array(role_probs).argmax()
+
+        #                 # Compute obs model, update state variable
+        #                 role_var = self.semantic_objects[resp.object_id].states['role']
+        #                 role_obs_model = gtsam.DiscreteConditional([self.sensor_dict['clip_role_rec']['role_obs_symbol'],len(self.sensor_dict['clip_role_rec']['role_obs_labels'])],[[role_var.var_symbol,len(role_var.var_labels)]],self.sensor_dict['clip_role_rec']['role_obs_spec'])
+        #                 role_likelihood = role_obs_model.likelihood(role_obs_idx)
+
+        #                 role_var.update(role_likelihood, resp.stamp)      
+                    
+        #             self.ready_to_send_gesture_rec_req = True
+
+
+        #     if self.ready_to_send_gesture_rec_req == True:
+
+        #         # Check if objects need update
+        #         now_stamp = self.get_clock().now()
+
+        #         # For each object, check if state is stale. If so, send state update request.
+        #         for id in self.semantic_objects.keys():
+
+        #             obj = self.semantic_objects[id]
+
+        #             # TODO - check if gesture needs updated
+
+        #             # ### CHECK IF OBJECT NEEDS AN UPDATE
+        #             # role_not_initialized = (obj.states['role'].last_updated is None)
+        #             # if role_not_initialized:
+        #             #     role_is_stale = True
+
+        #             # else: # role was initialized
+        #             #     time_since_update = (now_stamp - Time.from_msg(obj.states['role'].last_updated))
+        #             #     sec_since_update = time_to_float(0.,time_since_update.nanoseconds)
+        #             #     role_is_stale = (sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold'])
+
+        #             # ### CHECK IF UPDATE REQUEST HAS ALREADY BEEN SENT
+        #             # req_in_queue = (id in self.ids_to_recognize) 
+        #             # needs_role_update = (role_not_initialized | role_is_stale) & (req_in_queue == False)
+
+        #             # update_is_possible = obj.new_image_available
+
+        #             # if (needs_role_update & update_is_possible):
+        #             #     self.req_queue.put(self.vis_rec_req(id,now_stamp))
+        #             #     self.ids_to_recognize.append(id)
+                
+        #             ### SEND REQUESTS
+        #             if self.req_queue.empty() == False:
+
+        #                 del self.gesture_ids_to_recognize[self.gesture_ids_to_recognize.index(id)]
+        #                 clip_req = self.gesture_req_queue.get()
+        #                 self.gesture_future = self.clip_client.call_async(clip_req)
+
+        #                 self.ready_to_send_gesture_rec_req = False
 
     def pub_timer_callback(self):
         foxglove_visualization(self)
@@ -459,6 +534,59 @@ class SemanticTrackerNode(Node):
                     comm_likelihood = comm_obs_model.likelihood(comm_obs_idx)
 
                     comm_var.update(comm_likelihood, msg.header.stamp)
+
+    def gesture_kp_callback(self, msg, sensor_name):
+
+        if 'gesture' in self.command_rec_methods:
+
+            if self.camera_info_received == False:
+                return
+
+            # Compute the assignment matrix
+            assignment_matrix = np.zeros((len(msg.keypoints),len(self.semantic_objects.keys())))
+
+            for ii, gesture_kps in enumerate(msg.keypoints):
+                for jj, object_key in enumerate(self.semantic_objects.keys()):
+                    object = self.semantic_objects[object_key]
+
+                    vec_to_obj = compute_unit_vec_from_pos(self.tf_buffer,self.gesture_kp_frame,self.tracker_frame,object)
+                    vec_to_kp_centroid = self.camera_model.projectPixelTo3dRay((gesture_kps.bbox_mean_x,gesture_kps.bbox_mean_y))
+                    delta_vec = compute_delta_vec(vec_to_obj, vec_to_kp_centroid)
+                    assignment_matrix[ii,jj] += delta_vec
+
+            # Solve assignment matrix
+            comm_assignments = solve_assignment_matrix('greedy', assignment_matrix, self.sensor_dict[sensor_name]['match_threshold'])
+
+            # Handle comm matches
+            for assignment in comm_assignments:
+
+                object_idx = assignment[1]
+                object_key = list(self.semantic_objects.keys())[object_idx]
+                kp_idx = assignment[0]
+
+                # Add keypoints to the person's keypoint buffer
+                self.get_logger().info("Add keypoints to person buffer")
+                self.get_logger().info(str(self.semantic_objects[object_key].keypoint_buffer))
+
+                self.semantic_objects[object_key].keypoint_buffer = torch.roll(self.semantic_objects[object_key].keypoint_buffer, shifts = -1, dims=1)
+                self.semantic_objects[object_key].keypoint_buffer[:,-1,:] = torch.Tensor(msg.keypoints[kp_idx].keypoint_data)
+                self.get_logger().info(str(self.semantic_objects[object_key].keypoint_buffer))
+
+            # Handle objects with no speech
+            for jj, object_key in enumerate(self.semantic_objects.keys()):
+
+                if jj not in comm_assignments[:,1]: # If track is unmatched, handle it as a missed detection
+
+                    # Add zeros to the person's keypoint buffer
+                    self.get_logger().info("Add zeroes to person buffer")
+                    self.get_logger().info(str(self.semantic_objects[object_key].keypoint_buffer))
+
+                    self.semantic_objects[object_key].keypoint_buffer = torch.roll(self.semantic_objects[object_key].keypoint_buffer, shifts = -1, dims=1)
+                    self.semantic_objects[object_key].keypoint_buffer[:,-1,:] = torch.zeros(51) # TODO - make this a param
+
+            # NOTE
+            # Shifts = -1, buffer[:, -1, :] puts new points at bottom row, old points at top row
+            # Shifts = 1, buffer[:, 0, :] puts new points at top row, old points at bottom row 
 
 def main(args=None):
     rclpy.init(args=args)
