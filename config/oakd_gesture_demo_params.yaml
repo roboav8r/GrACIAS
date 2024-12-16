@@ -90,11 +90,16 @@ semantic_fusion_node:
 
         match_threshold: .5 # radians. ~30 degrees
 
-        # # GTSAM fusion variables
-        # role_obs_labels: ['pedestrian','teammate','supervisor']
-        # role_obs_model_coeffs: [.721171, .278790, .000040,
-        #                         .033467, .966514, .000019,
-        #                         .001246, .011736, .987018]      
+        # GTSAM fusion variables
+        comm_obs_labels: ['advance', 'attention', 'follow-me', 'halt', 'move-forward', 'move-in-reverse', 'rally']
+        comm_obs_model_coeffs: [0.142857143, 0.142857143, 0.142857143, 0.142857143, 0.142857143, 0.142857143, 0.142857143, # p(obs|none)
+                                0.921052632, 0.013157895, 0.013157895, 0.013157895, 0.013157895, 0.013157895, 0.013157895,
+                                0.013157895, 0.921052632, 0.013157895, 0.013157895, 0.013157895, 0.013157895, 0.013157895,
+                                0.013157895, 0.013157895, 0.921052632, 0.013157895, 0.013157895, 0.013157895, 0.013157895,
+                                0.013157895, 0.013157895, 0.013157895, 0.921052632, 0.013157895, 0.013157895, 0.013157895,
+                                0.013157895, 0.013157895, 0.013157895, 0.013157895, 0.921052632, 0.013157895, 0.013157895,
+                                0.013157895, 0.013157895, 0.013157895, 0.013157895, 0.013157895, 0.921052632, 0.013157895,
+                                0.013157895, 0.013157895, 0.013157895, 0.013157895, 0.013157895, 0.013157895, 0.921052632]
 
     objects_of_interest: ['person']
     person:
@@ -112,8 +117,8 @@ semantic_fusion_node:
       
       comms: 
         symbol: 'c' # Letter to uniquely identify the variable in GTSAM.
-        labels: ['none']
-        probs: [1.]  
+        labels: ['none', 'advance', 'attention', 'follow-me', 'halt', 'move-forward', 'move-in-reverse', 'rally']
+        probs: [1., .01, .01, .01, .01, .01, .01, .01]  
         upper_prob_limit: .999
         lower_prob_limit: .001
 

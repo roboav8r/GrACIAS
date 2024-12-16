@@ -35,6 +35,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/semantic_tracking_node.py
   scripts/clip_vis_rec_server.py
+  scripts/gesture_rec_server.py
   scripts/record_scene_results_node.py
   scripts/record_hierarchical_cmd_results_node.py
   scripts/role_exp_mgr.py

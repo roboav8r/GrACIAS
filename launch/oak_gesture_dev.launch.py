@@ -88,7 +88,7 @@ def generate_launch_description():
     )
     ld.add_action(semantic_tracking_node)
 
-    # TODO - Gesture recognition nodes 
+    # Gesture recognition nodes 
     gesture_keypoint_node = Node(package = "gesture_recognition_ros2", 
                     executable = "gesture_keypoint_node.py",
                     name = "gesture_keypoint_node",
@@ -97,6 +97,12 @@ def generate_launch_description():
     )
     ld.add_action(gesture_keypoint_node)
 
+    gesture_rec_server = Node(package = "situated_interaction", 
+                    executable = "gesture_rec_server.py",
+                    name = "gesture_rec_server",
+                    parameters=[params]
+    )
+    ld.add_action(gesture_rec_server)
 
     # Foxglove bridge for visualization
     viz_node = IncludeLaunchDescription(

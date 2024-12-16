@@ -96,7 +96,7 @@ class SemanticTrackerNode(Node):
         self.clip_req = ObjectVisRec.Request()
 
         # Create gesture service client
-        self.gesture_client = self.create_client(GestureRec, 'clip_object_rec', callback_group=self.client_cb_group)
+        self.gesture_client = self.create_client(GestureRec, 'gesture_rec', callback_group=self.client_cb_group)
         self.gesture_client.wait_for_service()
         self.gesture_req = GestureRec.Request()
 
@@ -190,6 +190,15 @@ class SemanticTrackerNode(Node):
 
         return clip_req
 
+    def gesture_rec_req(self, id, stamp):
+
+        gesture_req = GestureRec.Request()
+        gesture_req.object_id = id
+        gesture_req.stamp = stamp.to_msg()
+        gesture_req.keypoint_data = self.semantic_objects[id].keypoint_buffer.flatten().tolist()
+
+        return gesture_req
+
     def update_timer_callback(self):
     
         if 'visual' in self.role_rec_methods:
@@ -273,26 +282,27 @@ class SemanticTrackerNode(Node):
 
                     # Get role likelihood function
                     resp = self.gesture_future.result()
+                    self.get_logger().info("Got response %s" % str(resp))
 
-        #             ### CHECK IF THE OBJECT IS BEING TRACKED AND CAN BE UPDATED
-        #             if resp.object_id in self.semantic_objects.keys():
+                    ### CHECK IF THE OBJECT IS BEING TRACKED AND CAN BE UPDATED
+                    if resp.object_id in self.semantic_objects.keys():
 
-        #                 # TODO - update comms with gesture likelihoods from response 
+                        # Get comms symbol
+                        comm_var = self.semantic_objects[resp.object_id].comms
+                        self.get_logger().info("Prior comm dist: %s" % str(comm_var.probs))
+                        comm_obs_idx = np.array(resp.comms.probabilities).argmax()
 
-        #                 for state in resp.states:
-        #                     if state.variable=='role':
-        #                         role_probs = state.probabilities
+                        comm_obs_model = gtsam.DiscreteConditional([self.sensor_dict['lstm_gesture_rec']['comm_obs_symbol'],
+                                                                    len(self.sensor_dict['lstm_gesture_rec']['comm_obs_labels'])],
+                                                                    [[comm_var.var_symbol,len(comm_var.var_labels)]],
+                                                                    self.sensor_dict['lstm_gesture_rec']['comm_obs_spec'])
+                        comm_likelihood = comm_obs_model.likelihood(comm_obs_idx)
+                        comm_var.update(comm_likelihood, resp.stamp)
+                        self.get_logger().info("Posterior comm dist: %s" % str(comm_var.probs))
 
-        #                 role_obs_idx = np.array(role_probs).argmax()
+                        self.semantic_objects[resp.object_id].last_gesture_update = resp.stamp
 
-        #                 # Compute obs model, update state variable
-        #                 role_var = self.semantic_objects[resp.object_id].states['role']
-        #                 role_obs_model = gtsam.DiscreteConditional([self.sensor_dict['clip_role_rec']['role_obs_symbol'],len(self.sensor_dict['clip_role_rec']['role_obs_labels'])],[[role_var.var_symbol,len(role_var.var_labels)]],self.sensor_dict['clip_role_rec']['role_obs_spec'])
-        #                 role_likelihood = role_obs_model.likelihood(role_obs_idx)
-
-        #                 role_var.update(role_likelihood, resp.stamp)      
-                    
-        #             self.ready_to_send_gesture_rec_req = True
+                    self.ready_to_send_gesture_rec_req = True
 
             if self.ready_to_send_gesture_rec_req == True:
 
@@ -304,36 +314,34 @@ class SemanticTrackerNode(Node):
 
                     obj = self.semantic_objects[id]
 
-        #             # TODO come back here - check if gesture needs updated
+                    # Check if gesture needs updated
 
-        #             # ### CHECK IF OBJECT NEEDS AN UPDATE
-        #             # role_not_initialized = (obj.states['role'].last_updated is None)
-        #             # if role_not_initialized:
-        #             #     role_is_stale = True
+                    ### CHECK IF GESTURE NEEDS AN UPDATE
+                    gesture_not_initialized = (obj.last_gesture_update is None)
+                    if gesture_not_initialized:
+                        gesture_is_stale = True
 
-        #             # else: # role was initialized
-        #             #     time_since_update = (now_stamp - Time.from_msg(obj.states['role'].last_updated))
-        #             #     sec_since_update = time_to_float(0.,time_since_update.nanoseconds)
-        #             #     role_is_stale = (sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold'])
+                    else: # gesture was initialized
+                        time_since_update = (now_stamp - Time.from_msg(obj.last_gesture_update))
+                        sec_since_update = time_to_float(0.,time_since_update.nanoseconds)
+                        gesture_is_stale = (sec_since_update > self.sensor_dict['clip_role_rec']['update_threshold'])
 
-        #             # ### CHECK IF UPDATE REQUEST HAS ALREADY BEEN SENT
-        #             # req_in_queue = (id in self.ids_to_recognize) 
-        #             # needs_role_update = (role_not_initialized | role_is_stale) & (req_in_queue == False)
+                    ### CHECK IF UPDATE REQUEST HAS ALREADY BEEN SENT
+                    gesture_req_in_queue = (id in self.gesture_ids_to_recognize) 
+                    needs_gesture_update = (gesture_not_initialized | gesture_is_stale) & (gesture_req_in_queue == False)
 
-        #             # update_is_possible = obj.new_image_available
-
-        #             # if (needs_role_update & update_is_possible):
-        #             #     self.req_queue.put(self.vis_rec_req(id,now_stamp))
-        #             #     self.ids_to_recognize.append(id)
+                    if (needs_gesture_update):
+                        self.gesture_req_queue.put(self.gesture_rec_req(id,now_stamp))
+                        self.gesture_ids_to_recognize.append(id)
                 
-        #             ### SEND REQUESTS
-        #             if self.req_queue.empty() == False:
+                    ### SEND REQUESTS
+                    if self.gesture_req_queue.empty() == False:
 
-        #                 del self.gesture_ids_to_recognize[self.gesture_ids_to_recognize.index(id)]
-        #                 clip_req = self.gesture_req_queue.get()
-        #                 self.gesture_future = self.clip_client.call_async(clip_req)
+                        del self.gesture_ids_to_recognize[self.gesture_ids_to_recognize.index(id)]
+                        gesture_req = self.gesture_req_queue.get()
+                        self.gesture_future = self.gesture_client.call_async(gesture_req)
 
-        #                 self.ready_to_send_gesture_rec_req = False
+                        self.ready_to_send_gesture_rec_req = False
 
     def pub_timer_callback(self):
         foxglove_visualization(self)
@@ -570,21 +578,17 @@ class SemanticTrackerNode(Node):
                 kp_idx = assignment[0]
 
                 # Add keypoints to the person's keypoint buffer
-                self.get_logger().info("Add keypoints to person buffer")
-                self.get_logger().info(str(self.semantic_objects[object_key].keypoint_buffer))
+                # self.get_logger().info("Add keypoints to person buffer")
+                # self.get_logger().info(str(self.semantic_objects[object_key].keypoint_buffer))
 
                 self.semantic_objects[object_key].keypoint_buffer = torch.roll(self.semantic_objects[object_key].keypoint_buffer, shifts = -1, dims=1)
                 self.semantic_objects[object_key].keypoint_buffer[:,-1,:] = torch.Tensor(msg.keypoints[kp_idx].keypoint_data)
-                self.get_logger().info(str(self.semantic_objects[object_key].keypoint_buffer))
+                # self.get_logger().info(str(self.semantic_objects[object_key].keypoint_buffer))
 
             # Handle objects with no speech
             for jj, object_key in enumerate(self.semantic_objects.keys()):
 
                 if jj not in comm_assignments[:,1]: # If track is unmatched, handle it as a missed detection
-
-                    # Add zeros to the person's keypoint buffer
-                    self.get_logger().info("Add zeroes to person buffer")
-                    self.get_logger().info(str(self.semantic_objects[object_key].keypoint_buffer))
 
                     self.semantic_objects[object_key].keypoint_buffer = torch.roll(self.semantic_objects[object_key].keypoint_buffer, shifts = -1, dims=1)
                     self.semantic_objects[object_key].keypoint_buffer[:,-1,:] = torch.zeros(51) # TODO - make this a param
